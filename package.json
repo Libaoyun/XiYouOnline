@@ -1,0 +1,21 @@
+{
+  "name": "hanfeng-westward-2d",
+  "private": true,
+  "version": "2.0.0",
+  "description": "汉风西游 - 正统2D自由探索与西游大闹天宫复刻版",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "hanfeng-westward",
+    "rpg",
+    "2d",
+    "wukong",
+    "maopao"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

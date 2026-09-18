@@ -265,7 +265,43 @@ window.GAME_DATA.ITEMS = {
     price: 0,
     desc: '长安府衙所颁发的定居户籍文牒。持有可随时在各地土地神处“一键返回居住地”。'
   },
+  jin_liu_lu: {
+    id: 'jin_liu_lu',
+    name: '金柳露',
+    type: 'misc',
+    icon: '🧴',
+    price: 1500,
+    desc: '三界通灵琼浆圣水！可在仙宠界面对任意仙宠进行【洗炼重铸】，将其重置为Lv.1幼年灵宠并彻底刷新资质与成长率，有机会洗出高成长绝品宝宝！'
+  },
+  meteor_iron: {
+    id: 'meteor_iron',
+    name: '天外陨铁',
+    type: 'misc',
+    icon: '🪨',
+    price: 800,
+    desc: '九天外坠落的星辰神铁，蕴含先天淬炼精气。可在长安城李铁匠处对装备进行【精炼强化】，大幅提升基础攻击与防御！'
+  },
+  bishui_zhu: {
+    id: 'bishui_zhu',
+    name: '避水神珠',
+    type: 'misc',
+    icon: '🔮',
+    price: 5000,
+    desc: '东海龙宫镇海至宝，佩之入汪洋深渊如履平地，散发温润水灵护罩，受水系法术伤害减免 30%。'
+  },
   // 1. 武器
+  dinghai_shenzhen: {
+    id: 'dinghai_shenzhen',
+    name: '定海神针铁·仿',
+    type: 'equip',
+    slot: 'weapon',
+    reqLevel: 30,
+    icon: '🦯',
+    price: 12000,
+    quality: 'gold',
+    attrs: { atk: 160, matk: 95, hp: 650, spd: 18 },
+    desc: '大禹治水测江海深浅之天河定底神珍！重一万三千五百斤，神芒破霄，横扫乾坤！'
+  },
   eq_wp_wood: {
     id: 'eq_wp_wood',
     name: '青铜短剑',
@@ -467,6 +503,101 @@ window.GAME_DATA.ITEMS = {
     quality: 'purple',
     attrs: { matk: 95, mdef: 80, mp: 300 },
     desc: '地府泰山石敢当所炼魂珠，牢锁神魂，大幅激发元神法力。'
+  },
+
+  // === 剧情战利特级神装 ===
+  eq_ring_baigu: {
+    id: 'eq_ring_baigu',
+    name: '千年白骨幽魂戒',
+    type: 'equip',
+    slot: 'necklace',
+    reqLevel: 40,
+    icon: '💍',
+    price: 15000,
+    quality: 'gold',
+    attrs: { matk: 85, mdef: 70, hp: 350 },
+    resists: { phy: 8, shesheng: 8, leiting: 8, fengyin: 8 },
+    desc: '白虎岭白骨夫人万年尸骨精元凝结之宝戒，通体幽光森森，令佩戴者全技能抗性与体魄大幅提升！'
+  },
+  eq_wp_lengyue: {
+    id: 'eq_wp_lengyue',
+    name: '冷月追魂宝刀',
+    type: 'equip',
+    slot: 'weapon',
+    reqLevel: 45,
+    icon: '🗡️',
+    price: 22000,
+    quality: 'gold',
+    attrs: { atk: 195, spd: 15, hp: 400 },
+    desc: '西方奎木狼黄袍怪随身劈山神刃，寒气逼人，出鞘如冷月裂空，斩金断铁！'
+  },
+
+  // === 仙家魔兽要诀 (打书学习被动特技) ===
+  book_high_critical: {
+    id: 'book_high_critical',
+    name: '魔兽要诀·高级必杀',
+    type: 'pet_book',
+    skillId: 'high_critical',
+    skillName: '高级必杀',
+    icon: '📕',
+    price: 8000,
+    quality: 'gold',
+    desc: '太古魔兽相传之秘卷！仙宠研习后领悟【高级必杀】，物理攻击时拥有 25% 几率触发暴击，造成 1.8 倍毁灭打击！'
+  },
+  book_high_vampire: {
+    id: 'book_high_vampire',
+    name: '魔兽要诀·高级吸血',
+    type: 'pet_book',
+    skillId: 'high_vampire',
+    skillName: '高级吸血',
+    icon: '📗',
+    price: 8500,
+    quality: 'gold',
+    desc: '九幽修罗嗜血之术！仙宠研习后领悟【高级吸血】，物理攻击命中时将造成伤害的 35% 瞬间转化为自身气血！'
+  },
+  book_high_rebirth: {
+    id: 'book_high_rebirth',
+    name: '魔兽要诀·高级神佑',
+    type: 'pet_book',
+    skillId: 'high_rebirth',
+    skillName: '高级神佑',
+    icon: '📘',
+    price: 12000,
+    quality: 'gold',
+    desc: '瑶池神树涅槃之真谛！仙宠研习后领悟【高级神佑复生】，战斗中遭受致命伤害阵亡时有 40% 几率圣光涅槃，满血原地复活！'
+  },
+  book_high_speed: {
+    id: 'book_high_speed',
+    name: '魔兽要诀·高级敏捷',
+    type: 'pet_book',
+    skillId: 'high_speed',
+    skillName: '高级敏捷',
+    icon: '📙',
+    price: 6000,
+    quality: 'purple',
+    desc: '金翅大鹏御风神术！仙宠研习后领悟【高级敏捷】，基础出手速度额外提升 30 点，决胜抢占先机！'
+  },
+  book_high_sneak: {
+    id: 'book_high_sneak',
+    name: '魔兽要诀·高级偷袭',
+    type: 'pet_book',
+    skillId: 'high_sneak',
+    skillName: '高级偷袭',
+    icon: '📜',
+    price: 7000,
+    quality: 'purple',
+    desc: '无形无相偷袭之妙法！仙宠研习后领悟【高级偷袭】，物理伤害额外永久提升 15%，且出手不受任何反击反震！'
+  },
+
+  // === 运镖任务信物 ===
+  biao_letter: {
+    id: 'biao_letter',
+    name: '大唐朝廷军饷镖银',
+    type: 'quest_item',
+    icon: '📦',
+    price: 0,
+    quality: 'blue',
+    desc: '长安总督衙门与大唐镖局所托之重金军饷，需沿陆路历经艰险送达前方要塞关隘，中途切莫遗失！'
   }
 };
 

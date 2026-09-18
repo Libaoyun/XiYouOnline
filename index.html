@@ -11,47 +11,50 @@
 <body class="modern-mode">
 
   <!-- 顶部模式切换与全局控制栏 -->
+  <!-- 顶部模式切换与全局控制栏 (国风仙侠玉石暗金 HUD) -->
   <header class="top-nav">
-    <div class="brand-title">
-      <span>📿 汉风西游 · 正统2D版</span>
-      <span class="brand-badge">威灵大将 · 西游行</span>
-    </div>
-    <!-- 玩家实时状态简报 HUD -->
-    <div id="player-hud" style="display:flex;align-items:center;gap:12px;font-size:12px;">
-      <span id="hud-player-name" style="font-weight:bold;color:#ffd700;">威灵大将 (Lv.50)</span>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <span style="color:#ff6b81;font-size:10px;font-weight:bold;">HP:</span>
-        <div style="width:70px;height:7px;background:#222;border-radius:3px;overflow:hidden;border:1px solid #c59b27;">
-          <div id="hud-hp-bar" style="width:100%;height:100%;background:#2ed573;"></div>
+    <!-- 左侧：仙侠国风角色状态 HUD -->
+    <div class="top-player-hud" id="player-hud">
+      <div class="hud-avatar-frame" title="主角修真法相">
+        <span class="hud-avatar-icon">📿</span>
+        <span class="hud-realm-tag">威灵大将</span>
+      </div>
+      <div class="hud-info-col">
+        <div class="hud-title-row">
+          <span id="hud-player-name" class="hud-name-text">威灵大将 (Lv.50)</span>
+          <span class="hud-location-badge" id="hud-location-text">🏯 天宫·南天门</span>
+        </div>
+        <div class="hud-bars-row">
+          <!-- 气血 HP 槽 -->
+          <div class="hud-bar-wrap hp-wrap" title="气血值">
+            <span class="hud-bar-label">HP</span>
+            <div class="hud-bar-track">
+              <div id="hud-hp-bar" class="hud-bar-fill hp-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+          <!-- 银两财富 -->
+          <div class="hud-silver-wrap" title="当前持有盘缠银两">
+            <span class="hud-silver-icon">🪙</span>
+            <span id="hud-silver" class="hud-silver-text">15000 两</span>
+          </div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <span style="color:#ffd700;font-size:11px;">🪙:</span>
-        <span id="hud-silver" style="color:#fef0cd;font-weight:bold;">15000 两</span>
-      </div>
     </div>
+
+    <!-- 右侧：精简系统功能胶囊组 (横排绝不折行) -->
     <nav class="nav-controls">
-      <span id="save-status-indicator" style="font-size:11px;color:#2ed573;font-weight:bold;margin-right:4px;">💾 进度已保存</span>
-      <button onclick="window.App2D.saveAutoProgress(); window.showGameMessage('💾 历练进度已手动保存！', 'success');" class="nav-btn" style="background:#1b2838;border-color:#3498db;" title="立即手动保存历练进度">
-        💾 保存
+      <span id="save-status-indicator" class="hud-save-tag">💾 进度已保存</span>
+      <button onclick="window.App2D.saveAutoProgress(); window.showGameMessage('💾 历练进度已手动保存！', 'success');" class="sys-capsule-btn btn-save" title="立即手动保存历练进度">
+        <span>💾</span> 保存
       </button>
-      <button id="toggle-mode-btn" class="nav-btn" title="在经典按键机与大屏模式之间切换">
-        📱 切换掌机
+      <button id="toggle-mode-btn" class="sys-capsule-btn btn-mode" title="在经典按键掌机与次世代大屏画卷之间切换">
+        <span>📱</span> 切换掌机
       </button>
-      <button id="toggle-sound-btn" class="nav-btn" title="开启或关闭复古 8-bit 音效">
-        🔊 音效:开
+      <button id="toggle-sound-btn" class="sys-capsule-btn btn-sound" title="开启或关闭复古 8-bit 音效">
+        <span>🔊</span> 音效:开
       </button>
-      <button onclick="window.App2D.openPeachModal()" class="nav-btn" style="background:#5c1d18;border-color:#ffd700;" title="前往天庭蟠桃园采摘仙桃">
-        🍑 采摘蟠桃
-      </button>
-      <button onclick="window.App2D.openMountModal()" class="nav-btn" style="background:#203820;border-color:#2ecc71;" title="打开御马监坐骑驯养面板">
-        🐎 坐骑驯养
-      </button>
-      <button onclick="window.App2D.openClassSelectModal()" class="nav-btn" style="background:#2c2c54;border-color:#706fd3;" title="查看与切换三大门派绝技 (金刚/妖魔/神仙)">
-        ☯️ 门派绝技
-      </button>
-      <button onclick="window.App2D.restartGame()" class="nav-btn" style="background:#3d1a24;border-color:#e74c3c;" title="清空历练存档，重新开启西行之旅">
-        🔄 重新启程
+      <button onclick="window.App2D.restartGame()" class="sys-capsule-btn btn-reset" title="清空历练存档，重新开启西行之旅">
+        <span>🔄</span> 重新启程
       </button>
     </nav>
   </header>
@@ -71,6 +74,9 @@
           <!-- 场景标题悬浮浮条 (右上角) -->
           <div style="position:absolute;top:8px;right:8px;z-index:10;display:flex;gap:6px;">
             <span class="scene-location-badge" id="scene-location-text">🏯 天宫·南天门与凌霄宝殿</span>
+            <button onclick="window.App2D.openQuestTrackerModal()" class="nav-btn" style="padding:2px 8px;font-size:11px;background:rgba(20,15,10,0.85);border-color:#ffd700;">
+              📜 降魔任务[Q]
+            </button>
             <button onclick="window.App2D.toggleMountRiding()" id="quick-ride-btn" class="nav-btn" style="padding:2px 8px;font-size:11px;background:rgba(20,15,10,0.85);border-color:#ffd700;">
               🏇 状态:骑乘中
             </button>
@@ -126,25 +132,52 @@
         </div>
       </div>
 
-      <!-- 大屏沉浸模式专属底部古典快捷工具栏 -->
-      <div class="modern-bottom-bar">
-        <button class="modern-tool-btn" onclick="window.App2D.interactNearby()" title="与附近NPC或场景物体互动 (按空格键)">
-          <span>💬</span> 对话互动 <span style="font-size:10px;color:#ffd700;">[Space]</span>
+      <!-- 大屏沉浸模式专属底部古典快捷工具栏 (商业级仙侠国风双层八卦操作盘) -->
+      <div class="modern-bottom-bar" id="game-bottom-action-bar">
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.interactNearby()" title="与附近NPC或场景物体互动 (按空格键)">
+          <span class="dock-key-badge">[Space]</span>
+          <span class="dock-btn-icon">💬</span>
+          <span class="dock-btn-label">对话互动</span>
         </button>
-        <button class="modern-tool-btn" onclick="window.App2D.toggleMountRiding()" title="翻身上马疾驰或下马步行 (按R键或7键)">
-          <span>🏇</span> 坐骑骑乘 <span style="font-size:10px;color:#ffd700;">[R/7]</span>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.openQuestTrackerModal()" title="查看正统西游主线与钟馗日常抓鬼任务 (按Q键)">
+          <span class="dock-key-badge">[Q]</span>
+          <span class="dock-btn-icon">📜</span>
+          <span class="dock-btn-label">降魔历练</span>
         </button>
-        <button class="modern-tool-btn" onclick="window.App2D.openMountModal()" title="御马监神驹驯养与属性加成 (按3键)">
-          <span>🐎</span> 驯化坐骑 <span style="font-size:10px;color:#ffd700;">[3]</span>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.openInventoryModal()" title="打开储物背包与宝石镶嵌 (按B键)">
+          <span class="dock-key-badge">[B]</span>
+          <span class="dock-btn-icon">🎒</span>
+          <span class="dock-btn-label">储物背包</span>
         </button>
-        <button class="modern-tool-btn" onclick="window.App2D.openPeachModal()" title="天庭蟠桃胜境采摘仙桃暴涨经验 (按1键)">
-          <span>🍑</span> 采摘蟠桃 <span style="font-size:10px;color:#ffd700;">[1]</span>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.openPetManageModal()" title="随行仙宠领悟绝技与出战设置 (按P键)">
+          <span class="dock-key-badge">[P]</span>
+          <span class="dock-btn-icon">🐾</span>
+          <span class="dock-btn-label">随行仙宠</span>
         </button>
-        <button class="modern-tool-btn" onclick="window.App2D.openClassSelectModal()" title="查看与切换三大门派绝技 (按K键)">
-          <span>☯️</span> 门派绝技 <span style="font-size:10px;color:#ffd700;">[K]</span>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.toggleMountRiding()" title="翻身上马疾驰或下马步行 (按R键或7键)">
+          <span class="dock-key-badge">[R/7]</span>
+          <span class="dock-btn-icon">🏇</span>
+          <span class="dock-btn-label">坐骑骑乘</span>
         </button>
-        <button class="modern-tool-btn" onclick="window.Dialogue ? window.Dialogue.close() : null" title="关闭所有弹窗与面板 (按Esc键)">
-          <span>✕</span> 关闭弹窗 <span style="font-size:10px;color:#ffd700;">[Esc]</span>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.openMountModal()" title="御马监神驹驯养与属性加成 (按3键)">
+          <span class="dock-key-badge">[3]</span>
+          <span class="dock-btn-icon">🐎</span>
+          <span class="dock-btn-label">驯化坐骑</span>
+        </button>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.openPeachModal()" title="天庭蟠桃胜境采摘仙桃暴涨经验 (按1键)">
+          <span class="dock-key-badge">[1]</span>
+          <span class="dock-btn-icon">🍑</span>
+          <span class="dock-btn-label">采摘蟠桃</span>
+        </button>
+        <button class="action-dock-btn modern-tool-btn" onclick="window.App2D.openClassSelectModal()" title="查看与切换三大门派绝技 (按K键)">
+          <span class="dock-key-badge">[K]</span>
+          <span class="dock-btn-icon">☯️</span>
+          <span class="dock-btn-label">门派绝技</span>
+        </button>
+        <button class="action-dock-btn modern-tool-btn dock-btn-close" onclick="window.Dialogue ? window.Dialogue.close() : null" title="关闭所有弹窗与面板 (按Esc键)">
+          <span class="dock-key-badge">[Esc]</span>
+          <span class="dock-btn-icon">✕</span>
+          <span class="dock-btn-label">关闭弹窗</span>
         </button>
       </div>
     </div>

@@ -42,6 +42,13 @@ window.GAME_DATA.MAPS_2D = {
         g[1][c] = 'cloud_void';
         g[17][c] = 'cloud_void';
       }
+      // 凌霄宝殿金顶琉璃大殿 (北端仙阙)
+      for (let c = 8; c <= 14; c++) {
+        g[2][c] = 'tang_palace';
+      }
+      // 南天门汉白玉牌楼
+      g[14][10] = 'paifang';
+      g[14][11] = 'paifang';
       // 左右蟠龙天柱
       g[4][5] = 'heaven_pillar';
       g[4][16] = 'heaven_pillar';
@@ -86,8 +93,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 3 * 32, y: 13 * 32, targetMap: 'tiangong_yuma', targetX: 12 * 32, targetY: 13 * 32, name: '西去【天宫·御马监】选领坐骑' },
-      { x: 19 * 32, y: 13 * 32, targetMap: 'tiangong_pantao', targetX: 12 * 32, targetY: 13 * 32, name: '东入【天宫·蟠桃胜境】采摘仙桃' }
+      { x: 3 * 32, y: 13 * 32, targetMap: 'tiangong_yuma', targetX: 12 * 32, targetY: 13 * 32, name: '御马监' },
+      { x: 19 * 32, y: 13 * 32, targetMap: 'tiangong_pantao', targetX: 12 * 32, targetY: 13 * 32, name: '蟠桃园' }
     ]
   },
 
@@ -109,6 +116,10 @@ window.GAME_DATA.MAPS_2D = {
       for (let c = 0; c < 20; c++) {
         g[0][c] = 'cloud_void';
         g[15][c] = 'cloud_void';
+      }
+      // 仙马御厩金顶廊房
+      for (let c = 6; c <= 13; c++) {
+        g[2][c] = 'tang_store';
       }
       // 仙马围栏柱
       g[5][4] = 'heaven_pillar';
@@ -142,7 +153,7 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 10 * 32, y: 14 * 32, targetMap: 'tiangong_palace', targetX: 4 * 32, targetY: 13 * 32, name: '返回【凌霄宝殿】' }
+      { x: 10 * 32, y: 14 * 32, targetMap: 'tiangong_palace', targetX: 4 * 32, targetY: 13 * 32, name: '天宫' }
     ]
   },
 
@@ -153,39 +164,67 @@ window.GAME_DATA.MAPS_2D = {
     id: 'tiangong_pantao',
     name: '天宫·蟠桃胜境',
     region: '瑶池仙境',
-    width: 20,
-    height: 16,
+    width: 26,
+    height: 20,
     tiles: (() => {
-      const g = createGrid(20, 16, 'grass');
-      for (let r = 0; r < 16; r++) {
+      const g = createGrid(26, 20, 'grass');
+      // 外围九霄云海深渊
+      for (let r = 0; r < 20; r++) {
         g[r][0] = 'cloud_void';
-        g[r][19] = 'cloud_void';
+        g[r][1] = 'cloud_void';
+        g[r][24] = 'cloud_void';
+        g[r][25] = 'cloud_void';
       }
-      for (let c = 0; c < 20; c++) {
+      for (let c = 0; c < 26; c++) {
         g[0][c] = 'cloud_void';
-        g[15][c] = 'cloud_void';
+        g[19][c] = 'cloud_void';
       }
-      // 蟠桃古树与瑶池
-      g[4][10] = 'bamboo';
-      g[5][9] = 'bamboo';
-      g[5][11] = 'bamboo';
-      g[6][10] = 'bamboo';
+      // 仙玉铺地石道 (十字环廊)
+      for (let c = 4; c <= 21; c++) g[10][c] = 'heaven_floor';
+      for (let r = 3; r <= 16; r++) g[r][13] = 'heaven_floor';
 
-      g[10][6] = 'water';
-      g[10][7] = 'water';
-      g[11][6] = 'water';
-      g[11][7] = 'water';
+      // 瑶池仙泉水榭 (中央水泽)
+      for (let r = 8; r <= 12; r++) {
+        for (let c = 11; c <= 15; c++) {
+          g[r][c] = 'water';
+        }
+      }
+      // 水中央品桃仙亭与白玉道
+      g[9][13] = 'stone_temple';
+      g[10][11] = 'heaven_floor';
+      g[10][12] = 'heaven_floor';
+      g[10][13] = 'heaven_floor';
+      g[10][14] = 'heaven_floor';
+      g[10][15] = 'heaven_floor';
+
+      // 四方祥云蟠桃仙木阻挡桩 (不可直接穿行大树桩中心)
+      g[5][6] = 'bamboo';
+      g[5][20] = 'bamboo';
+      g[14][5] = 'bamboo';
+      g[14][21] = 'bamboo';
+      g[4][13] = 'heaven_pillar';
+      g[16][13] = 'heaven_pillar';
       return g;
     })(),
-    playerSpawn: { x: 10 * 32, y: 12 * 32, direction: 'up' },
+    playerSpawn: { x: 13 * 32, y: 12 * 32, direction: 'up' },
+    // 蟠桃古树实体配置 (包含三千年、六千年、九千年仙桃母树，玩家靠近点击即可确认采摘吃桃)
+    peachTrees: [
+      { id: 'tree_3000_1', name: '三千年·青翠仙木', tier: 'tier_3000', x: 6 * 32, y: 5 * 32, title: '【三千年一熟】', icon: '🍑' },
+      { id: 'tree_3000_2', name: '三千年·繁枝仙树', tier: 'tier_3000', x: 20 * 32, y: 5 * 32, title: '【三千年一熟】', icon: '🍑' },
+      { id: 'tree_3000_3', name: '三千年·灵根老树', tier: 'tier_3000', x: 5 * 32, y: 14 * 32, title: '【三千年一熟】', icon: '🍑' },
+      { id: 'tree_6000_1', name: '六千年·层花仙树', tier: 'tier_6000', x: 8 * 32, y: 4 * 32, title: '【六千年一熟】', icon: '🍑' },
+      { id: 'tree_6000_2', name: '六千年·甘露母树', tier: 'tier_6000', x: 21 * 32, y: 14 * 32, title: '【六千年一熟】', icon: '🍑' },
+      { id: 'tree_9000_1', name: '九千年·紫纹至尊母树', tier: 'tier_9000', x: 13 * 32, y: 3 * 32, title: '【九千年一熟】', icon: '✨🍑' },
+      { id: 'tree_9000_2', name: '九千年·缃核造化神树', tier: 'tier_9000', x: 13 * 32, y: 16 * 32, title: '【九千年一熟】', icon: '✨🍑' }
+    ],
     npcs: [
       {
         id: 'npc_pantao_tudi',
         name: '蟠桃园土地',
         title: '【园苑执事】',
         x: 10 * 32,
-        y: 8 * 32,
-        appearance: 'tang_seng',
+        y: 10 * 32,
+        appearance: 'tudi_gong',
         icon: '👴',
         dialogueKey: 'pantao_tudi_talk'
       },
@@ -193,16 +232,16 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_qixiannv',
         name: '红衣仙女',
         title: '【采桃仙子】',
-        x: 14 * 32,
-        y: 7 * 32,
-        appearance: 'tang_seng',
+        x: 16 * 32,
+        y: 10 * 32,
+        appearance: 'xiannv',
         icon: '🧚‍♀️',
         dialogueKey: 'qixiannv_talk'
       }
     ],
     monsters: [],
     portals: [
-      { x: 10 * 32, y: 14 * 32, targetMap: 'tiangong_palace', targetX: 18 * 32, targetY: 13 * 32, name: '返回【凌霄宝殿】' }
+      { x: 13 * 32, y: 18 * 32, targetMap: 'tiangong_palace', targetX: 18 * 32, targetY: 13 * 32, name: '天宫' }
     ]
   },
 
@@ -261,7 +300,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【村长老者】',
         x: 8 * 32,
         y: 12 * 32,
-        appearance: 'tang_seng',
+        appearance: 'liu_taigong',
         icon: '👴',
         dialogueKey: 'liutaigong_talk'
       },
@@ -271,90 +310,174 @@ window.GAME_DATA.MAPS_2D = {
         title: '【当方土地】',
         x: 23 * 32,
         y: 9 * 32,
-        appearance: 'tang_seng',
+        appearance: 'tudi_gong',
         icon: '🌿',
         dialogueKey: 'liujia_tudi_talk'
       }
     ],
     monsters: [
       {
+        id: 'mob_rat_1',
+        name: '偷粮硕鼠',
+        icon: '🐀',
+        x: 14 * 32,
+        y: 15 * 32,
+        level: 2,
+        hp: 90,
+        maxHp: 90,
+        atk: 20,
+        def: 10,
+        spd: 24,
+        skills: ['撕咬'],
+        patrolRadius: 30
+      },
+      {
+        id: 'mob_piglet_1',
+        name: '山林小野猪',
+        icon: '🐗',
+        x: 18 * 32,
+        y: 16 * 32,
+        level: 3,
+        hp: 130,
+        maxHp: 130,
+        atk: 25,
+        def: 14,
+        spd: 20,
+        skills: ['冲撞'],
+        patrolRadius: 35
+      },
+      {
         id: 'mob_wolf_1',
         name: '双叉岭恶狼',
         icon: '🐺',
         x: 16 * 32,
-        y: 6 * 32,
-        level: 3,
-        hp: 120,
-        maxHp: 120,
-        atk: 28,
-        def: 14,
-        spd: 22,
-        patrolRadius: 30
+        y: 5 * 32,
+        level: 4,
+        hp: 160,
+        maxHp: 160,
+        atk: 32,
+        def: 16,
+        spd: 25,
+        skills: ['连击'],
+        patrolRadius: 35
       },
       {
         id: 'mob_tiger_1',
         name: '下山吊睛猛虎',
         icon: '🐅',
-        x: 20 * 32,
-        y: 12 * 32,
+        x: 21 * 32,
+        y: 13 * 32,
         level: 6,
-        hp: 260,
-        maxHp: 260,
-        atk: 45,
-        def: 22,
-        spd: 26,
+        hp: 280,
+        maxHp: 280,
+        atk: 48,
+        def: 24,
+        spd: 28,
+        skills: ['猛扑'],
         patrolRadius: 40
       }
     ],
     portals: [
-      { x: 25 * 32, y: 10 * 32, targetMap: 'changan_city', targetX: 3 * 32, targetY: 11 * 32, name: '东行前往【大唐长安城】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'wuxingshan', targetX: 23 * 32, targetY: 10 * 32, name: '西行前往【两界山·五行山】' }
+      { x: 25 * 32, y: 10 * 32, targetMap: 'changan_city', targetX: 3 * 32, targetY: 16 * 32, name: '长安城' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'wuxingshan', targetX: 23 * 32, targetY: 10 * 32, name: '五行山', minLevel: 5 }
     ]
   },
 
   // =========================================================================
-  // 3. 第二章：大唐国都·长安城 (见玄奘、受菩萨点化、钱庄、医馆、定居)
+  // 3. 第二章：大唐国都·长安城 (大尺度盛唐棋盘坊市，明亮祥和市井烟火)
   // =========================================================================
   changan_city: {
     id: 'changan_city',
     name: '大唐王都·长安城',
     region: '盛唐帝阙',
-    width: 28,
-    height: 22,
+    width: 46,
+    height: 34,
     tiles: (() => {
-      const g = createGrid(28, 22, 'changan_stone');
+      const g = createGrid(46, 34, 'changan_stone');
       // 外城墙
-      for (let c = 0; c < 28; c++) {
+      for (let c = 0; c < 46; c++) {
         g[0][c] = 'city_wall';
-        g[21][c] = 'city_wall';
+        g[1][c] = 'city_wall';
+        g[32][c] = 'city_wall';
+        g[33][c] = 'city_wall';
       }
-      for (let r = 0; r < 22; r++) {
+      for (let r = 0; r < 34; r++) {
         g[r][0] = 'city_wall';
-        g[r][27] = 'city_wall';
+        g[r][1] = 'city_wall';
+        g[r][44] = 'city_wall';
+        g[r][45] = 'city_wall';
       }
-      // 城门出入口：西门、南门
-      g[11][0] = 'changan_stone';
-      g[10][0] = 'changan_stone';
-      g[21][14] = 'changan_stone';
-      g[21][15] = 'changan_stone';
+      // 西城门通往刘家村 (开口宽阔)
+      g[16][0] = 'changan_stone'; g[16][1] = 'changan_stone';
+      g[17][0] = 'changan_stone'; g[17][1] = 'changan_stone';
 
-      // 化生寺大殿围墙
-      for (let r = 4; r <= 8; r++) {
-        for (let c = 18; c <= 24; c++) {
-          g[r][c] = 'city_wall';
+      // 南城门通往陈塘关 (朱雀门开口)
+      g[32][22] = 'changan_stone'; g[32][23] = 'changan_stone';
+      g[33][22] = 'changan_stone'; g[33][23] = 'changan_stone';
+
+      // 中央朱雀牌楼门坊 (盛世长安)
+      g[5][22] = 'paifang';
+      g[5][23] = 'paifang';
+
+      // 东北·化生宝刹 (金顶琉璃大雄宝殿群)
+      for (let r = 3; r <= 7; r++) {
+        for (let c = 29; c <= 37; c++) {
+          g[r][c] = 'tang_palace';
         }
       }
-      g[8][21] = 'changan_stone';
+      // 化生寺大殿正门前台阶空开
+      g[7][33] = 'changan_stone';
+
+      // 西北·大唐府衙官署 (户籍司大堂)
+      for (let r = 3; r <= 6; r++) {
+        for (let c = 6; c <= 13; c++) {
+          g[r][c] = 'tang_palace';
+        }
+      }
+      g[6][9] = 'changan_stone'; g[6][10] = 'changan_stone';
+
+      // 西北·飞升仙台 (天界接引灵柱)
+      g[4][17] = 'heaven_pillar';
+      g[6][17] = 'heaven_pillar';
+
+      // 西南·市井坊肆商铺阁楼 (北排)
+      for (let r = 11; r <= 13; r++) {
+        for (let c = 5; c <= 15; c++) {
+          g[r][c] = 'tang_store';
+        }
+      }
+      // 西南·市井坊肆商铺阁楼 (南排)
+      for (let r = 21; r <= 23; r++) {
+        for (let c = 5; c <= 15; c++) {
+          g[r][c] = 'tang_store';
+        }
+      }
+
+      // 东南·大唐第一镖局与武将府第 (北排)
+      for (let r = 11; r <= 13; r++) {
+        for (let c = 29; c <= 39; c++) {
+          g[r][c] = 'tang_store';
+        }
+      }
+      // 东南·神兵百炼坊与万宝行 (南排)
+      for (let r = 21; r <= 23; r++) {
+        for (let c = 29; c <= 39; c++) {
+          g[r][c] = 'tang_store';
+        }
+      }
+
+      // 街边歇脚古亭
+      g[18][20] = 'stone_temple';
       return g;
     })(),
-    playerSpawn: { x: 3 * 32, y: 11 * 32, direction: 'right' },
+    playerSpawn: { x: 3 * 32, y: 16 * 32, direction: 'right' },
     npcs: [
       {
         id: 'npc_qianzhuang',
         name: '钱庄掌柜',
         title: '【通达三界】',
-        x: 5 * 32,
-        y: 8 * 32,
+        x: 7 * 32,
+        y: 14 * 32,
         appearance: 'liu_boqin',
         icon: '💰',
         dialogueKey: 'qianzhuang_talk'
@@ -363,7 +486,7 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_yishi',
         name: '回生老医师',
         title: '【妙手回春】',
-        x: 5 * 32,
+        x: 13 * 32,
         y: 14 * 32,
         appearance: 'tang_seng',
         icon: '🏥',
@@ -374,7 +497,7 @@ window.GAME_DATA.MAPS_2D = {
         name: '长安户籍官',
         title: '【定居户籍】',
         x: 10 * 32,
-        y: 8 * 32,
+        y: 7 * 32,
         appearance: 'tang_seng',
         icon: '📜',
         dialogueKey: 'huji_talk'
@@ -383,8 +506,8 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_xuanzang',
         name: '玄奘法师 (唐僧)',
         title: '【金山寺高僧】',
-        x: 21 * 32,
-        y: 6 * 32,
+        x: 33 * 32,
+        y: 8 * 32,
         appearance: 'tang_seng',
         icon: '🧘‍♂️',
         dialogueKey: 'xuanzang_talk'
@@ -393,8 +516,8 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_guanyin',
         name: '观音菩萨 (化身)',
         title: '【大慈大悲】',
-        x: 16 * 32,
-        y: 7 * 32,
+        x: 36 * 32,
+        y: 8 * 32,
         appearance: 'tang_seng',
         icon: '🪷',
         dialogueKey: 'guanyin_talk'
@@ -403,8 +526,8 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_blacksmith',
         name: '李铁匠',
         title: '【神兵淬火】',
-        x: 10 * 32,
-        y: 16 * 32,
+        x: 31 * 32,
+        y: 24 * 32,
         appearance: 'liu_boqin',
         icon: '🔨',
         dialogueKey: 'blacksmith_talk'
@@ -413,8 +536,8 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_shop',
         name: '万宝商贾',
         title: '【百宝货铺】',
-        x: 15 * 32,
-        y: 16 * 32,
+        x: 37 * 32,
+        y: 24 * 32,
         appearance: 'liu_boqin',
         icon: '🏮',
         dialogueKey: 'shop_talk'
@@ -423,18 +546,99 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_tiangong_guide',
         name: '飞升仙官',
         title: '【接引天界】',
-        x: 6 * 32,
-        y: 6 * 32,
+        x: 17 * 32,
+        y: 5 * 32,
         appearance: 'tang_seng',
         icon: '☁️',
         dialogueKey: 'tiangong_guide_talk'
+      },
+      {
+        id: 'npc_zhongkui',
+        name: '钟馗',
+        title: '【伏魔大将军】',
+        x: 36 * 32,
+        y: 14 * 32,
+        appearance: 'heaven_general',
+        icon: '👹',
+        dialogueKey: 'zhongkui_talk'
+      },
+      {
+        id: 'npc_biaoju',
+        name: '程咬金 (镖局总管)',
+        title: '【天下第一镖】',
+        x: 31 * 32,
+        y: 14 * 32,
+        appearance: 'heaven_general',
+        icon: '🚩',
+        dialogueKey: 'biaoju_talk'
+      },
+      // 盛世长安路人 (充满烟火气与祥和安宁)
+      {
+        id: 'npc_changan_girl',
+        name: '苏绣娘',
+        title: '【长安织造】',
+        x: 8 * 32,
+        y: 24 * 32,
+        appearance: 'changan_girl',
+        icon: '🧵',
+        dialogueKey: 'changan_girl_talk'
+      },
+      {
+        id: 'npc_changan_scholar',
+        name: '杜子美',
+        title: '【游方书生】',
+        x: 20 * 32,
+        y: 10 * 32,
+        appearance: 'changan_scholar',
+        icon: '📜',
+        dialogueKey: 'changan_scholar_talk'
+      },
+      {
+        id: 'npc_changan_hawker',
+        name: '货郎阿福',
+        title: '【挑担货郎】',
+        x: 26 * 32,
+        y: 16 * 32,
+        appearance: 'changan_hawker',
+        icon: '🍡',
+        dialogueKey: 'changan_hawker_talk'
+      },
+      {
+        id: 'npc_changan_child',
+        name: '小虎',
+        title: '【坊间顽童】',
+        x: 28 * 32,
+        y: 9 * 32,
+        appearance: 'changan_child',
+        icon: '🍭',
+        dialogueKey: 'changan_child_talk'
+      },
+      {
+        id: 'npc_changan_guard',
+        name: '金甲禁军',
+        title: '【御林巡卒】',
+        x: 21 * 32,
+        y: 31 * 32,
+        appearance: 'changan_guard',
+        icon: '🛡️',
+        dialogueKey: 'changan_guard_talk'
+      },
+      {
+        id: 'npc_changan_tea',
+        name: '茶肆阿婆',
+        title: '【长安茶肆】',
+        x: 18 * 32,
+        y: 19 * 32,
+        appearance: 'changan_girl',
+        icon: '🍵',
+        dialogueKey: 'changan_tea_talk'
       }
     ],
     monsters: [],
     portals: [
-      { x: 1 * 32, y: 11 * 32, targetMap: 'liujiacun', targetX: 24 * 32, targetY: 10 * 32, name: '出西门返回【双叉岭刘家村】' },
-      { x: 14 * 32, y: 21 * 32, targetMap: 'chentangguan', targetX: 13 * 32, targetY: 2 * 32, name: '出南城门前往【陈塘关】' },
-      { x: 26 * 32, y: 11 * 32, targetMap: 'tiangong_pantao', targetX: 10 * 32, targetY: 13 * 32, name: '登仙云飞升【蟠桃园吃桃】' }
+      { x: 1 * 32, y: 16 * 32, targetMap: 'liujiacun', targetX: 24 * 32, targetY: 10 * 32, name: '刘家村' },
+      { x: 23 * 32, y: 33 * 32, targetMap: 'chentangguan', targetX: 11 * 32, targetY: 3 * 32, name: '陈塘关', minLevel: 15 },
+      { x: 42 * 32, y: 8 * 32, targetMap: 'tiangong_pantao', targetX: 10 * 32, targetY: 13 * 32, name: '蟠桃园' }
     ]
   },
 
@@ -444,37 +648,54 @@ window.GAME_DATA.MAPS_2D = {
   chentangguan: {
     id: 'chentangguan',
     name: '东海雄关·陈塘关',
-    region: '九湾河畔',
+    region: '九湾河畔与东海之滨',
     width: 26,
     height: 20,
     tiles: (() => {
-      const g = createGrid(26, 20, 'grass');
-      // 青石关道
-      for (let c = 0; c < 26; c++) g[10][c] = 'dirt_path';
-      for (let r = 0; r < 20; r++) g[r][13] = 'dirt_path';
+      // 默认大面积金黄细腻沙滩
+      const g = createGrid(26, 20, 'beach_sand');
 
-      // 关隘石墙
+      // 屏幕右侧 1/5 (col = 21..25) 全部为波涛浩瀚大海！
       for (let r = 0; r < 20; r++) {
-        g[r][0] = 'city_wall';
-      }
-      g[10][0] = 'dirt_path';
-
-      // 九湾河支流水泽
-      for (let r = 14; r < 20; r++) {
-        for (let c = 16; c < 26; c++) {
+        for (let c = 21; c < 26; c++) {
           g[r][c] = 'water';
         }
       }
+
+      // 西侧雄关石墙 (col = 0) 与关隘石门
+      for (let r = 0; r < 20; r++) {
+        g[r][0] = 'city_wall';
+      }
+      g[10][0] = 'beach_sand'; // 西出野狐岭关口
+
+      // 李靖总兵帅府大殿群 (西北沙滩高台)
+      for (let r = 3; r <= 5; r++) {
+        for (let c = 8; c <= 14; c++) {
+          g[r][c] = 'tang_palace';
+        }
+      }
+      // 帅府前正门台阶
+      g[5][11] = 'beach_sand';
+
+      // 守关箭楼
+      g[13][2] = 'stone_temple';
+
+      // 观海避风石亭 (位于沙滩与海浪交界前)
+      g[7][19] = 'stone_temple';
+
+      // 北门通向长安城石道与主干道
+      for (let r = 0; r < 20; r++) g[r][11] = 'dirt_path';
+      for (let c = 0; c <= 20; c++) g[10][c] = 'dirt_path';
       return g;
     })(),
-    playerSpawn: { x: 13 * 32, y: 3 * 32, direction: 'down' },
+    playerSpawn: { x: 11 * 32, y: 3 * 32, direction: 'down' },
     npcs: [
       {
         id: 'npc_lijing_zongbing',
         name: '李靖总兵',
         title: '【陈塘关镇守】',
         x: 10 * 32,
-        y: 8 * 32,
+        y: 7 * 32,
         appearance: 'heaven_general',
         icon: '🛡️',
         dialogueKey: 'lijing_talk'
@@ -483,17 +704,104 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_nezha_child',
         name: '哪吒三太子',
         title: '【混天绫火尖枪】',
-        x: 16 * 32,
-        y: 8 * 32,
+        x: 13 * 32,
+        y: 7 * 32,
         appearance: 'sun_wukong',
         icon: '🔥',
         dialogueKey: 'nezha_talk'
+      },
+      {
+        id: 'npc_fisherman',
+        name: '海滨老渔翁',
+        title: '【陈塘老渔】',
+        x: 19 * 32,
+        y: 8 * 32,
+        appearance: 'liu_boqin',
+        icon: '🎣',
+        dialogueKey: 'fisherman_talk'
       }
     ],
-    monsters: [],
+    monsters: [
+      {
+        id: 'mob_clam_1',
+        name: '灵河巨蚌',
+        icon: '🦪',
+        x: 18 * 32,
+        y: 5 * 32,
+        level: 18,
+        hp: 1100,
+        maxHp: 1100,
+        atk: 135,
+        def: 90,
+        spd: 22,
+        skills: ['水击'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_clam_2',
+        name: '碧水老蚌精',
+        icon: '🦪',
+        x: 19 * 32,
+        y: 11 * 32,
+        level: 19,
+        hp: 1250,
+        maxHp: 1250,
+        atk: 142,
+        def: 98,
+        spd: 20,
+        skills: ['水击'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_crab_1',
+        name: '铁甲金蟹',
+        icon: '🦀',
+        x: 17 * 32,
+        y: 8 * 32,
+        level: 20,
+        hp: 1350,
+        maxHp: 1350,
+        atk: 150,
+        def: 105,
+        spd: 26,
+        skills: ['连击'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_crab_2',
+        name: '巨钳青蟹怪',
+        icon: '🦀',
+        x: 18 * 32,
+        y: 14 * 32,
+        level: 20,
+        hp: 1400,
+        maxHp: 1400,
+        atk: 155,
+        def: 110,
+        spd: 25,
+        skills: ['横扫'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_lobster_1',
+        name: '巡海大龙虾',
+        icon: '🦞',
+        x: 19 * 32,
+        y: 17 * 32,
+        level: 20,
+        hp: 1450,
+        maxHp: 1450,
+        atk: 160,
+        def: 102,
+        spd: 28,
+        skills: ['双螯猛击'],
+        patrolRadius: 35
+      }
+    ],
     portals: [
-      { x: 13 * 32, y: 1 * 32, targetMap: 'changan_city', targetX: 14 * 32, targetY: 20 * 32, name: '北上返回【大唐长安城】' },
-      { x: 25 * 32, y: 10 * 32, targetMap: 'donghai_coast', targetX: 2 * 32, targetY: 10 * 32, name: '东出关隘前往【东海之滨】' }
+      { x: 11 * 32, y: 1 * 32, targetMap: 'changan_city', targetX: 23 * 32, targetY: 31 * 32, name: '长安城', minLevel: 0 },
+      { x: 21 * 32, y: 10 * 32, targetMap: 'donghai_coast', targetX: 2 * 32, targetY: 10 * 32, name: '东海之滨', minLevel: 18 },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'yehu_ling', targetX: 25 * 32, targetY: 10 * 32, name: '野狐岭', minLevel: 18 }
     ]
   },
 
@@ -529,10 +837,41 @@ window.GAME_DATA.MAPS_2D = {
         dialogueKey: 'yecha_talk'
       }
     ],
-    monsters: [],
+    monsters: [
+      {
+        id: 'mob_shrimp_soldier_1',
+        name: '巡海虾兵',
+        icon: '🦐',
+        x: 8 * 32,
+        y: 6 * 32,
+        level: 16,
+        hp: 880,
+        maxHp: 880,
+        atk: 122,
+        def: 68,
+        spd: 36,
+        skills: ['水击'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_crab_soldier_1',
+        name: '赤甲蟹兵',
+        icon: '🦀',
+        x: 8 * 32,
+        y: 15 * 32,
+        level: 17,
+        hp: 1020,
+        maxHp: 1020,
+        atk: 132,
+        def: 82,
+        spd: 26,
+        skills: ['连击'],
+        patrolRadius: 35
+      }
+    ],
     portals: [
-      { x: 1 * 32, y: 10 * 32, targetMap: 'chentangguan', targetX: 24 * 32, targetY: 10 * 32, name: '西回【陈塘关】' },
-      { x: 14 * 32, y: 10 * 32, targetMap: 'shuijinggong', targetX: 13 * 32, targetY: 3 * 32, name: '避水下潜深入【水底水晶宫】' }
+      { x: 1 * 32, y: 10 * 32, targetMap: 'chentangguan', targetX: 24 * 32, targetY: 10 * 32, name: '陈塘关' },
+      { x: 14 * 32, y: 10 * 32, targetMap: 'shuijinggong', targetX: 13 * 32, targetY: 3 * 32, name: '水晶宫' , minLevel: 20}
     ]
   },
 
@@ -572,10 +911,41 @@ window.GAME_DATA.MAPS_2D = {
         dialogueKey: 'guichengxiang_talk'
       }
     ],
-    monsters: [],
+    monsters: [
+      {
+        id: 'mob_palace_shrimp_1',
+        name: '巡殿虾将',
+        icon: '🦐',
+        x: 7 * 32,
+        y: 6 * 32,
+        level: 18,
+        hp: 1180,
+        maxHp: 1180,
+        atk: 142,
+        def: 78,
+        spd: 38,
+        skills: ['水击'],
+        patrolRadius: 30
+      },
+      {
+        id: 'mob_palace_crab_1',
+        name: '水府铁蟹将',
+        icon: '🦀',
+        x: 16 * 32,
+        y: 6 * 32,
+        level: 19,
+        hp: 1320,
+        maxHp: 1320,
+        atk: 152,
+        def: 98,
+        spd: 28,
+        skills: ['连击', '金刚护体'],
+        patrolRadius: 30
+      }
+    ],
     portals: [
-      { x: 12 * 32, y: 2 * 32, targetMap: 'donghai_coast', targetX: 13 * 32, targetY: 9 * 32, name: '浮出水面返回【东海之滨】' },
-      { x: 12 * 32, y: 15 * 32, targetMap: 'longgong_palace', targetX: 12 * 32, targetY: 3 * 32, name: '入殿拜谒【东海龙宫大殿】' }
+      { x: 12 * 32, y: 2 * 32, targetMap: 'donghai_coast', targetX: 13 * 32, targetY: 9 * 32, name: '东海之滨' },
+      { x: 12 * 32, y: 15 * 32, targetMap: 'longgong_palace', targetX: 12 * 32, targetY: 3 * 32, name: '龙宫大殿' }
     ]
   },
 
@@ -621,7 +991,7 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 12 * 32, y: 16 * 32, targetMap: 'shuijinggong', targetX: 12 * 32, targetY: 14 * 32, name: '出殿返回【水晶宫】' }
+      { x: 12 * 32, y: 16 * 32, targetMap: 'shuijinggong', targetX: 12 * 32, targetY: 14 * 32, name: '水晶宫' , minLevel: 20}
     ]
   },
 
@@ -677,10 +1047,56 @@ window.GAME_DATA.MAPS_2D = {
         dialogueKey: 'mountain_god_talk'
       }
     ],
-    monsters: [],
+    monsters: [
+      {
+        id: 'mob_snake_1',
+        name: '盘石小青蛇',
+        icon: '🐍',
+        x: 8 * 32,
+        y: 15 * 32,
+        level: 7,
+        hp: 320,
+        maxHp: 320,
+        atk: 55,
+        def: 26,
+        spd: 32,
+        skills: ['毒雾'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_fox_1',
+        name: '巡山小野狐',
+        icon: '🦊',
+        x: 18 * 32,
+        y: 15 * 32,
+        level: 8,
+        hp: 370,
+        maxHp: 370,
+        atk: 60,
+        def: 28,
+        spd: 34,
+        skills: ['魅惑'],
+        patrolRadius: 40
+      },
+      {
+        id: 'mob_mountain_ape',
+        name: '五指山顽猿',
+        icon: '🐒',
+        x: 5 * 32,
+        y: 14 * 32,
+        level: 9,
+        hp: 430,
+        maxHp: 430,
+        atk: 68,
+        def: 32,
+        spd: 30,
+        skills: ['掷石'],
+        patrolRadius: 35
+      }
+    ],
     portals: [
-      { x: 25 * 32, y: 10 * 32, targetMap: 'liujiacun', targetX: 2 * 32, targetY: 10 * 32, name: '东回【双叉岭刘家村】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'yingchoujian', targetX: 23 * 32, targetY: 10 * 32, name: '西行前往【蛇盘山·鹰愁涧】' }
+      { x: 25 * 32, y: 10 * 32, targetMap: 'liujiacun', targetX: 2 * 32, targetY: 10 * 32, name: '刘家村' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'yingchoujian', targetX: 23 * 32, targetY: 10 * 32, name: '鹰愁涧' , minLevel: 12}
     ]
   },
 
@@ -737,23 +1153,54 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [
       {
+        id: 'mob_bandit_1',
+        name: '黑风强盗',
+        icon: '🗡️',
+        x: 7 * 32,
+        y: 14 * 32,
+        level: 11,
+        hp: 550,
+        maxHp: 550,
+        atk: 82,
+        def: 42,
+        spd: 33,
+        skills: ['连击'],
+        patrolRadius: 40
+      },
+      {
         id: 'mob_water_serpent',
         name: '寒潭黑水玄蛇',
         icon: '🐍',
         x: 12 * 32,
         y: 6 * 32,
         level: 12,
-        hp: 450,
-        maxHp: 450,
-        atk: 75,
-        def: 38,
-        spd: 32,
+        hp: 600,
+        maxHp: 600,
+        atk: 88,
+        def: 44,
+        spd: 36,
+        skills: ['毒雾'],
         patrolRadius: 35
+      },
+      {
+        id: 'mob_tyrant_1',
+        name: '蛇盘山恶霸',
+        icon: '🪓',
+        x: 18 * 32,
+        y: 6 * 32,
+        level: 13,
+        hp: 720,
+        maxHp: 720,
+        atk: 96,
+        def: 48,
+        spd: 30,
+        skills: ['横扫'],
+        patrolRadius: 40
       }
     ],
     portals: [
-      { x: 25 * 32, y: 10 * 32, targetMap: 'wuxingshan', targetX: 2 * 32, targetY: 10 * 32, name: '东回【五行山】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'gaolaozhuang', targetX: 23 * 32, targetY: 10 * 32, name: '西去【乌斯藏·高老庄】' }
+      { x: 25 * 32, y: 10 * 32, targetMap: 'wuxingshan', targetX: 2 * 32, targetY: 10 * 32, name: '五行山' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'gaolaozhuang', targetX: 23 * 32, targetY: 10 * 32, name: '高老庄' , minLevel: 15}
     ]
   },
 
@@ -838,8 +1285,8 @@ window.GAME_DATA.MAPS_2D = {
       }
     ],
     portals: [
-      { x: 27 * 32, y: 11 * 32, targetMap: 'yingchoujian', targetX: 2 * 32, targetY: 10 * 32, name: '东回【蛇盘山·鹰愁涧】' },
-      { x: 1 * 32, y: 11 * 32, targetMap: 'huangfengling', targetX: 24 * 32, targetY: 10 * 32, name: '西入【八百里·黄风岭】' }
+      { x: 27 * 32, y: 11 * 32, targetMap: 'yingchoujian', targetX: 2 * 32, targetY: 10 * 32, name: '鹰愁涧' },
+      { x: 1 * 32, y: 11 * 32, targetMap: 'huangfengling', targetX: 24 * 32, targetY: 10 * 32, name: '黄风岭' , minLevel: 18}
     ]
   },
 
@@ -905,8 +1352,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 25 * 32, y: 10 * 32, targetMap: 'gaolaozhuang', targetX: 2 * 32, targetY: 11 * 32, name: '东回【高老庄】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'liushahe', targetX: 24 * 32, targetY: 10 * 32, name: '西去【八百里·流沙河】' }
+      { x: 25 * 32, y: 10 * 32, targetMap: 'gaolaozhuang', targetX: 2 * 32, targetY: 11 * 32, name: '高老庄' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'liushahe', targetX: 24 * 32, targetY: 10 * 32, name: '流沙河' }
     ]
   },
 
@@ -961,8 +1408,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 27 * 32, y: 10 * 32, targetMap: 'huangfengling', targetX: 2 * 32, targetY: 10 * 32, name: '东回【黄风岭】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'futushan', targetX: 20 * 32, targetY: 10 * 32, name: '西渡前往【浮屠山·乌巢禅林】' }
+      { x: 27 * 32, y: 10 * 32, targetMap: 'huangfengling', targetX: 2 * 32, targetY: 10 * 32, name: '黄风岭' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'futushan', targetX: 20 * 32, targetY: 10 * 32, name: '乌巢禅林' }
     ]
   },
 
@@ -1003,8 +1450,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 21 * 32, y: 10 * 32, targetMap: 'liushahe', targetX: 2 * 32, targetY: 10 * 32, name: '东回【流沙河】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'wuzhuangguan', targetX: 25 * 32, targetY: 11 * 32, name: '西登【万寿山·五庄观】' }
+      { x: 21 * 32, y: 10 * 32, targetMap: 'liushahe', targetX: 2 * 32, targetY: 10 * 32, name: '流沙河' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'wuzhuangguan', targetX: 25 * 32, targetY: 11 * 32, name: '五庄观' }
     ]
   },
 
@@ -1071,8 +1518,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 27 * 32, y: 11 * 32, targetMap: 'futushan', targetX: 2 * 32, targetY: 10 * 32, name: '东回【浮屠山】' },
-      { x: 1 * 32, y: 11 * 32, targetMap: 'baihuling', targetX: 24 * 32, targetY: 10 * 32, name: '西行进入【白虎岭·白骨洞】' }
+      { x: 27 * 32, y: 11 * 32, targetMap: 'futushan', targetX: 2 * 32, targetY: 10 * 32, name: '浮屠山' },
+      { x: 1 * 32, y: 11 * 32, targetMap: 'baihuling', targetX: 24 * 32, targetY: 10 * 32, name: '白虎岭' , minLevel: 30}
     ]
   },
 
@@ -1127,8 +1574,8 @@ window.GAME_DATA.MAPS_2D = {
       }
     ],
     portals: [
-      { x: 25 * 32, y: 10 * 32, targetMap: 'wuzhuangguan', targetX: 2 * 32, targetY: 11 * 32, name: '东回【万寿山五庄观】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'baoxiangguo', targetX: 26 * 32, targetY: 11 * 32, name: '西入【宝象国·金顶王都】' }
+      { x: 25 * 32, y: 10 * 32, targetMap: 'wuzhuangguan', targetX: 2 * 32, targetY: 11 * 32, name: '五庄观' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'baoxiangguo', targetX: 26 * 32, targetY: 11 * 32, name: '宝象国' , minLevel: 35}
     ]
   },
 
@@ -1197,8 +1644,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 27 * 32, y: 11 * 32, targetMap: 'baihuling', targetX: 2 * 32, targetY: 10 * 32, name: '东回【白虎岭】' },
-      { x: 1 * 32, y: 11 * 32, targetMap: 'fangcunshan', targetX: 18 * 32, targetY: 10 * 32, name: '步入乾坤法阵探访【灵台方寸山】' }
+      { x: 27 * 32, y: 11 * 32, targetMap: 'baihuling', targetX: 2 * 32, targetY: 10 * 32, name: '白虎岭' },
+      { x: 1 * 32, y: 11 * 32, targetMap: 'fangcunshan', targetX: 18 * 32, targetY: 10 * 32, name: '方寸山' , minLevel: 35}
     ]
   },
 
@@ -1235,8 +1682,8 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 20 * 32, y: 10 * 32, targetMap: 'baoxiangguo', targetX: 3 * 32, targetY: 11 * 32, name: '穿梭法阵返回【宝象国】' },
-      { x: 1 * 32, y: 10 * 32, targetMap: 'luojiashan', targetX: 18 * 32, targetY: 10 * 32, name: '云游仙界前往【南海珞珈山】' }
+      { x: 20 * 32, y: 10 * 32, targetMap: 'baoxiangguo', targetX: 3 * 32, targetY: 11 * 32, name: '宝象国' },
+      { x: 1 * 32, y: 10 * 32, targetMap: 'luojiashan', targetX: 18 * 32, targetY: 10 * 32, name: '普陀山' , minLevel: 40}
     ]
   },
 
@@ -1280,7 +1727,290 @@ window.GAME_DATA.MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 20 * 32, y: 10 * 32, targetMap: 'changan_city', targetX: 16 * 32, targetY: 9 * 32, name: '腾云飞返【长安城化生寺】' }
+      { x: 20 * 32, y: 10 * 32, targetMap: 'changan_city', targetX: 16 * 32, targetY: 9 * 32, name: '长安城' }
+    ]
+  },
+
+  // =========================================================================
+  // 全新练功区 1：苍茫古木·野狐岭 (20级左右练功区，陈塘关西出即达)
+  // =========================================================================
+  yehu_ling: {
+    id: 'yehu_ling',
+    name: '苍茫古林·野狐岭',
+    region: '青丘古地·20级练功场',
+    width: 28,
+    height: 20,
+    tiles: (() => {
+      const g = createGrid(28, 20, 'grass');
+      // 东西贯通古栈道
+      for (let c = 0; c < 28; c++) g[10][c] = 'dirt_path';
+      for (let r = 1; r <= 10; r++) g[r][14] = 'dirt_path'; // 往北通郊狼岭小径
+
+      // 狐妖灵丘巨石与迷雾灌木
+      for (let r = 3; r <= 7; r++) {
+        for (let c = 3; c <= 8; c++) g[r][c] = 'mountain_rock';
+      }
+      for (let r = 13; r <= 17; r++) {
+        for (let c = 4; c <= 10; c++) g[r][c] = 'bamboo';
+        for (let c = 18; c <= 24; c++) g[r][c] = 'bamboo';
+      }
+      return g;
+    })(),
+    playerSpawn: { x: 25 * 32, y: 10 * 32, direction: 'left' },
+    npcs: [
+      {
+        id: 'npc_yehu_guide',
+        name: '修道散修',
+        title: '【练功向导】',
+        x: 23 * 32,
+        y: 8 * 32,
+        appearance: 'tang_seng',
+        icon: '🧙‍♂️',
+        dialogueKey: 'yehu_guide_talk'
+      }
+    ],
+    monsters: [
+      {
+        id: 'mob_fox_white',
+        name: '白面灵狐',
+        icon: '🦊',
+        x: 18 * 32,
+        y: 7 * 32,
+        level: 19,
+        hp: 1250,
+        maxHp: 1250,
+        atk: 145,
+        def: 75,
+        spd: 38,
+        skills: ['连击'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_fox_fire',
+        name: '赤尾火狐妖',
+        icon: '🦊',
+        x: 10 * 32,
+        y: 8 * 32,
+        level: 20,
+        hp: 1450,
+        maxHp: 1450,
+        atk: 160,
+        def: 82,
+        spd: 40,
+        skills: ['三昧真火'],
+        patrolRadius: 40
+      },
+      {
+        id: 'mob_fox_shadow',
+        name: '青丘魅影狐',
+        icon: '🦊',
+        x: 8 * 32,
+        y: 13 * 32,
+        level: 21,
+        hp: 1600,
+        maxHp: 1600,
+        atk: 175,
+        def: 88,
+        spd: 44,
+        skills: ['定身咒'],
+        patrolRadius: 45
+      },
+      {
+        id: 'mob_fox_lord',
+        name: '野狐妖护法',
+        icon: '🦊',
+        x: 15 * 32,
+        y: 14 * 32,
+        level: 22,
+        hp: 2100,
+        maxHp: 2100,
+        atk: 195,
+        def: 98,
+        spd: 46,
+        skills: ['飞沙走石'],
+        patrolRadius: 50
+      }
+    ],
+    portals: [
+      { x: 26 * 32, y: 10 * 32, targetMap: 'chentangguan', targetX: 2 * 32, targetY: 10 * 32, name: '陈塘关' },
+      { x: 14 * 32, y: 1 * 32, targetMap: 'jiaolang_ling', targetX: 14 * 32, targetY: 18 * 32, name: '郊狼岭' , minLevel: 20}
+    ]
+  },
+
+  // =========================================================================
+  // 全新练功区 2：阴风呼啸·郊狼岭 (25级练功秘境，嗜血群狼盘踞)
+  // =========================================================================
+  jiaolang_ling: {
+    id: 'jiaolang_ling',
+    name: '阴风呼啸·郊狼岭',
+    region: '苍狼旷野·25级练功场',
+    width: 28,
+    height: 20,
+    tiles: (() => {
+      const g = createGrid(28, 20, 'grass');
+      // 南北纵贯与东西岔道
+      for (let r = 0; r < 20; r++) g[r][14] = 'dirt_path';
+      for (let c = 4; c <= 24; c++) g[10][c] = 'dirt_path';
+
+      // 乱石阵与狼骨荒冢
+      for (let r = 3; r <= 8; r++) {
+        for (let c = 4; c <= 10; c++) g[r][c] = 'mountain_rock';
+        for (let c = 18; c <= 24; c++) g[r][c] = 'mountain_rock';
+      }
+      for (let r = 12; r <= 17; r++) {
+        for (let c = 4; c <= 10; c++) g[r][c] = 'mountain_rock';
+        for (let c = 18; c <= 24; c++) g[r][c] = 'mountain_rock';
+      }
+      return g;
+    })(),
+    playerSpawn: { x: 14 * 32, y: 18 * 32, direction: 'up' },
+    npcs: [],
+    monsters: [
+      {
+        id: 'mob_wolf_blood',
+        name: '嗜血郊狼',
+        icon: '🐺',
+        x: 8 * 32,
+        y: 10 * 32,
+        level: 24,
+        hp: 1950,
+        maxHp: 1950,
+        atk: 210,
+        def: 105,
+        spd: 42,
+        skills: ['连击'],
+        patrolRadius: 35
+      },
+      {
+        id: 'mob_wolf_shadow',
+        name: '幽影魔狼',
+        icon: '🐺',
+        x: 20 * 32,
+        y: 10 * 32,
+        level: 25,
+        hp: 2200,
+        maxHp: 2200,
+        atk: 230,
+        def: 115,
+        spd: 45,
+        skills: ['舍生取义'],
+        patrolRadius: 40
+      },
+      {
+        id: 'mob_wolf_grayking',
+        name: '狂暴灰狼王',
+        icon: '🐺',
+        x: 10 * 32,
+        y: 5 * 32,
+        level: 26,
+        hp: 2500,
+        maxHp: 2500,
+        atk: 250,
+        def: 125,
+        spd: 48,
+        skills: ['连击', '横扫'],
+        patrolRadius: 45
+      },
+      {
+        id: 'mob_wolf_silver',
+        name: '啸月银狼领主',
+        icon: '🐺',
+        x: 18 * 32,
+        y: 5 * 32,
+        level: 27,
+        hp: 3100,
+        maxHp: 3100,
+        atk: 280,
+        def: 135,
+        spd: 52,
+        skills: ['雷霆万钧', '舍生取义'],
+        patrolRadius: 50
+      }
+    ],
+    portals: [
+      { x: 14 * 32, y: 19 * 32, targetMap: 'yehu_ling', targetX: 14 * 32, targetY: 2 * 32, name: '野狐岭' },
+      { x: 14 * 32, y: 1 * 32, targetMap: 'heifeng_juebi', targetX: 14 * 32, targetY: 18 * 32, name: '黑风绝壁' , minLevel: 25}
+    ]
+  },
+
+  // =========================================================================
+  // 全新练功区 3：万妖魔窟·黑风绝壁 (30级+高阶练功圣地，掉落珍宝天外陨铁与宝石)
+  // =========================================================================
+  heifeng_juebi: {
+    id: 'heifeng_juebi',
+    name: '万妖魔窟·黑风绝壁',
+    region: '绝壁深渊·30级+高阶练功场',
+    width: 28,
+    height: 20,
+    tiles: (() => {
+      const g = createGrid(28, 20, 'grass');
+      for (let r = 0; r < 20; r++) {
+        g[r][0] = 'mountain_rock';
+        g[r][27] = 'mountain_rock';
+        g[r][14] = 'dirt_path';
+      }
+      for (let c = 0; c < 28; c++) {
+        g[0][c] = 'mountain_rock';
+        g[10][c] = 'dirt_path';
+      }
+      // 幽冥魔窟血池
+      for (let r = 4; r <= 8; r++) {
+        for (let c = 4; c <= 9; c++) g[r][c] = 'dark_water';
+        for (let c = 19; c <= 24; c++) g[r][c] = 'dark_water';
+      }
+      return g;
+    })(),
+    playerSpawn: { x: 14 * 32, y: 18 * 32, direction: 'up' },
+    npcs: [],
+    monsters: [
+      {
+        id: 'mob_heifeng_demon',
+        name: '黑风狂暴巨魔',
+        icon: '👹',
+        x: 8 * 32,
+        y: 10 * 32,
+        level: 30,
+        hp: 3400,
+        maxHp: 3400,
+        atk: 300,
+        def: 155,
+        spd: 46,
+        skills: ['雷霆万钧'],
+        patrolRadius: 40
+      },
+      {
+        id: 'mob_bear_general',
+        name: '万年熊精战将',
+        icon: '🐻',
+        x: 20 * 32,
+        y: 10 * 32,
+        level: 32,
+        hp: 4200,
+        maxHp: 4200,
+        atk: 340,
+        def: 185,
+        spd: 44,
+        skills: ['金刚护体', '舍生取义'],
+        patrolRadius: 45
+      },
+      {
+        id: 'mob_bone_demon',
+        name: '九幽蚀骨尸魔',
+        icon: '💀',
+        x: 14 * 32,
+        y: 6 * 32,
+        level: 35,
+        hp: 4800,
+        maxHp: 4800,
+        atk: 380,
+        def: 210,
+        spd: 50,
+        skills: ['飞沙走石', '三昧真火'],
+        patrolRadius: 50
+      }
+    ],
+    portals: [
+      { x: 14 * 32, y: 19 * 32, targetMap: 'jiaolang_ling', targetX: 14 * 32, targetY: 2 * 32, name: '郊狼岭' }
     ]
   }
 };

@@ -167,6 +167,80 @@ class ParticleSystem {
         });
       }
     }
+
+    // 陈塘关：东侧海滨潮汐浪花飞沫与海滩金沙暖光微粒
+    if (mapId === 'chentangguan' && this.spawnTimer % 3 === 0) {
+      if (this.particles.length < this.maxParticles) {
+        if (Math.random() < 0.65) {
+          // 潮间带海浪飞沫水雾（主要在右侧靠海区域）
+          this.particles.push({
+            type: 'sea_spray',
+            x: viewportW * 0.65 + Math.random() * (viewportW * 0.35 + 20),
+            y: Math.random() * viewportH,
+            vx: -0.8 - Math.random() * 1.2,
+            vy: -0.4 - Math.random() * 0.8,
+            radius: 3 + Math.random() * 5,
+            alpha: 0.4 + Math.random() * 0.3,
+            life: 80 + Math.random() * 60,
+            maxLife: 140
+          });
+        } else {
+          // 沙滩暖金细微光尘
+          this.particles.push({
+            type: 'golden_sand_glimmer',
+            x: Math.random() * (viewportW * 0.75),
+            y: Math.random() * viewportH,
+            vx: (Math.random() - 0.5) * 0.2,
+            vy: -0.2 - Math.random() * 0.3,
+            radius: 1.5 + Math.random() * 2,
+            alpha: 0.6,
+            pulse: Math.random() * Math.PI * 2,
+            life: 100 + Math.random() * 80,
+            maxLife: 180
+          });
+        }
+      }
+    }
+
+    // 长安城：盛唐祥和牡丹花瓣随风轻摆与金色吉兆瑞气
+    if (mapId === 'changan_city' && this.spawnTimer % 4 === 0) {
+      if (this.particles.length < this.maxParticles) {
+        const isGold = Math.random() < 0.4;
+        this.particles.push({
+          type: 'changan_blessing',
+          x: Math.random() * (viewportW + 40) - 20,
+          y: -10,
+          vx: 0.4 + Math.random() * 0.6,
+          vy: 0.6 + Math.random() * 0.7,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: 0.02 + Math.random() * 0.02,
+          radius: isGold ? 1.8 + Math.random() * 1.5 : 3.5,
+          size: 4 + Math.random() * 3,
+          isGold: isGold,
+          alpha: 0.7,
+          life: 200 + Math.random() * 100,
+          maxLife: 300
+        });
+      }
+    }
+
+    // 东海之滨 / 水晶宫 / 龙宫大殿：深海水灵气泡徐徐上升
+    if ((mapId === 'donghai_coast' || mapId === 'shuijinggong' || mapId === 'longgong_palace') && this.spawnTimer % 4 === 0) {
+      if (this.particles.length < this.maxParticles) {
+        this.particles.push({
+          type: 'sea_bubble',
+          x: Math.random() * viewportW,
+          y: viewportH + 10,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: -0.8 - Math.random() * 0.9,
+          radius: 2.5 + Math.random() * 4.5,
+          alpha: 0.6 + Math.random() * 0.3,
+          pulse: Math.random() * Math.PI * 2,
+          life: 180 + Math.random() * 90,
+          maxLife: 270
+        });
+      }
+    }
   }
 
   // 骑乘神驹疾驰时的马蹄踏云烟尘
@@ -199,15 +273,19 @@ class ParticleSystem {
       p.y += p.vy;
       p.life--;
 
-      if (p.type === 'petal') {
-        p.rotation += p.rotSpeed;
-        p.x += Math.sin(p.rotation) * 0.4;
+      if (p.type === 'petal' || p.type === 'changan_blessing') {
+        p.rotation += (p.rotSpeed || 0.02);
+        p.x += Math.sin(p.rotation) * 0.45;
       }
 
-      if (p.type === 'firefly') {
-        p.pulse += 0.08;
-        p.vx += (Math.random() - 0.5) * 0.05;
-        p.vy += (Math.random() - 0.5) * 0.05;
+      if (p.type === 'firefly' || p.type === 'sea_bubble' || p.type === 'golden_sand_glimmer') {
+        p.pulse = (p.pulse || 0) + 0.08;
+        if (p.type === 'sea_bubble') {
+          p.x += Math.sin(p.pulse) * 0.4;
+        } else if (p.type === 'firefly') {
+          p.vx += (Math.random() - 0.5) * 0.05;
+          p.vy += (Math.random() - 0.5) * 0.05;
+        }
       }
 
       if (p.life <= 0) {
@@ -312,6 +390,61 @@ class ParticleSystem {
         ctx.arc(renderX, renderY, p.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
+      } else if (p.type === 'sea_spray') {
+        const currentAlpha = p.alpha * Math.sin(lifeRatio * Math.PI);
+        const grad = ctx.createRadialGradient(renderX, renderY, 0, renderX, renderY, p.radius);
+        grad.addColorStop(0, `rgba(235, 248, 255, ${currentAlpha})`);
+        grad.addColorStop(0.6, `rgba(180, 225, 255, ${currentAlpha * 0.5})`);
+        grad.addColorStop(1, 'rgba(150, 210, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(renderX, renderY, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'golden_sand_glimmer') {
+        const currentAlpha = p.alpha * (0.3 + 0.7 * Math.abs(Math.sin(p.pulse || (lifeRatio * Math.PI))));
+        ctx.fillStyle = `rgba(255, 220, 110, ${currentAlpha})`;
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.arc(renderX, renderY, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      } else if (p.type === 'changan_blessing') {
+        ctx.save();
+        ctx.translate(renderX, renderY);
+        ctx.rotate(p.rotation);
+        if (p.isGold) {
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
+          ctx.shadowColor = '#ffd700';
+          ctx.shadowBlur = 4;
+          ctx.globalAlpha = p.alpha * lifeRatio;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(255, 175, 195, 0.85)';
+          ctx.shadowColor = 'rgba(255, 182, 193, 0.6)';
+          ctx.shadowBlur = 3;
+          ctx.globalAlpha = p.alpha * lifeRatio;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      } else if (p.type === 'sea_bubble') {
+        const currentAlpha = p.alpha * Math.min(1, lifeRatio * 1.6);
+        ctx.strokeStyle = `rgba(180, 235, 255, ${currentAlpha})`;
+        ctx.lineWidth = 1.2;
+        ctx.fillStyle = `rgba(200, 240, 255, ${currentAlpha * 0.22})`;
+        ctx.beginPath();
+        ctx.arc(renderX, renderY, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // 气泡高光斑点
+        ctx.fillStyle = `rgba(255, 255, 255, ${currentAlpha * 0.85})`;
+        ctx.beginPath();
+        ctx.arc(renderX - p.radius * 0.35, renderY - p.radius * 0.35, p.radius * 0.28, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
 

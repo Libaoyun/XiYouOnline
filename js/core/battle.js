@@ -13,8 +13,8 @@ class BattleEngine {
     // 确保 activePets 为数组（最多3只，根据玩家等级）
     const maxPets = player.getMaxCombatPets ? player.getMaxCombatPets() : 1;
     this.activePets = (Array.isArray(activePets) ? activePets : (activePets ? [activePets] : [])).slice(0, maxPets);
-    this.enemies = enemies; // 敌方单位数组
-    this.options = options;
+    this.enemies = Array.isArray(enemies) ? enemies : (enemies ? [enemies] : []); // 敌方单位数组
+    this.options = options || {};
 
     this.round = 1;
     this.status = 'player_input'; // 'player_input' | 'executing' | 'victory' | 'defeat' | 'escaped'
@@ -58,7 +58,13 @@ class BattleEngine {
         maxHp: this.player.maxHp,
         mp: this.player.mp,
         maxMp: this.player.maxMp,
+        atk: this.player.atk,
+        def: this.player.def,
         spd: this.player.spd,
+        critRate: this.player.critRate || 0.08,
+        comboRate: this.player.comboRate || 0.05,
+        fatalRate: this.player.fatalRate || 0.02,
+        dodgeRate: this.player.dodgeRate || 0.05,
         buffs: []
       }
     ];
@@ -76,12 +82,149 @@ class BattleEngine {
           maxHp: pet.maxHp,
           mp: pet.mp,
           maxMp: pet.maxMp,
+          atk: pet.atk,
+          def: pet.def,
           spd: pet.spd,
+          critRate: pet.critRate || 0.08,
+          comboRate: pet.comboRate || 0.05,
+          fatalRate: pet.fatalRate || 0.02,
+          dodgeRate: pet.dodgeRate || 0.05,
           skills: pet.skills || [],
           buffs: []
         });
       }
     });
+  }
+
+  getAliveAllies() {
+    return (this.allies || []).filter(a => a.hp === undefined || a.hp > 0);
+  }
+
+  getAliveEnemies() {
+    return (this.enemies || []).filter(e => e.hp === undefined || e.hp > 0);
+  }
+
+  // 检查是否所有存活己方都已确认指令
+  isAllAlliesReady() {
+    const alive = this.getAliveAllies();
+    return alive.length > 0 && alive.every(a => a.isReady || (this.actions && !!this.actions[a.id]));
+  }
+
+  /**
+   * 汉风西游全新核心战斗数值法则与公式结算
+   * 1. 闪避判定：跳过伤害(0)，显示 MISS，打断连击
+   * 2. 致命一击：无视防御和物理抗性，按目标最大血量真实伤害
+   * 3. 基础伤害：atk - def，若 def >= atk 保底 1 点伤害
+   * 4. 暴击判定：造成 1.5 倍伤害
+   * 5. 连击判定：连续追击 1~3 次，每次伤害为上一次的一半 (减半下取整保底1)
+   * 6. 随机浮动：±10% (0.90 ~ 1.10)
+   */
+  static calculateAttackDamage(attacker, target, options = {}) {
+    const atkVal = attacker.atk || (attacker.entity && attacker.entity.atk) || 50;
+    const defVal = target.def !== undefined ? target.def : ((target.entity && target.entity.def) || 20);
+    const maxHpTarget = target.maxHp || (target.entity && target.entity.maxHp) || 200;
+
+    const dodgeRate = target.dodgeRate !== undefined ? target.dodgeRate : ((target.entity && target.entity.dodgeRate) || 0.05);
+    const fatalRate = attacker.fatalRate !== undefined ? attacker.fatalRate : ((attacker.entity && attacker.entity.fatalRate) || 0.02);
+    const critRate = attacker.critRate !== undefined ? attacker.critRate : ((attacker.entity && attacker.entity.critRate) || 0.08);
+    const comboRate = attacker.comboRate !== undefined ? attacker.comboRate : ((attacker.entity && attacker.entity.comboRate) || 0.05);
+
+    const passives = (attacker.entity && attacker.entity.passives) || (attacker.passives) || [];
+    const targetPassives = (target.entity && target.entity.passives) || (target.passives) || [];
+
+    // 1. 闪避率判定 (目标闪避普通攻击)
+    let finalDodgeRate = dodgeRate;
+    if (targetPassives.some(p => p.id === 'high_sneak')) finalDodgeRate += 0.15;
+    const isDodge = options.forceDodge !== undefined ? options.forceDodge : (Math.random() < finalDodgeRate);
+
+    if (isDodge) {
+      return {
+        isDodge: true,
+        isFatal: false,
+        isCrit: false,
+        comboCount: 0,
+        damages: [0],
+        comboHits: [],
+        totalDamage: 0
+      };
+    }
+
+    // 防御姿态减免
+    const isDefending = target.buffs && target.buffs.some(b => b.name === '防御');
+    const defStanceMult = isDefending ? 0.5 : 1.0;
+
+    // ±10% 伤害浮动函数 (0.90 ~ 1.10)
+    const getFlux = () => {
+      if (options.dmgFluctuate !== undefined) return options.dmgFluctuate;
+      if (options.mockRandomFlux !== undefined) return options.mockRandomFlux;
+      return 0.90 + Math.random() * 0.20;
+    };
+
+    // 2. 致命一击判定 (无视防御与物理抗性，按目标生命值百分比造成真实伤害)
+    const isFatal = options.forceFatal !== undefined ? options.forceFatal : (Math.random() < fatalRate);
+    if (isFatal) {
+      const isBoss = target.isBoss;
+      const ratio = isBoss ? 0.08 : 0.20; // 20% 最大生命真实伤害 (Boss 8%)
+      const fatalDmg = Math.max(1, Math.floor(maxHpTarget * ratio * getFlux() * defStanceMult));
+      return {
+        isDodge: false,
+        isFatal: true,
+        isCrit: false,
+        comboCount: 0,
+        damages: [fatalDmg],
+        comboHits: [fatalDmg],
+        totalDamage: fatalDmg
+      };
+    }
+
+    // 3. 基础伤害 = 攻击力 - 防御力，防御力>=攻击力保底造成 1 点伤害
+    const baseDamage = Math.max(1, atkVal - defVal);
+
+    // 物理抗性减免 (区别于防御力数值减免)
+    const resPhy = (target.resistances && target.resistances.res_phy) || (target.entity && target.entity.resistances && target.entity.resistances.res_phy) || 0;
+    const resMult = Math.max(0, 1 - resPhy);
+
+    // 4. 暴击率判定 (普通攻击造成 1.5 倍伤害)
+    let finalCritRate = critRate;
+    if (passives.some(p => p.id === 'high_critical')) finalCritRate += 0.20;
+    const isCrit = options.forceCrit !== undefined ? options.forceCrit : (Math.random() < finalCritRate);
+    const critMult = isCrit ? 1.5 : 1.0;
+
+    // 偷袭增伤
+    const sneakMult = passives.some(p => p.id === 'high_sneak') ? 1.15 : 1.0;
+
+    // 主击伤害
+    const firstDmg = Math.max(1, Math.floor(baseDamage * critMult * sneakMult * defStanceMult * resMult * getFlux()));
+
+    // 5. 连击率判定 (概率连击1~3次，每次连击伤害为上一次的一半)
+    let finalComboRate = comboRate;
+    if (passives.some(p => p.id === 'high_combo')) finalComboRate += 0.25;
+    const triggerCombo = options.forceCombo !== undefined ? options.forceCombo : (Math.random() < finalComboRate);
+
+    const damages = [firstDmg];
+    let comboCount = 0;
+    if (triggerCombo) {
+      const maxCombos = options.forceComboCount !== undefined ? options.forceComboCount : (1 + Math.floor(Math.random() * 3)); // 1~3次
+      comboCount = maxCombos;
+      let prevDmg = firstDmg;
+      for (let c = 0; c < maxCombos; c++) {
+        const nextDmg = Math.max(1, Math.floor(prevDmg * 0.5)); // 每次连击伤害减半
+        damages.push(nextDmg);
+        prevDmg = nextDmg;
+      }
+    }
+
+    const totalDamage = damages.reduce((sum, d) => sum + d, 0);
+
+    return {
+      isDodge: false,
+      isFatal: false,
+      isCrit: isCrit,
+      comboCount: comboCount,
+      damages: damages,
+      comboHits: damages,
+      totalDamage: totalDamage
+    };
   }
 
   // 同步血量与蓝量至真实数据对象
@@ -138,6 +281,9 @@ class BattleEngine {
     aliveUnits.forEach((item, index) => {
       item.turnOrder = index + 1;
       item.unit.turnOrder = index + 1;
+      if (item.unit.entity) {
+        item.unit.entity.turnOrder = index + 1;
+      }
     });
 
     this.turnQueue = aliveUnits;
@@ -155,9 +301,9 @@ class BattleEngine {
     this.actions[allyId] = action;
   }
 
-  // 替换仙宠（仅仙宠单位可用，玩家不可替换）
+  // 替换仙宠（仅仙宠单位可用，玩家不可替换，同时支持战斗槽位ID与实例ID）
   switchPet(allyId, newPetInstanceId, availablePets = []) {
-    const ally = this.allies.find(a => a.id === allyId);
+    const ally = this.allies.find(a => a.id === allyId || (a.entity && a.entity.instanceId === allyId));
     if (!ally || ally.isPlayer) {
       return { success: false, msg: '玩家本尊不可被替换，仅仙宠可替换出战！' };
     }
@@ -174,6 +320,8 @@ class BattleEngine {
     }
 
     // 替换为新仙宠 (保留其原有的血量和法力)
+    ally.id = targetPet.instanceId;
+    ally.instanceId = targetPet.instanceId;
     ally.entity = targetPet;
     ally.name = targetPet.name;
     ally.hp = targetPet.hp;
@@ -196,6 +344,38 @@ class BattleEngine {
     return {
       success: true,
       msg: `成功将【${targetPet.name}】召唤出战！`
+    };
+  }
+
+  // 便捷招降接口
+  async captureMonster(targetIndex, cb) {
+    const targetEnemy = this.enemies[targetIndex];
+    if (!targetEnemy || targetEnemy.hp <= 0) return { success: false, msg: '目标不存在或已阵亡！' };
+    if (targetEnemy.isBoss) return { success: false, msg: '首领妖王意志如铁，无法被招降！' };
+
+    const q = targetEnemy.quality || 'ordinary';
+    const inv = window.App2D ? window.App2D.inventory : null;
+
+    if (q === 'sanxian') {
+      if (!inv || inv.getItemCount('silver_gourd') < 1) {
+        return { success: false, msg: '缺少法宝【紫竹银葫芦】，无法招降散仙野怪！' };
+      }
+    } else if (q === 'jinxian') {
+      if (!inv || inv.getItemCount('gold_gourd') < 1) {
+        return { success: false, msg: '缺少法宝【紫金红葫芦】，无法招降金仙圣兽！' };
+      }
+    }
+
+    let result = null;
+    await this.handleAllyTurn(this.allies[0] || { name: '玩家', buffs: [] }, { type: 'capture', targetIndex }, async (res) => {
+      result = res;
+      if (cb) await cb(res);
+    });
+
+    const isSuccess = result && result.type === 'capture_success';
+    return {
+      success: isSuccess,
+      msg: result ? result.text : (isSuccess ? '招降成功' : '招降失败')
     };
   }
 
@@ -380,6 +560,7 @@ class BattleEngine {
           this.log(`【招降成功】你口吐真言，成功感化招降了普通野怪【${targetEnemy.name}】！`);
           window.Sound.playSuccess();
           const newPet = window.PetSystem.createPet(targetEnemy.templateId || 'dahai_gui', true, targetEnemy.level || 5);
+          if (targetEnemy.name) newPet.name = targetEnemy.name;
           if (window.App2D && window.App2D.pets) window.App2D.pets.push(newPet);
           if (cb) await cb({ type: 'capture_success', targetIndex: action.targetIndex, pet: newPet, text: '招降成功！' });
         } else {
@@ -405,6 +586,7 @@ class BattleEngine {
           this.log(`【宝葫芦收服】祭起【紫竹银葫芦】，一道银光冲霄，成功招降散仙【${targetEnemy.name}】！`);
           window.Sound.playSuccess();
           const newPet = window.PetSystem.createPet(targetEnemy.templateId || 'baihua_she', true, targetEnemy.level || 10);
+          if (targetEnemy.name) newPet.name = targetEnemy.name;
           if (window.App2D && window.App2D.pets) window.App2D.pets.push(newPet);
           if (cb) await cb({ type: 'capture_success', targetIndex: action.targetIndex, pet: newPet, text: '银葫芦收服！' });
         } else {
@@ -430,6 +612,7 @@ class BattleEngine {
           this.log(`【太上至宝显威】抛出【紫金红葫芦】，大喊其名！金仙圣兽【${targetEnemy.name}】应声被吸入葫中降伏！`);
           window.Sound.playCrit();
           const newPet = window.PetSystem.createPet(targetEnemy.templateId || 'gudai_ruishou', true, targetEnemy.level || 25);
+          if (targetEnemy.name) newPet.name = targetEnemy.name;
           if (window.App2D && window.App2D.pets) window.App2D.pets.push(newPet);
           if (cb) await cb({ type: 'capture_success', targetIndex: action.targetIndex, pet: newPet, text: '金葫芦降伏！' });
         } else {
@@ -447,28 +630,63 @@ class BattleEngine {
       if (aliveEnemies.length === 0) return;
       const targetEnemy = this.enemies[action.targetIndex] || aliveEnemies[0];
 
-      const atkVal = ally.entity ? ally.entity.atk : (ally.atk || 50);
-      const defVal = targetEnemy.def || 20;
+      // 调用全新核心法则结算公式
+      const attackRes = BattleEngine.calculateAttackDamage(ally, targetEnemy);
 
-      // 抗物理抗性结算
-      const resPhy = (targetEnemy.resistances && targetEnemy.resistances.res_phy) || 0;
-      const isCrit = Math.random() < 0.18;
-      const critMult = isCrit ? 1.8 : 1.0;
+      // 1. 闪避判定：跳过伤害(0)，显示 MISS，打断连击
+      if (attackRes.isDodge) {
+        this.log(`【${targetEnemy.name}】身法如电，轻盈【闪避 MISS】了【${ally.name}】的致命杀招！`);
+        window.Sound.playFailure();
+        if (cb) await cb({
+          type: 'dodge',
+          attacker: ally.id,
+          targetIndex: targetEnemy.enemyIndex,
+          text: '闪避 MISS'
+        });
+        return;
+      }
 
-      let rawDmg = Math.max(1, Math.floor((atkVal * 1.15 - defVal * 0.6) * critMult * (1 - resPhy)));
-      targetEnemy.hp = Math.max(0, targetEnemy.hp - rawDmg);
+      // 扣除目标生命值 (支持连击总伤与多段衰减)
+      targetEnemy.hp = Math.max(0, targetEnemy.hp - attackRes.totalDamage);
 
-      this.log(`【${ally.name}】挥舞兵刃，重创【${targetEnemy.name}】造成 ${rawDmg} 点物理伤害${isCrit ? '（暴击！）' : ''}！`);
-      if (isCrit) window.Sound.playCrit();
+      let logMsg = `【${ally.name}】挥舞神兵，轰击【${targetEnemy.name}】！`;
+      if (attackRes.isFatal) {
+        logMsg += ` 触发【⚡致命一击】无视防御与物理抗性，贯穿造成 ${attackRes.damages[0]} 点纯正真实伤害！`;
+      } else {
+        logMsg += ` 造成 ${attackRes.damages[0]} 点物理伤害${attackRes.isCrit ? '（💥暴击1.5倍！）' : ''}！`;
+        if (attackRes.comboCount > 0) {
+          logMsg += ` 并且激发【🔥连续追击 ${attackRes.comboCount} 次】（连击每次伤害减半：${attackRes.damages.slice(1).join('、')}）！`;
+        }
+        logMsg += ` 本轮普攻共造成 ${attackRes.totalDamage} 点总伤害！`;
+      }
+
+      // 高级吸血结算 (仙宠技能)
+      const passives = (ally.entity && ally.entity.passives) || (ally.passives) || [];
+      const hasHighVampire = passives.some(p => p.id === 'high_vampire');
+      if (hasHighVampire && attackRes.totalDamage > 0) {
+        const leech = Math.min(Math.floor(attackRes.totalDamage * 0.35), ally.maxHp - ally.hp);
+        if (leech > 0) {
+          ally.hp += leech;
+          logMsg += `【🩸高级吸血恢复 +${leech} HP】`;
+        }
+      }
+
+      this.log(logMsg);
+      if (attackRes.isFatal || attackRes.isCrit) window.Sound.playCrit();
       else window.Sound.playHit();
 
       if (cb) await cb({
         type: 'damage',
         attacker: ally.id,
         targetIndex: targetEnemy.enemyIndex,
-        damage: rawDmg,
-        isCrit: isCrit,
-        text: `-${rawDmg}`
+        attackResult: attackRes,
+        damage: attackRes.damages[0],
+        totalDamage: attackRes.totalDamage,
+        isCrit: attackRes.isCrit,
+        isFatal: attackRes.isFatal,
+        comboCount: attackRes.comboCount,
+        damages: attackRes.damages,
+        text: attackRes.isFatal ? `⚡致命 -${attackRes.damages[0]}` : (attackRes.isCrit ? `💥暴击 -${attackRes.damages[0]}` : `-${attackRes.damages[0]}`)
       });
       return;
     }
@@ -509,85 +727,108 @@ class BattleEngine {
     // 1. 金刚系：舍生取义
     if (skill.name === '舍生取义' || skill.id === 'sk_jg_shesheng') {
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_shesheng) || 0;
-      const baseDmg = Math.floor((ally.atk * 2.8 + ally.maxHp * 0.15) - targetEnemy.def * 0.2);
+      const lvl = skill.level || 1;
+      const prof = skill.proficiency || 0;
+      const profBonus = prof * 0.0015 + lvl * 0.35;
+      const baseDmg = Math.floor((ally.atk * (2.8 + profBonus) + ally.maxHp * 0.15) - targetEnemy.def * 0.2);
       const finalDmg = Math.max(50, Math.floor(baseDmg * (1 - res)));
       targetEnemy.hp = Math.max(0, targetEnemy.hp - finalDmg);
-      this.log(`【舍生取义】${ally.name} 搏命轰杀【${targetEnemy.name}】造成 ${finalDmg} 点狂暴破甲重创！`);
+      this.log(`【舍生取义 Lv.${lvl}】${ally.name} 搏命轰杀【${targetEnemy.name}】造成 ${finalDmg} 点狂暴破甲重创！`);
       window.Sound.playCrit();
       if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: finalDmg, text: `破甲 -${finalDmg}` });
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 2. 金刚系：佛光普照
     if (skill.name === '佛光普照' || skill.id === 'sk_jg_foguang') {
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_foguang) || 0;
-      const hpDmg = Math.max(30, Math.floor(targetEnemy.hp * 0.22 * (1 - res)));
-      const mpDrain = Math.floor(targetEnemy.maxMp * 0.25);
+      const lvl = skill.level || 1;
+      const hpRate = Math.min(0.50, 0.22 + lvl * 0.03 + (skill.proficiency || 0) * 0.0001);
+      const mpRate = Math.min(0.60, 0.25 + lvl * 0.04);
+      const hpDmg = Math.max(30, Math.floor(targetEnemy.hp * hpRate * (1 - res)));
+      const mpDrain = Math.floor(targetEnemy.maxMp * mpRate);
       targetEnemy.hp = Math.max(0, targetEnemy.hp - hpDmg);
       targetEnemy.mp = Math.max(0, targetEnemy.mp - mpDrain);
-      this.log(`【佛光普照】纯阳佛火涤荡，削去【${targetEnemy.name}】${hpDmg} 点真实气血，并焚毁其 ${mpDrain} 点精力！`);
+      this.log(`【佛光普照 Lv.${lvl}】纯阳佛火涤荡，削去【${targetEnemy.name}】${hpDmg} 点真实气血，并焚毁其 ${mpDrain} 点精力！`);
       window.Sound.playMagic();
       if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: hpDmg, text: `佛光 -${hpDmg}` });
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
-    // 3. 金刚系：金刚护体 (己方群体增益)
+    // 3. 金刚系：金刚护体 (随等级护持目标数递增：1级1人，2级2人，3级全体)
     if (skill.name === '金刚护体' || skill.id === 'sk_jg_huti') {
-      this.allies.forEach(a => {
-        if (a.hp > 0) {
-          a.buffs.push({ name: '金刚护体', duration: 3, defBonusRate: 0.45 });
-        }
+      const lvl = skill.level || 1;
+      const targetCount = lvl === 1 ? 1 : (lvl === 2 ? 2 : 99);
+      const aliveAllies = this.allies.filter(a => a.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+      const targets = aliveAllies.slice(0, targetCount);
+      const defRate = 0.35 + lvl * 0.08;
+      targets.forEach(t => {
+        t.buffs.push({ name: '金刚护体', duration: 3, defBonusRate: defRate });
       });
-      this.log(`【金刚护体】罗汉金身普照全队！己方全体物理防御与法术抗性大幅飙升！`);
+      const names = targets.map(t => t.name).join('、');
+      this.log(`【金刚护体 Lv.${lvl}】罗汉金身普照【${names}】(${targets.length}人)！物防与法抗大幅飙升！`);
       window.Sound.playMagic();
-      if (cb) await cb({ type: 'buff', target: 'allies', text: '罗汉金身护持！' });
+      if (cb) await cb({ type: 'buff', target: 'allies', text: `金刚护体(${targets.length}人)` });
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 4. 妖魔系：雷霆万钧 (单体高伤)
     if (skill.name === '雷霆万钧' || skill.id === 'sk_ym_leiting') {
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_leiting) || 0;
-      const dmg = Math.max(60, Math.floor(((ally.matk || ally.atk) * 3.2 - targetEnemy.mdef * 0.3) * (1 - res)));
+      const lvl = skill.level || 1;
+      const profBonus = (skill.proficiency || 0) * 0.002 + lvl * 0.35;
+      const dmg = Math.max(60, Math.floor(((ally.matk || ally.atk) * (3.2 + profBonus) - targetEnemy.mdef * 0.3) * (1 - res)));
       targetEnemy.hp = Math.max(0, targetEnemy.hp - dmg);
-      this.log(`【雷霆万钧】九天狂雷轰顶！对【${targetEnemy.name}】造成 ${dmg} 点极高雷法伤害！`);
+      this.log(`【雷霆万钧 Lv.${lvl}】九天狂雷轰顶！对【${targetEnemy.name}】造成 ${dmg} 点极高雷法伤害！`);
       window.Sound.playCrit();
       if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: dmg, text: `雷霆 -${dmg}` });
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 5. 妖魔系：飞沙走石 (群体攻击)
     if (skill.name === '飞沙走石' || skill.id === 'sk_ym_feisha') {
+      const lvl = skill.level || 1;
+      const profBonus = (skill.proficiency || 0) * 0.001 + lvl * 0.25;
       for (const e of aliveEnemies) {
         const res = (e.resistances && e.resistances.res_feisha) || 0;
-        const dmg = Math.max(40, Math.floor(((ally.matk || ally.atk) * 1.8 - e.mdef * 0.4) * (1 - res)));
+        const dmg = Math.max(40, Math.floor(((ally.matk || ally.atk) * (1.8 + profBonus) - e.mdef * 0.4) * (1 - res)));
         e.hp = Math.max(0, e.hp - dmg);
         if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `飞沙 -${dmg}` });
       }
-      this.log(`【飞沙走石】三昧神风怒卷黄沙，漫天狂飙轰击敌方全体！`);
+      this.log(`【飞沙走石 Lv.${lvl}】三昧神风怒卷黄沙，漫天狂飙轰击敌方全体！`);
       window.Sound.playMagic();
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 6. 妖魔系：三昧真火
     if (skill.name === '三昧真火' || skill.id === 'sk_ym_sanmei') {
+      const lvl = skill.level || 1;
+      const profBonus = (skill.proficiency || 0) * 0.001 + lvl * 0.25;
       for (const e of aliveEnemies) {
         const res = (e.resistances && e.resistances.res_sanmei) || 0;
-        const dmg = Math.max(45, Math.floor(((ally.matk || ally.atk) * 2.0 - e.mdef * 0.3) * (1 - res)));
+        const dmg = Math.max(45, Math.floor(((ally.matk || ally.atk) * (2.0 + profBonus) - e.mdef * 0.3) * (1 - res)));
         e.hp = Math.max(0, e.hp - dmg);
         if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `真火 -${dmg}` });
       }
-      this.log(`【三昧真火】鼻端喷火，眼中吐烟！敌方全体葬身无边烈焰！`);
+      this.log(`【三昧真火 Lv.${lvl}】鼻端喷火，眼中吐烟！敌方全体葬身无边烈焰！`);
       window.Sound.playHit();
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 7. 神仙系：封印咒 (单体强封3回合)
     if (skill.name === '封印咒' || skill.id === 'sk_xr_fengyin') {
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_fengyin) || 0;
-      const hitRate = Math.max(0.3, 0.75 - res);
+      const lvl = skill.level || 1;
+      const hitRate = Math.max(0.3, 0.75 + lvl * 0.03 + (skill.proficiency || 0) * 0.0002 - res);
       if (Math.random() < hitRate) {
         targetEnemy.buffs.push({ id: 'fengyin', name: '封印', duration: 3 });
-        this.log(`【封印大成】神仙金符化作万道金锁，将【${targetEnemy.name}】彻底封印 3 回合！`);
+        this.log(`【封印大成 Lv.${lvl}】神仙金符化作万道金锁，将【${targetEnemy.name}】彻底封印 3 回合！`);
         window.Sound.playMagic();
         if (cb) await cb({ type: 'sealed', targetIndex: targetEnemy.enemyIndex, text: '封印镇压3回合！' });
       } else {
@@ -595,16 +836,18 @@ class BattleEngine {
         window.Sound.playFailure();
         if (cb) await cb({ type: 'miss', targetIndex: targetEnemy.enemyIndex, text: '封印落空！' });
       }
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 8. 神仙系：定身咒 (无法攻击施法)
     if (skill.name === '定身咒' || skill.id === 'sk_xr_dingshen') {
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_dingshen) || 0;
-      const hitRate = Math.max(0.35, 0.80 - res);
+      const lvl = skill.level || 1;
+      const hitRate = Math.max(0.35, 0.80 + lvl * 0.03 + (skill.proficiency || 0) * 0.0002 - res);
       if (Math.random() < hitRate) {
         targetEnemy.buffs.push({ id: 'dingshen', name: '定身', duration: 3 });
-        this.log(`【定身神咒】玄门金索缚定，【${targetEnemy.name}】无法攻击与施法！`);
+        this.log(`【定身神咒 Lv.${lvl}】玄门金索缚定，【${targetEnemy.name}】无法攻击与施法！`);
         window.Sound.playMagic();
         if (cb) await cb({ type: 'dingshen', targetIndex: targetEnemy.enemyIndex, text: '定身禁锢！' });
       } else {
@@ -612,16 +855,36 @@ class BattleEngine {
         window.Sound.playFailure();
         if (cb) await cb({ type: 'miss', targetIndex: targetEnemy.enemyIndex, text: '定身失败！' });
       }
+      this.rewardSkillProficiency(ally, skill);
       return;
     }
 
     // 9. 神仙系：隐身咒
     if (skill.name === '隐身咒' || skill.id === 'sk_xr_yinshen') {
+      const lvl = skill.level || 1;
       ally.buffs.push({ id: 'yinshen', name: '隐身潜行', duration: 3, hideAttributes: true });
-      this.log(`【隐身咒】${ally.name} 遁入太虚虚空！属性不可窥探，闪避与暴击率飙升！`);
+      this.log(`【隐身咒 Lv.${lvl}】${ally.name} 遁入太虚虚空！属性不可窥探，闪避与暴击率飙升！`);
       window.Sound.playMagic();
       if (cb) await cb({ type: 'invis', target: ally.id, text: '遁入虚空隐身！' });
+      this.rewardSkillProficiency(ally, skill);
       return;
+    }
+  }
+
+  // 绝技熟练度结算与升级
+  rewardSkillProficiency(ally, skill) {
+    if (!skill) return;
+    const gain = Math.floor(Math.random() * 5 + 10);
+    skill.proficiency = (skill.proficiency || 0) + gain;
+    const curLvl = skill.level || 1;
+    const thresholds = { 1: 100, 2: 250, 3: 500, 4: 850 };
+    if (curLvl < 5 && skill.proficiency >= (thresholds[curLvl] || 9999)) {
+      skill.level = curLvl + 1;
+      this.log(`🌟【技能精进】${ally.name} 勤修苦练，绝技【${skill.name}】熟练度圆满，晋升至 Lv.${skill.level}！威力跃迁！`);
+      if (window.Sound) window.Sound.playSuccess();
+      if (window.showGameMessage) {
+        window.showGameMessage(`🌟 绝技【${skill.name}】晋升至 Lv.${skill.level}！威力大幅提升！`, 'success');
+      }
     }
   }
 
@@ -632,35 +895,69 @@ class BattleEngine {
 
     // 封印检查
     if (enemy.buffs.some(b => b.id === 'fengyin')) {
-      this.log(`【镇压封印】${enemy.name} 处于封印状态，无法做任何行动！`);
+      this.log(`【镇压封印】${enemy.name} 处于封印状态，动弹不得，无法做任何行动！`);
       return;
     }
 
     const targetAlly = this.allies.find(a => a.id === action.targetId) || aliveAllies[0];
-    const defVal = targetAlly.def || 20;
 
-    // 检查我方防御 buff
-    const defBuff = targetAlly.buffs.find(b => b.name === '防御');
-    const defMult = defBuff ? 0.5 : 1.0;
+    // 调用统一核心伤害计算公式
+    const attackRes = BattleEngine.calculateAttackDamage(enemy, targetAlly);
 
-    const resPhy = (targetAlly.entity && targetAlly.entity.resistances && targetAlly.entity.resistances.res_phy) || 0;
-    const isCrit = Math.random() < 0.12;
-    const critMult = isCrit ? 1.6 : 1.0;
+    // 1. 玩家/仙宠闪避判定
+    if (attackRes.isDodge) {
+      this.log(`【${targetAlly.name}】身形飘逸，轻盈【闪避 MISS】了【${enemy.name}】的凶残扑击！`);
+      window.Sound.playFailure();
+      if (cb) await cb({
+        type: 'dodge',
+        attacker: 'enemy_' + enemy.enemyIndex,
+        target: targetAlly.id,
+        text: '闪避 MISS'
+      });
+      return;
+    }
 
-    const dmg = Math.max(1, Math.floor((enemy.atk * 1.1 - defVal * 0.55) * critMult * defMult * (1 - resPhy)));
-    targetAlly.hp = Math.max(0, targetAlly.hp - dmg);
+    targetAlly.hp = Math.max(0, targetAlly.hp - attackRes.totalDamage);
 
-    this.log(`【${enemy.name}】凶猛扑击，对【${targetAlly.name}】造成 ${dmg} 点伤害${isCrit ? '（暴击！）' : ''}！`);
-    if (isCrit) window.Sound.playCrit();
+    // 检查高级神佑复生被动 (high_rebirth)
+    const passives = (targetAlly.entity && targetAlly.entity.passives) || (targetAlly.passives) || [];
+    const hasRebirth = passives.some(p => p.id === 'high_rebirth');
+    let didRevive = false;
+    if (targetAlly.hp === 0 && hasRebirth && Math.random() < 0.45) {
+      const reviveHp = Math.max(1, Math.floor(targetAlly.maxHp * 0.50));
+      targetAlly.hp = reviveHp;
+      didRevive = true;
+      this.log(`✨【圣光涅槃】${targetAlly.name} 触发【高级神佑复生】！仙光冲霄，原地涅槃复活！回复 ${reviveHp} 点气血！`);
+      if (window.Sound) window.Sound.playSuccess();
+    }
+
+    let logMsg = `【${enemy.name}】凶猛扑击【${targetAlly.name}】！`;
+    if (attackRes.isFatal) {
+      logMsg += ` 竟触发【⚡致命一击】无视防御与物理抗性，贯穿造成 ${attackRes.damages[0]} 点纯正真实伤害！`;
+    } else {
+      logMsg += ` 造成 ${attackRes.damages[0]} 点伤害${attackRes.isCrit ? '（💥暴击1.5倍！）' : ''}！`;
+      if (attackRes.comboCount > 0) {
+        logMsg += ` 并且激发【🔥连续撕咬 ${attackRes.comboCount} 次】（连击每次伤害减半：${attackRes.damages.slice(1).join('、')}）！`;
+      }
+      logMsg += ` 本轮攻击共造成 ${attackRes.totalDamage} 点总伤害！`;
+    }
+    this.log(logMsg);
+
+    if (attackRes.isFatal || attackRes.isCrit) window.Sound.playCrit();
     else window.Sound.playHit();
 
     if (cb) await cb({
-      type: 'damage',
+      type: didRevive ? 'revive' : 'damage',
       attacker: 'enemy_' + enemy.enemyIndex,
       target: targetAlly.id,
-      damage: dmg,
-      isCrit: isCrit,
-      text: `-${dmg}`
+      attackResult: attackRes,
+      damage: attackRes.damages[0],
+      totalDamage: attackRes.totalDamage,
+      isCrit: attackRes.isCrit,
+      isFatal: attackRes.isFatal,
+      comboCount: attackRes.comboCount,
+      damages: attackRes.damages,
+      text: didRevive ? '✨高级神佑复活！' : (attackRes.isFatal ? `⚡致命 -${attackRes.damages[0]}` : (attackRes.isCrit ? `💥暴击 -${attackRes.damages[0]}` : `-${attackRes.damages[0]}`))
     });
   }
 }

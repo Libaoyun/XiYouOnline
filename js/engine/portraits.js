@@ -13,6 +13,70 @@ class PortraitSystem {
     const key = `${roleId}_${size}`;
     if (this.cache[key]) return this.cache[key];
 
+    const s = String(roleId || '').toLowerCase();
+
+    // 独立国风怪物头像检测
+    if (s.includes('rat') || s.includes('鼠')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#303952" stroke="#ff4757" stroke-width="2.5"/><circle cx="28" cy="28" r="14" fill="#57606f"/><circle cx="28" cy="28" r="8" fill="#f8a5c2"/><circle cx="72" cy="28" r="14" fill="#57606f"/><circle cx="72" cy="28" r="8" fill="#f8a5c2"/><ellipse cx="50" cy="58" rx="26" ry="24" fill="#57606f"/><ellipse cx="50" cy="65" rx="16" ry="14" fill="#dcdde1"/><circle cx="38" cy="52" r="4.5" fill="#1e272e"/><circle cx="62" cy="52" r="4.5" fill="#1e272e"/><circle cx="39.5" cy="50.5" r="1.5" fill="#fff"/><circle cx="63.5" cy="50.5" r="1.5" fill="#fff"/><circle cx="50" cy="62" r="3.5" fill="#ff6b81"/><rect x="47" y="66" width="6" height="7" fill="#fff" rx="1"/><line x1="32" y1="62" x2="16" y2="58" stroke="#1e272e" stroke-width="1.8"/><line x1="32" y1="65" x2="16" y2="68" stroke="#1e272e" stroke-width="1.8"/><line x1="68" y1="62" x2="84" y2="58" stroke="#1e272e" stroke-width="1.8"/><line x1="68" y1="65" x2="84" y2="68" stroke="#1e272e" stroke-width="1.8"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('pig') || s.includes('猪')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#2d1500" stroke="#ff4757" stroke-width="2.5"/><polygon points="45,16 50,4 55,16" fill="#1e130c"/><polygon points="35,18 40,6 45,18" fill="#1e130c"/><polygon points="55,18 60,6 65,18" fill="#1e130c"/><circle cx="50" cy="54" r="28" fill="#573f2c"/><ellipse cx="50" cy="62" rx="14" ry="10" fill="#8c503e"/><circle cx="44" cy="62" r="3.5" fill="#2d1500"/><circle cx="56" cy="62" r="3.5" fill="#2d1500"/><circle cx="36" cy="46" r="4" fill="#ff4757"/><circle cx="64" cy="46" r="4" fill="#ff4757"/><polygon points="32,68 22,48 36,60" fill="#fff"/><polygon points="68,68 78,48 64,60" fill="#fff"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('wolf') || s.includes('狼')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#1e272e" stroke="#2ed573" stroke-width="2.5"/><polygon points="25,40 18,12 36,28" fill="#2d3748"/><polygon points="75,40 82,12 64,28" fill="#2d3748"/><polygon points="26,36 22,18 34,28" fill="#4a5568"/><polygon points="74,36 78,18 66,28" fill="#4a5568"/><ellipse cx="50" cy="58" rx="25" ry="24" fill="#4a5568"/><polygon points="50,42 38,72 62,72" fill="#2d3748"/><circle cx="37" cy="50" r="4" fill="#2ed573"/><circle cx="63" cy="50" r="4" fill="#2ed573"/><circle cx="37" cy="50" r="1.5" fill="#fff"/><circle cx="63" cy="50" r="1.5" fill="#fff"/><polygon points="45,72 50,78 55,72" fill="#1e272e"/><polygon points="42,72 40,78 44,74" fill="#fff"/><polygon points="58,72 60,78 56,74" fill="#fff"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('tiger') || s.includes('虎')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#3d1e03" stroke="#ffd700" stroke-width="2.5"/><circle cx="28" cy="28" r="12" fill="#2c3e50"/><circle cx="72" cy="28" r="12" fill="#2c3e50"/><circle cx="50" cy="56" r="28" fill="#f39c12"/><rect x="26" y="44" width="8" height="4" fill="#2c3e50" rx="1"/><rect x="66" y="44" width="8" height="4" fill="#2c3e50" rx="1"/><text x="50" y="38" font-family="sans-serif" font-weight="bold" font-size="16" fill="#000" text-anchor="middle">王</text><circle cx="38" cy="52" r="4.5" fill="#ffd700"/><circle cx="62" cy="52" r="4.5" fill="#ffd700"/><circle cx="38" cy="52" r="2" fill="#000"/><circle cx="62" cy="52" r="2" fill="#000"/><ellipse cx="50" cy="68" rx="12" ry="7" fill="#fff"/><polygon points="46,65 50,70 54,65" fill="#000"/><polygon points="42,70 44,77 46,72" fill="#fff"/><polygon points="58,70 56,77 54,72" fill="#fff"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('snake') || s.includes('serpent') || s.includes('蛇')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#032612" stroke="#2ed573" stroke-width="2.5"/><path d="M22,80 Q50,40 78,80" stroke="#2ed573" stroke-width="12" fill="none" stroke-linecap="round"/><polygon points="50,22 28,52 72,52" fill="#10ac84"/><circle cx="38" cy="42" r="4" fill="#ffd700"/><circle cx="62" cy="42" r="4" fill="#ffd700"/><line x1="38" y1="39" x2="38" y2="45" stroke="#000" stroke-width="2"/><line x1="62" y1="39" x2="62" y2="45" stroke="#000" stroke-width="2"/><path d="M50,52 L50,72 L44,78 M50,72 L56,78" stroke="#ff4757" stroke-width="2.5" fill="none"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('fox') || s.includes('狐')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#3a110a" stroke="#ff6348" stroke-width="2.5"/><polygon points="22,42 16,14 42,32" fill="#ee5253"/><polygon points="78,42 84,14 58,32" fill="#ee5253"/><polygon points="22,38 20,20 38,32" fill="#fff"/><polygon points="78,38 80,20 62,32" fill="#fff"/><ellipse cx="50" cy="58" rx="26" ry="24" fill="#ff4757"/><polygon points="50,46 32,76 68,76" fill="#fff"/><circle cx="36" cy="52" r="3.5" fill="#1e272e"/><circle cx="64" cy="52" r="3.5" fill="#1e272e"/><circle cx="50" cy="74" r="3.5" fill="#ff9ff3"/><polygon points="50,72 47,75 53,75" fill="#1e272e"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('clam') || s.includes('蚌')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#1d1533" stroke="#8854d0" stroke-width="2.5"/><ellipse cx="50" cy="62" rx="32" ry="18" fill="#574b90" stroke="#786fa6" stroke-width="2"/><ellipse cx="50" cy="56" rx="22" ry="12" fill="#f8a5c2"/><ellipse cx="50" cy="38" rx="32" ry="18" fill="#303952" stroke="#786fa6" stroke-width="2"/><circle cx="50" cy="52" r="10" fill="#ffffff" stroke="#ffd700" stroke-width="2"/><circle cx="50" cy="52" r="14" fill="none" stroke="rgba(102,217,232,0.6)" stroke-width="2"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('crab') || s.includes('蟹')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#0a291e" stroke="#33d9b2" stroke-width="2.5"/><ellipse cx="20" cy="34" rx="10" ry="14" fill="#ff5252" stroke="#b33939" stroke-width="2"/><ellipse cx="80" cy="34" rx="10" ry="14" fill="#ff5252" stroke="#b33939" stroke-width="2"/><rect x="26" y="44" width="48" height="34" rx="12" fill="#33d9b2" stroke="#218c74" stroke-width="2.5"/><circle cx="40" cy="36" r="4.5" fill="#1e272e"/><circle cx="60" cy="36" r="4.5" fill="#1e272e"/><circle cx="41.5" cy="34.5" r="1.5" fill="#fff"/><circle cx="61.5" cy="34.5" r="1.5" fill="#fff"/><line x1="40" y1="44" x2="40" y2="38" stroke="#33d9b2" stroke-width="3"/><line x1="60" y1="44" x2="60" y2="38" stroke="#33d9b2" stroke-width="3"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('shrimp') || s.includes('虾')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#3b1111" stroke="#ff3838" stroke-width="2.5"/><path d="M30,76 Q45,30 70,72" stroke="#ee5253" stroke-width="12" fill="none" stroke-linecap="round"/><circle cx="34" cy="46" r="12" fill="#ee5253"/><circle cx="30" cy="42" r="3.5" fill="#1e272e"/><circle cx="38" cy="42" r="3.5" fill="#1e272e"/><path d="M34,36 Q20,12 10,18" stroke="#ffa801" stroke-width="2" fill="none"/><path d="M34,36 Q48,12 58,18" stroke="#ffa801" stroke-width="2" fill="none"/><line x1="72" y1="20" x2="72" y2="80" stroke="#70a1ff" stroke-width="3"/><polygon points="68,20 72,12 76,20" fill="#fff"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('bandit') || s.includes('tyrant') || s.includes('盗') || s.includes('霸') || s.includes('贼')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#1c1613" stroke="#b71540" stroke-width="2.5"/><path d="M26,68 L50,56 L74,68 L70,100 L30,100 Z" fill="#2f3542"/><path d="M26,68 L50,56 L74,80 L65,100 L30,100 Z" fill="#d35400"/><ellipse cx="50" cy="42" rx="14" ry="15" fill="#f8c291"/><rect x="34" y="24" width="32" height="10" fill="#b71540" rx="2"/><ellipse cx="50" cy="50" rx="12" ry="7" fill="#2f3542"/><circle cx="43" cy="42" r="3" fill="#1e272e"/><circle cx="57" cy="42" r="3" fill="#1e272e"/><line x1="38" y1="38" x2="48" y2="44" stroke="#c0392b" stroke-width="2"/><line x1="78" y1="18" x2="78" y2="85" stroke="#dfe4ea" stroke-width="4"/><circle cx="72" cy="30" r="3" fill="none" stroke="#ffd700" stroke-width="1.5"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('bear') || s.includes('熊')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#0d1114" stroke="#747d8c" stroke-width="2.5"/><circle cx="28" cy="28" r="10" fill="#1e272e"/><circle cx="72" cy="28" r="10" fill="#1e272e"/><circle cx="50" cy="56" r="28" fill="#1e272e"/><ellipse cx="50" cy="64" rx="14" ry="10" fill="#747d8c"/><circle cx="50" cy="62" r="4" fill="#000"/><circle cx="40" cy="50" r="3.5" fill="#ff4757"/><circle cx="60" cy="50" r="3.5" fill="#ff4757"/><path d="M38,78 Q50,88 62,78" stroke="#fff" stroke-width="3" fill="none"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+    if (s.includes('skeleton') || s.includes('bone') || s.includes('尸') || s.includes('骨') || s.includes('鬼') || s.includes('demon')) {
+      const svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="display:block;border-radius:50%;"><circle cx="50" cy="50" r="46" fill="#120c1c" stroke="#00d2d3" stroke-width="2.5"/><circle cx="50" cy="46" r="22" fill="#f8f9fa"/><rect x="42" y="60" width="16" height="12" fill="#f8f9fa" rx="2"/><circle cx="41" cy="46" r="6" fill="#120c1c"/><circle cx="59" cy="46" r="6" fill="#120c1c"/><circle cx="41" cy="46" r="3.5" fill="#00d2d3"/><circle cx="59" cy="46" r="3.5" fill="#00d2d3"/><polygon points="50,52 47,58 53,58" fill="#120c1c"/><line x1="45" y1="64" x2="45" y2="70" stroke="#120c1c" stroke-width="2"/><line x1="50" y1="64" x2="50" y2="70" stroke="#120c1c" stroke-width="2"/><line x1="55" y1="64" x2="55" y2="70" stroke="#120c1c" stroke-width="2"/></svg>`;
+      this.cache[key] = svg;
+      return svg;
+    }
+
     let content = '';
 
     switch (roleId) {

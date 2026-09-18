@@ -78,5 +78,21 @@ window.showGameMessage = function(text, type = 'gold', duration = 2800) {
 
 // 彻底拦截并覆盖原生 alert，确保全系统无任何原生弹窗
 window.alert = function(msg) {
-  window.showGameMessage(String(msg), 'gold');
+  window.showGameMessage(String(msg), 'gold', 3500);
+};
+
+// 彻底拦截并覆盖原生 confirm，杜绝任何阻塞式浏览器默认对话框
+window.confirm = function(msg) {
+  if (window.App2D && typeof window.App2D.showConfirmModal === 'function') {
+    window.App2D.showConfirmModal({
+      title: '西行提示',
+      content: String(msg),
+      confirmText: '确定',
+      cancelText: '取消',
+      onConfirm: () => {}
+    });
+    return true;
+  }
+  window.showGameMessage(String(msg), 'gold', 3500);
+  return true;
 };

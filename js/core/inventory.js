@@ -144,6 +144,7 @@ class Inventory {
 
     // 装备到身上，并换下旧装备
     const oldEquip = player.equipItem(item.slot, {
+      instanceId: slotData.instanceId,
       itemId: slotData.itemId,
       star: (slotData.equipData && slotData.equipData.star) || 0,
       sockets: (slotData.equipData && slotData.equipData.sockets) || [null, null, null]
@@ -180,31 +181,45 @@ class Inventory {
     return { success: true, msg: `已卸下【${(item && item.name) || '装备'}】并放入背包！` };
   }
 
-  // 宝石镶嵌 (装备最多3孔)
+  // 宝石镶嵌 (装备最多3孔，同时支持背包中装备与已穿戴装备)
   socketGem(equipInstanceId, gemItemId, socketIdx, player) {
+    let targetEquipData = null;
+    let targetItem = null;
+
     const equipSlot = this.slots.find(s => s.instanceId === equipInstanceId);
-    if (!equipSlot) return { success: false, msg: '未在背包中找到对应装备！' };
+    if (equipSlot) {
+      targetItem = window.GAME_DATA.ITEMS[equipSlot.itemId];
+      equipSlot.equipData = equipSlot.equipData || { star: 0, sockets: [null, null, null] };
+      equipSlot.equipData.sockets = equipSlot.equipData.sockets || [null, null, null];
+      targetEquipData = equipSlot.equipData;
+    } else if (player && player.equipment) {
+      for (const part of Object.keys(player.equipment)) {
+        const eq = player.equipment[part];
+        if (eq && (eq.instanceId === equipInstanceId || part === equipInstanceId || eq.itemId === equipInstanceId)) {
+          targetItem = window.GAME_DATA.ITEMS[eq.itemId];
+          eq.sockets = eq.sockets || [null, null, null];
+          targetEquipData = eq;
+          break;
+        }
+      }
+    }
 
-    const equipItem = window.GAME_DATA.ITEMS[equipSlot.itemId];
-    if (!equipItem || equipItem.type !== 'equip') return { success: false, msg: '目标物品并非有效装备！' };
-
+    if (!targetEquipData) return { success: false, msg: '未找到对应装备！' };
+    if (!targetItem || targetItem.type !== 'equip') return { success: false, msg: '目标物品并非有效装备！' };
     if (socketIdx < 0 || socketIdx >= 3) return { success: false, msg: '无效的宝石孔位编号！' };
 
-    equipSlot.equipData = equipSlot.equipData || { star: 0, sockets: [null, null, null] };
-    equipSlot.equipData.sockets = equipSlot.equipData.sockets || [null, null, null];
-
-    if (equipSlot.equipData.sockets[socketIdx]) {
-      return { success: false, msg: `该孔位已镶嵌有【${window.GAME_DATA.ITEMS[equipSlot.equipData.sockets[socketIdx]].name}】！需先拆除！` };
+    targetEquipData.sockets = targetEquipData.sockets || [null, null, null];
+    if (targetEquipData.sockets[socketIdx]) {
+      return { success: false, msg: `该孔位已镶嵌有【${window.GAME_DATA.ITEMS[targetEquipData.sockets[socketIdx]].name}】！需先拆除！` };
     }
 
     const gemItem = window.GAME_DATA.ITEMS[gemItemId];
     if (!gemItem || gemItem.type !== 'gem') return { success: false, msg: '所选物品并非宝石！' };
-
     if (this.getItemCount(gemItemId) < 1) return { success: false, msg: `背包中【${gemItem.name}】数量不足！` };
 
     // 扣减宝石
     this.removeItem(gemItemId, 1);
-    equipSlot.equipData.sockets[socketIdx] = gemItemId;
+    targetEquipData.sockets[socketIdx] = gemItemId;
 
     if (player) {
       player.recalculateStats(false);
@@ -213,26 +228,39 @@ class Inventory {
     window.Sound.playMagic();
     return {
       success: true,
-      msg: `🎉 成功将【${gemItem.name}】镶嵌至【${equipItem.name}】第 ${socketIdx + 1} 孔！神力已灌注！`
+      msg: `🎉 成功将【${gemItem.name}】镶嵌至【${targetItem.name}】第 ${socketIdx + 1} 孔！神力已灌注！`
     };
   }
 
-  // 宝石摘除
+  // 宝石摘除 (同时支持背包中装备与身上穿戴的装备)
   unsocketGem(equipInstanceId, socketIdx, player) {
     if (this.slots.length >= this.maxSlots) {
       return { success: false, msg: '背包已满，无法摘除宝石！' };
     }
 
+    let targetEquipData = null;
     const equipSlot = this.slots.find(s => s.instanceId === equipInstanceId);
-    if (!equipSlot || !equipSlot.equipData || !equipSlot.equipData.sockets) {
+    if (equipSlot && equipSlot.equipData) {
+      targetEquipData = equipSlot.equipData;
+    } else if (player && player.equipment) {
+      for (const part of Object.keys(player.equipment)) {
+        const eq = player.equipment[part];
+        if (eq && (eq.instanceId === equipInstanceId || part === equipInstanceId || eq.itemId === equipInstanceId)) {
+          targetEquipData = eq;
+          break;
+        }
+      }
+    }
+
+    if (!targetEquipData || !targetEquipData.sockets) {
       return { success: false, msg: '装备不存在！' };
     }
 
-    const gemItemId = equipSlot.equipData.sockets[socketIdx];
+    const gemItemId = targetEquipData.sockets[socketIdx];
     if (!gemItemId) return { success: false, msg: '该孔位为空，无宝石可拆除！' };
 
     const gemItem = window.GAME_DATA.ITEMS[gemItemId];
-    equipSlot.equipData.sockets[socketIdx] = null;
+    targetEquipData.sockets[socketIdx] = null;
     this.addItem(gemItemId, 1);
 
     if (player) {

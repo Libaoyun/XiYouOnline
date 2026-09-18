@@ -53,6 +53,7 @@ class PetSystem {
       growth: growth,
       aptitudes: aptitudes,
       skills: [], // 领悟后的技能对象数组 [{ id, name, classId, level, proficiency, icon, desc, costMp, costHpRatio }]
+      passives: [], // 研习魔兽要诀领悟的被动特技列表 [{ id, name, icon, desc }]
       // 抗性字典
       resistances: {
         res_phy: 0,
@@ -81,7 +82,11 @@ class PetSystem {
       def: 0,
       matk: 0,
       mdef: 0,
-      spd: 0
+      spd: 0,
+      critRate: 0.08,
+      comboRate: 0.05,
+      fatalRate: 0.02,
+      dodgeRate: 0.05
     };
 
     this.recalculatePet(pet, true);
@@ -106,6 +111,24 @@ class PetSystem {
     let matk = Math.floor((lvl * 6 + pet.attrs.int * (apt.matk / 850) * g) * qMult);
     let mdef = Math.floor((lvl * 4 + pet.attrs.sta * 0.9 + pet.attrs.int * 0.6) * qMult);
     let spd = Math.floor((pet.attrs.dex * (apt.spd / 900) * 1.3) * qMult);
+    // 高级敏捷被动加成 +30 速度
+    if (pet.passives && pet.passives.some(p => p.id === 'high_speed')) {
+      spd += 30;
+    }
+
+    let critRate = 0.08;
+    let comboRate = 0.05;
+    let fatalRate = 0.02;
+    let dodgeRate = 0.05;
+    if (pet.passives && Array.isArray(pet.passives)) {
+      if (pet.passives.some(p => p.id === 'high_critical')) critRate += 0.20;
+      if (pet.passives.some(p => p.id === 'high_combo')) comboRate += 0.25;
+      if (pet.passives.some(p => p.id === 'high_sneak')) dodgeRate += 0.15;
+    }
+    pet.critRate = Math.min(0.85, Number(critRate.toFixed(3)));
+    pet.comboRate = Math.min(0.75, Number(comboRate.toFixed(3)));
+    pet.fatalRate = Math.min(0.50, Number(fatalRate.toFixed(3)));
+    pet.dodgeRate = Math.min(0.70, Number(dodgeRate.toFixed(3)));
 
     pet.maxHp = Math.max(90, maxHp);
     pet.maxMp = Math.max(60, maxMp);
@@ -217,6 +240,119 @@ class PetSystem {
       this.recalculatePet(pet, true);
     }
     return leveledUp;
+  }
+
+  // 金柳露洗炼：随机生成新资质与成长预览
+  static generateWashResult(pet) {
+    const template = window.GAME_DATA.PETS[pet.templateId] || window.GAME_DATA.PETS['dahai_gui'];
+    const quality = pet.quality || template.quality || 'ordinary';
+    
+    // 金柳露洗炼出变异概率大幅提升
+    const mutRate = quality === 'jinxian' ? 0.16 : (quality === 'sanxian' ? 0.10 : 0.05);
+    const isMutated = Math.random() < mutRate;
+
+    const growthMin = template.growthRange[0];
+    const growthMax = template.growthRange[1];
+    let growth = Number((growthMin + Math.random() * (growthMax - growthMin)).toFixed(3));
+    if (isMutated) growth = Number((growth * 1.08).toFixed(3));
+
+    const rollApt = (range) => {
+      const base = Math.floor(range[0] + Math.random() * (range[1] - range[0]));
+      return isMutated ? Math.floor(base * 1.12) : base;
+    };
+
+    const aptitudes = {
+      hp: rollApt(template.aptitudes.hp),
+      atk: rollApt(template.aptitudes.atk),
+      def: rollApt(template.aptitudes.def),
+      matk: rollApt(template.aptitudes.matk),
+      spd: rollApt(template.aptitudes.spd)
+    };
+
+    return {
+      level: 1,
+      exp: 0,
+      isMutated: isMutated,
+      name: isMutated ? `变异${template.name}` : template.name,
+      growth: growth,
+      aptitudes: aptitudes
+    };
+  }
+
+  // 确认替换金柳露洗炼新属性
+  static applyWashResult(pet, washResult) {
+    pet.level = washResult.level || 1;
+    pet.exp = 0;
+    pet.isMutated = washResult.isMutated;
+    pet.name = washResult.name;
+    pet.growth = washResult.growth;
+    pet.aptitudes = JSON.parse(JSON.stringify(washResult.aptitudes));
+    pet.skills = [];
+    pet.classId = null;
+    pet.className = '无门派';
+    pet.attrs = {
+      con: 12,
+      str: 12,
+      int: 11,
+      dex: 11,
+      sta: 11
+    };
+    this.recalculatePet(pet, true);
+    return pet;
+  }
+
+  // 魔兽要诀打书研习系统 (最多4个被动槽位，开格或顶替)
+  static learnPetSkillBook(pet, bookItemId) {
+    const book = window.GAME_DATA.ITEMS[bookItemId];
+    if (!book || book.type !== 'pet_book') {
+      return { success: false, msg: '所选物品非仙家魔兽要诀！' };
+    }
+
+    if (!pet.passives) pet.passives = [];
+
+    // 检查是否已经学会了相同特技
+    if (pet.passives.some(p => p.id === book.skillId)) {
+      return { success: false, msg: `【${pet.name}】早已参悟了【${book.skillName}】，无需重复打书！` };
+    }
+
+    const newPassive = {
+      id: book.skillId,
+      name: book.skillName,
+      icon: book.icon,
+      desc: book.desc
+    };
+
+    let replaced = null;
+    if (pet.passives.length < 4) {
+      // 拥有空槽位时，80% 概率直接开槽领悟，20% 概率顶替已有特技
+      if (pet.passives.length > 0 && Math.random() < 0.20) {
+        const repIdx = Math.floor(Math.random() * pet.passives.length);
+        replaced = pet.passives[repIdx];
+        pet.passives[repIdx] = newPassive;
+      } else {
+        pet.passives.push(newPassive);
+      }
+    } else {
+      // 4个技能槽已满，100% 顶替随机一个特技
+      const repIdx = Math.floor(Math.random() * pet.passives.length);
+      replaced = pet.passives[repIdx];
+      pet.passives[repIdx] = newPassive;
+    }
+
+    // 重新计算全属性（如高级敏捷影响速度）
+    this.recalculatePet(pet, false);
+
+    let msg = `✨【魔兽顿悟】仙宠【${pet.name}】成功研习了《${book.name}》，领悟了被动绝技【${newPassive.name}】！`;
+    if (replaced) {
+      msg += `（旧绝技【${replaced.name}】已被新绝技融会贯通顶替）`;
+    }
+
+    return {
+      success: true,
+      replacedSkill: replaced,
+      newSkill: newPassive,
+      msg: msg
+    };
   }
 }
 

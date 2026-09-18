@@ -58,6 +58,12 @@ class Player {
       res_yinshen: 0
     };
 
+    // 核心战斗法则四维进阶率
+    this.critRate = initData.critRate || 0.08; // 暴击率 1.5倍伤害
+    this.comboRate = initData.comboRate || 0.05; // 连击率 连续追击1~3次，每次伤害减半
+    this.fatalRate = initData.fatalRate || 0.02; // 致命一击率 按生命上限真伤无视防御抗性
+    this.dodgeRate = initData.dodgeRate || 0.05; // 闪避率 完全规避伤害并打断连击
+
     this.recalculateStats(true);
   }
 
@@ -132,6 +138,11 @@ class Player {
       this.resistances.res_yinshen += 0.05;
     }
 
+    let baseCritRate = 0.08;
+    let baseComboRate = 0.05;
+    let baseFatalRate = 0.02;
+    let baseDodgeRate = 0.05;
+
     // 叠加穿戴装备的属性与镶嵌宝石孔属性/抗性
     Object.values(this.equipment).forEach(equip => {
       if (!equip) return;
@@ -149,6 +160,10 @@ class Player {
         if (baseItem.attrs.hp) baseMaxHp += Math.floor(baseItem.attrs.hp * starMult);
         if (baseItem.attrs.mp) baseMaxMp += Math.floor(baseItem.attrs.mp * starMult);
         if (baseItem.attrs.spd) baseSpd += Math.floor(baseItem.attrs.spd * starMult);
+        if (baseItem.attrs.critRate) baseCritRate += baseItem.attrs.critRate * starMult;
+        if (baseItem.attrs.comboRate) baseComboRate += baseItem.attrs.comboRate * starMult;
+        if (baseItem.attrs.fatalRate) baseFatalRate += baseItem.attrs.fatalRate * starMult;
+        if (baseItem.attrs.dodgeRate) baseDodgeRate += baseItem.attrs.dodgeRate * starMult;
       }
 
       // 遍历装备镶嵌的宝石 (最多3孔)
@@ -163,6 +178,10 @@ class Player {
           if (gemItem.bonus.def) baseDef += gemItem.bonus.def;
           if (gemItem.bonus.hp) baseMaxHp += gemItem.bonus.hp;
           if (gemItem.bonus.spd) baseSpd += gemItem.bonus.spd;
+          if (gemItem.bonus.critRate) baseCritRate += gemItem.bonus.critRate;
+          if (gemItem.bonus.comboRate) baseComboRate += gemItem.bonus.comboRate;
+          if (gemItem.bonus.fatalRate) baseFatalRate += gemItem.bonus.fatalRate;
+          if (gemItem.bonus.dodgeRate) baseDodgeRate += gemItem.bonus.dodgeRate;
 
           // 抗性加成
           if (gemItem.bonus.res_phy) this.resistances.res_phy += gemItem.bonus.res_phy;
@@ -190,6 +209,11 @@ class Player {
     this.mdef = baseMdef;
     this.spd = baseSpd;
 
+    this.critRate = Math.min(0.85, Number(baseCritRate.toFixed(3)));
+    this.comboRate = Math.min(0.75, Number(baseComboRate.toFixed(3)));
+    this.fatalRate = Math.min(0.50, Number(baseFatalRate.toFixed(3)));
+    this.dodgeRate = Math.min(0.70, Number(baseDodgeRate.toFixed(3)));
+
     if (healToFull) {
       this.hp = this.maxHp;
       this.mp = this.maxMp;
@@ -202,8 +226,9 @@ class Player {
   // 穿戴装备
   equipItem(slot, equipData) {
     const oldEquip = this.equipment[slot];
-    // 保证至少有 sockets 数组
+    // 保证至少有 sockets 数组与 instanceId
     const newEquip = {
+      instanceId: equipData.instanceId || ('worn_' + slot),
       itemId: equipData.itemId,
       star: equipData.star || 0,
       sockets: equipData.sockets || [null, null, null]

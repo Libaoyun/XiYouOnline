@@ -58,20 +58,14 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '蟠桃园土地',
         speakerTitle: '【瑶池地仙】',
         speakerIcon: '👴',
-        text: '小神参见威灵大将军！这蟠桃园共有三千六百株仙树：三千年、六千年、九千年仙桃人吃了长生不老，与天地齐寿！'
+        text: '小神参见威灵大将军！这蟠桃胜境中郁郁葱葱，遍植三千年一熟、六千年一熟、九千年一熟的先天蟠桃母树！人吃了白日飞升、与天地齐寿！'
       },
       {
         speaker: '蟠桃园土地',
         speakerTitle: '【瑶池地仙】',
         speakerIcon: '👴',
-        text: '少侠既已潜入仙境，可每日采摘品尝仙桃快速晋升修为！品尝过后，小神亦可施地灵遁法送少侠返回刘家村或定居之处！',
+        text: '少侠请看，园中各处大仙树上皆结有熟透的发光仙桃！少侠只需移步走至仙树跟前，点击即可确认采摘吞服，大增道行！采摘品尝完毕，小神亦可引动遁法送少侠返回刘家村或居住地！',
         options: [
-          {
-            text: '【🍑 采摘品尝蟠桃，飞速提升修为经验】',
-            action: () => {
-              window.App2D.openPeachModal();
-            }
-          },
           {
             text: '【🌿 遁法传送：返回两界山·刘家村】',
             action: () => {
@@ -85,6 +79,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
             action: () => {
               if (window.Dialogue) window.Dialogue.close();
               window.App2D.teleportToResidence();
+            }
+          },
+          {
+            text: '【🍑 留步仙园：前去各株仙树前采摘仙桃】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.showGameMessage('🍑 前往园中大仙树下，靠近点击即可确认采摘仙桃！', 'info');
             }
           }
         ]
@@ -369,7 +370,16 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '李铁匠',
         speakerTitle: '【大唐名匠】',
         speakerIcon: '🔨',
-        text: '工欲善其事，必先利其器。少侠行走江湖切记时常检视兵刃，打磨淬火方能在对战妖王时不落下风！'
+        text: '工欲善其事，必先利其器。少侠行走江湖切记时常检视兵刃，打磨淬火方能在对战妖王时不落下风！',
+        options: [
+          {
+            text: '【🔨 打开神兵天成 · 装备打造与强化精炼面板】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.openForgeModal();
+            }
+          }
+        ]
       }
     ]
   },
@@ -1069,7 +1079,16 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '李靖总兵',
         speakerTitle: '【陈塘关守将】',
         speakerIcon: '🛡️',
-        text: '本总兵奉旨镇守陈塘雄关，扼守九湾河直通东海要道！东面常有龙宫虾兵蟹将与水妖出没，少侠行经此地，切莫惊扰了海界安宁。'
+        text: '本总兵奉旨镇守陈塘雄关，扼守九湾河直通东海要道！东面常有龙宫虾兵蟹将与水妖出没，少侠行经此地，切莫惊扰了海界安宁。',
+        options: [
+          {
+            text: '【📦 交付护送的大唐军饷镖银 (完成押镖)】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.submitEscortQuest('npc_lijing_zongbing');
+            }
+          }
+        ]
       }
     ]
   },
@@ -1081,6 +1100,32 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speakerTitle: '【降魔灵珠子】',
         speakerIcon: '🔥',
         text: '小爷我身披混天绫，脚踏风火轮，手执火尖枪！要是东海龙宫那帮泥鳅敢再兴风作浪掀起滔天海啸，小爷定将他们剥皮抽筋！'
+      }
+    ]
+  },
+
+  fisherman_talk: {
+    steps: [
+      {
+        speaker: '海滨老渔翁',
+        speakerTitle: '【陈塘老渔】',
+        speakerIcon: '🎣',
+        text: '老朽在这陈塘关海滨打了六十年鱼喽！少侠你看，东边这片金沙滩退潮时，常有灵河巨蚌、碧水老蚌精和铁甲金蟹、青蟹怪在沙滩上漫步横行，深水处还有那巡海大龙虾！'
+      },
+      {
+        speaker: '海滨老渔翁',
+        speakerTitle: '【陈塘老渔】',
+        speakerIcon: '🎣',
+        text: '这些海怪虽有些道行，但外壳坚硬正是淬火锻造的上好材料！少侠往东穿过潮水便是东海之滨，往西出关隘则是那二十级练功点野狐岭。不过仙令森严，修为未达标可过不去关门呢！',
+        options: [
+          {
+            text: '【多谢老丈指点迷津】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.showGameMessage('🎣 听老渔翁一席话，对东海潮汐野怪与陈塘关隘了然于胸！', 'info');
+            }
+          }
+        ]
       }
     ]
   },
@@ -1101,9 +1146,25 @@ window.GAME_DATA.STORY_DIALOGUES = {
     steps: [
       {
         speaker: '龟丞相',
-        speakerTitle: '【龙宫老管事】',
+        speakerTitle: '【龙宫总管】',
         speakerIcon: '🐢',
-        text: '老朽参见上仙！此处乃东海水底水晶宫，琉璃为瓦，明珠为帘。前面大殿便是我家龙王陛下会客之所，上仙请自便！'
+        text: '老朽参见上仙！此处乃东海水底水晶宫，琉璃为瓦，明珠为帘。老朽奉陛下法旨打理四海珍宝阁，奇珍异宝、仙家灵露应有尽有！',
+        options: [
+          {
+            text: '【🐚 打开【东海珍宝阁】(选购金柳露、高阶宝石、天外陨铁)】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.openDragonShopModal();
+            }
+          },
+          {
+            text: '【打探海藏秘辛与定海神针铁下落】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.showGameMessage('🐢 龟丞相：“大殿龙王陛下正为此事忧心！海藏深处有万年覆海蛟龙作乱，上仙速去大殿助龙王一臂之力！”', 'info', 4000);
+            }
+          }
+        ]
       }
     ]
   },
@@ -1114,9 +1175,206 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '东海龙王敖广',
         speakerTitle: '【四海龙尊】',
         speakerIcon: '🐉',
-        text: '哈哈哈哈！贵客临门，老龙有失远迎！当年那大闹天宫的花果山美猴王，也是从老龙这海藏之中取走了如意金箍棒！威灵大将今日至此，龙宫珍宝任少侠赏阅！'
+        text: '哈哈哈哈！威灵大将军大驾光临，老龙有失远迎！当年大圣取走了如意金箍棒，如今海眼深处又有一尊大禹治水留存的【天河定海神珍铁·仿】镇压龙脉。'
+      },
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【四海龙尊】',
+        speakerIcon: '🐉',
+        text: '奈何深海凶兽【覆海蛟龙王】正率水妖撞击神针结界欲掀起滔天海啸！若将军能助老龙荡平蛟妖、通过深海试炼，老龙愿将神针与【紫金红葫芦】、【避水神珠】双手奉上！',
+        options: [
+          {
+            text: '【🌊 开启【龙宫借宝 · 深海试炼】：力斩覆海蛟龙王！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.triggerDonghaiTrialBattle();
+            }
+          },
+          {
+            text: '【稍作休整，备足仙丹再战】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // === 长安城伏魔判官钟馗 (日常抓鬼除魔) ===
+  zhongkui_talk: {
+    steps: [
+      {
+        speaker: '钟馗',
+        speakerTitle: '【伏魔大将军】',
+        speakerIcon: '👹',
+        text: '豹头环眼，铁面虬鬓！吾乃终南山钟馗！奉玉帝法旨与唐王恩典，巡察九州三界，斩尽一切作祟恶鬼冤魂！'
+      },
+      {
+        speaker: '钟馗',
+        speakerTitle: '【伏魔大将军】',
+        speakerIcon: '👹',
+        text: '少侠神威凛凛，正合伏魔除煞之大义！少侠若愿替天行道降妖除祟，本官定当表奏天庭，赐你海量修行经验、万两白银与仙露琼浆【金柳露】！',
+        options: [
+          {
+            text: '【📜 领取今日【降妖除魔令】(钟馗抓鬼任务)】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.acceptZhongkuiGhostQuest();
+            }
+          },
+          {
+            text: '【🏆 提交已完成的伏魔任务，领取丰厚赏赐】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.submitZhongkuiGhostQuest();
+            }
+          },
+          {
+            text: '【🎯 立即一键神行寻路，前往当前除妖目标地】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.trackZhongkuiGhostTarget();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // === 长安城大唐镖局程咬金 (大唐运镖) ===
+  biaoju_talk: {
+    steps: [
+      {
+        speaker: '程咬金 (大唐镖头)',
+        speakerTitle: '【天下第一镖】',
+        speakerIcon: '🚩',
+        text: '哈哈哈！洒家乃是大唐卢国公程咬金，奉皇命总督天下镖局！如今各路边防与仙山要塞急需朝廷军饷与香火贡品，少侠可敢领镖押运？！'
+      },
+      {
+        speaker: '程咬金 (大唐镖头)',
+        speakerTitle: '【天下第一镖】',
+        speakerIcon: '🚩',
+        text: '押镖规矩：少侠需预付 1000 两押金领取引信，一路斩妖除盗，切记中途不可神行传送。待安全押至目的地，本总管不仅退还押金，更重赏 3500 两白银、修行经验与稀世【魔兽要诀】！',
+        options: [
+          {
+            text: '【🚩 接取今日【大唐军饷押运令】(支付1000两押金)】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.acceptEscortQuest();
+            }
+          },
+          {
+            text: '【📜 查看当前运镖进度与护送目标路线】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.checkEscortStatus();
+            }
+          },
+          {
+            text: '【暂且休整，备齐兵刃再来】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // === 长安城织造·苏绣娘 ===
+  changan_girl_talk: {
+    steps: [
+      {
+        speaker: '苏绣娘',
+        speakerTitle: '【长安织造】',
+        speakerIcon: '🧵',
+        text: '“长安一片月，万户捣衣声。” 少侠好英武的气概！大唐盛世太平，妾身刚绣成一批江南云锦蜀袍与香囊荷包，少侠游历三界风尘仆仆，可要挑一件称心的衣袍护体？'
+      }
+    ]
+  },
+
+  // === 长安城游方书生·杜子美 ===
+  changan_scholar_talk: {
+    steps: [
+      {
+        speaker: '杜子美',
+        speakerTitle: '【游方书生】',
+        speakerIcon: '📜',
+        text: '“忆昔开元全盛日，小邑犹藏万家室。稻米流脂粟米白，公私仓廪俱丰实。” 少侠请看，朱雀大街四海通商，百姓安居乐业，此乃千古未有之盛景也！愿少侠西行之途，亦能如大唐般光明坦荡！'
+      }
+    ]
+  },
+
+  // === 长安城挑担货郎·阿福 ===
+  changan_hawker_talk: {
+    steps: [
+      {
+        speaker: '货郎阿福',
+        speakerTitle: '【百味挑担】',
+        speakerIcon: '🍡',
+        text: '刚出炉的桂花芡实糕、三原蓼花糖、五仁素饼嘞！香甜软糯，走过路过不要错过！少侠闯荡江湖劳累，来两块甜糕垫垫肚子吧，祝少侠一路顺风顺水！'
+      }
+    ]
+  },
+
+  // === 长安城坊间小童·小虎 ===
+  changan_child_talk: {
+    steps: [
+      {
+        speaker: '小虎',
+        speakerTitle: '【坊间顽童】',
+        speakerIcon: '🍭',
+        text: '哇！少侠大哥哥好威风！听说化生寺的玄奘法师要讲佛经，我正要拉着小伙伴去听呢！少侠大哥哥，外面的世界真的有腾云驾雾的神仙和会变身的齐天大圣吗？'
+      }
+    ]
+  },
+
+  // === 长安城金甲禁军·巡城校尉 ===
+  changan_guard_talk: {
+    steps: [
+      {
+        speaker: '金甲校尉',
+        speakerTitle: '【御林巡卒】',
+        speakerIcon: '🛡️',
+        text: '金吾不禁，长安盛世！圣天子抚育四方，京都内外一片祥和。少侠既入皇城，还请归刀入鞘，若有恶霸地痞或暗潜妖邪作祟，我巡城禁军定当雷霆荡除！'
+      }
+    ]
+  },
+
+  // === 长安城古亭茶肆·茶圣阿婆 ===
+  changan_tea_talk: {
+    steps: [
+      {
+        speaker: '茶肆阿婆',
+        speakerTitle: '【长安茶肆】',
+        speakerIcon: '🍵',
+        text: '贵客请歇脚！这雨前龙井乃今春自江南八百里快马送达京师的头采嫩芽，以城外甘露灵泉烹煮，清香四溢！看少侠风尘仆仆，快来饮上一大碗，润润心肺！',
+        options: [
+          {
+            text: '【🍵 品尝一碗清甜灵泉龙井茶 (气血法力充盈)】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D && window.App2D.playerData) {
+                window.App2D.playerData.hp = window.App2D.playerData.maxHp;
+                window.App2D.playerData.mp = window.App2D.playerData.maxMp;
+                window.App2D.updateHudBars();
+                if (window.Sound) window.Sound.playSuccess();
+                window.showGameMessage('🍵 一盏甘洌仙茶入腹，只觉四肢百骸灵气流转，气血与法力已全部充盈！', 'success', 3500);
+              }
+            }
+          },
+          {
+            text: '【🏮 闲话大唐盛世】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.showGameMessage('🏮 阿婆笑呵呵道：“如今大唐海晏河清，四海胡商云集朱雀大街，少侠只管放宽心历练游历！”', 'info', 4000);
+            }
+          }
+        ]
       }
     ]
   }
 };
+
 

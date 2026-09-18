@@ -64,6 +64,146 @@ class MiniMapEngine {
       };
     }
 
+    // 6. 蛇盘山·鹰愁涧 -> 目标：寒潭小白龙
+    if (mapId === 'yingchoujian') {
+      return {
+        x: 12 * 32,
+        y: 8 * 32,
+        name: '寒潭小白龙',
+        desc: '迎战恶龙收服白龙马'
+      };
+    }
+
+    // 7. 乌斯藏·高老庄 -> 目标：高太公与云栈洞猪八戒
+    if (mapId === 'gaolaozhuang') {
+      return {
+        x: 11 * 32,
+        y: 8 * 32,
+        name: '高太公 / 猪八戒',
+        desc: '解救翠兰收服天蓬元帅'
+      };
+    }
+
+    // 8. 八百里·黄风岭 -> 目标：灵吉菩萨与黄风大圣
+    if (mapId === 'huangfengling') {
+      return {
+        x: 12 * 32,
+        y: 6 * 32,
+        name: '灵吉菩萨 / 黄风大圣',
+        desc: '借定风丹降伏三昧神风'
+      };
+    }
+
+    // 9. 八百里·流沙河 -> 目标：卷帘大将沙和尚
+    if (mapId === 'liushaho') {
+      return {
+        x: 11 * 32,
+        y: 7 * 32,
+        name: '沙悟净 (卷帘大将)',
+        desc: '以九骨骷髅结法船渡河'
+      };
+    }
+
+    // 10. 万寿山·五庄观 -> 目标：人参果树与镇元大仙
+    if (mapId === 'wuzhuangguan') {
+      return {
+        x: 11 * 32,
+        y: 6 * 32,
+        name: '镇元大仙人参果树',
+        desc: '拜访地仙之祖偷尝草还丹'
+      };
+    }
+
+    // 11. 陈塘关 -> 目标：哪吒三太子与李靖总兵
+    if (mapId === 'chentangguan') {
+      return {
+        x: 10 * 32,
+        y: 7 * 32,
+        name: '哪吒三太子',
+        desc: '会面灵珠哪吒，南下东海'
+      };
+    }
+
+    // 12. 东海之滨 -> 目标：巡海夜叉
+    if (mapId === 'donghai_coast') {
+      return {
+        x: 10 * 32,
+        y: 9 * 32,
+        name: '巡海夜叉',
+        desc: '凭避水神诀潜入东海水晶宫'
+      };
+    }
+
+    // 13. 东海水晶宫 -> 目标：龟丞相珍宝阁
+    if (mapId === 'shuijinggong') {
+      return {
+        x: 10 * 32,
+        y: 9 * 32,
+        name: '龟丞相 (四海珍宝阁)',
+        desc: '选购金柳露与魔兽要诀，进见龙王'
+      };
+    }
+
+    // 14. 东海龙宫大殿 -> 目标：东海龙王敖广 (定海神珍试炼)
+    if (mapId === 'longgong_palace') {
+      return {
+        x: 12 * 32,
+        y: 7 * 32,
+        name: '东海龙王敖广',
+        desc: '开启【深海试炼·借宝定海神珍】'
+      };
+    }
+
+    // 15. 浮屠山 -> 目标：乌巢禅师
+    if (mapId === 'futushan') {
+      return {
+        x: 10 * 32,
+        y: 8 * 32,
+        name: '乌巢禅师',
+        desc: '听禅师传授《摩诃般若多心经》'
+      };
+    }
+
+    // 16. 白虎岭 -> 目标：白骨夫人 (幽冥尸魔)
+    if (mapId === 'baihuling') {
+      return {
+        x: 14 * 32,
+        y: 10 * 32,
+        name: '白骨夫人 (尸魔)',
+        desc: '火眼金睛破幻象，三打白骨精'
+      };
+    }
+
+    // 17. 宝象国 -> 目标：黄袍怪 (波月洞奎木狼) 与百花羞
+    if (mapId === 'baoxiangguo') {
+      return {
+        x: 20 * 32,
+        y: 17 * 32,
+        name: '黄袍怪 (奎木狼)',
+        desc: '大破波月洞，解救百花羞公主'
+      };
+    }
+
+    // 18. 灵台方寸山 -> 目标：斜月三星洞菩提祖师
+    if (mapId === 'fangcunshan') {
+      return {
+        x: 10 * 32,
+        y: 6 * 32,
+        name: '菩提祖师',
+        desc: '顿悟《大品天仙诀》奥义道果'
+      };
+    }
+
+    // 19. 南海普陀落伽山 -> 目标：观世音菩萨
+    if (mapId === 'luojiashan') {
+      return {
+        x: 10 * 32,
+        y: 6 * 32,
+        name: '观世音菩萨',
+        desc: '紫竹潮音圣境，沐浴灵泉圆满功德'
+      };
+    }
+
     return null;
   }
 
@@ -226,19 +366,34 @@ class MiniMapEngine {
     ctx.fillStyle = beamGrad;
     ctx.fillRect(screenX - 8, screenY - 80, 16, 90);
 
-    // 3. 悬浮跳动的醒目金色感叹号
-    const bounceY = Math.sin(this.pulseTime * 4) * 5;
-    ctx.fillStyle = '#ffde59';
+    // 3. 悬浮跳动的醒目金色感叹号与仙道任务指引卷轴
+    const bounceY = Math.sin(this.pulseTime * 4) * 4;
+    const tagY = screenY - 72 + bounceY;
+
+    // 主线指引悬浮仙家锦帛卷轴
+    const questText = `【主线】${questTarget.desc}`;
+    ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
+    const textW = ctx.measureText(questText).width;
+
+    ctx.fillStyle = 'rgba(24, 16, 10, 0.85)';
+    ctx.beginPath();
+    ctx.roundRect(screenX - textW / 2 - 8, tagY - 8, textW + 16, 16, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fce7b2';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(questText, screenX, tagY);
+
+    // 锦帛下方的任务灵符感叹号
+    ctx.fillStyle = '#ffd700';
     ctx.shadowColor = '#ffd700';
     ctx.shadowBlur = 8;
-    ctx.font = 'bold 26px "Microsoft YaHei", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('！', screenX, screenY - 45 + bounceY);
-
-    // 主线指引悬浮标签
-    ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
-    ctx.fillStyle = '#ffd700';
-    ctx.fillText(`【主线】${questTarget.desc}`, screenX, screenY - 68 + bounceY);
+    ctx.font = 'bold 18px "Microsoft YaHei", sans-serif';
+    ctx.fillText('！', screenX, screenY - 48 + bounceY);
 
     ctx.restore();
   }

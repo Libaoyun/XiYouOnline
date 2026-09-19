@@ -132,7 +132,7 @@ class GameApp2D {
       id: 'player',
       name: this.playerData.name,
       type: 'player',
-      appearance: 'heaven_general',
+      appearance: 'martial_hero',
       speed: 3.2
     });
 
@@ -170,6 +170,12 @@ class GameApp2D {
     } else if (testCombat === 'bailong') {
       setTimeout(() => {
         this.triggerYingchouBattle();
+      }, 50);
+    } else if (testCombat === 'wolf') {
+      this.playerData.name = '铁扇公主';
+      this.playerChar.appearance = 'tieshan';
+      setTimeout(() => {
+        this.triggerWolfBattle();
       }, 50);
     } else if (testCombat === 'bajie') {
       // 加入孙悟空同伴并进入猪八戒战斗
@@ -294,8 +300,40 @@ class GameApp2D {
   updateSaveIndicator(isSaved = true) {
     const el = document.getElementById('save-status-indicator');
     if (el) {
-      el.innerHTML = isSaved ? '💾 进度已保存' : '⏳ 正在保存...';
+      el.innerHTML = isSaved ? '●' : '⏳';
       el.style.color = isSaved ? '#2ed573' : '#ffd700';
+    }
+  }
+
+  // 展开或收起乾坤折叠主菜单 (快捷键 M 或界面按钮)
+  toggleFoldableMenu(forceState) {
+    const menuEl = document.getElementById('foldable-menu-modal');
+    if (!menuEl) return;
+    const shouldOpen = (forceState !== undefined) ? forceState : (menuEl.style.display === 'none' || !menuEl.classList.contains('active'));
+
+    if (shouldOpen) {
+      if (window.Dialogue) window.Dialogue.close();
+      document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+      menuEl.style.display = 'flex';
+      void menuEl.offsetHeight; // 强制重绘激活过渡动画
+      menuEl.classList.add('active');
+      this.isMenuOpen = true;
+      this.updateMenuSoundLabel();
+      if (window.Sound) window.Sound.playBeep();
+    } else {
+      menuEl.classList.remove('active');
+      this.isMenuOpen = false;
+      setTimeout(() => {
+        if (!this.isMenuOpen) menuEl.style.display = 'none';
+      }, 220);
+    }
+  }
+
+  // 同步主菜单中的音效开关状态文案
+  updateMenuSoundLabel() {
+    const labelEl = document.getElementById('menu-sound-label');
+    if (labelEl && window.Sound) {
+      labelEl.innerText = window.Sound.enabled ? '八音仙乐: 开' : '八音仙乐: 关';
     }
   }
 
@@ -344,6 +382,7 @@ class GameApp2D {
       x: m.x,
       y: m.y,
       speed: 1.2,
+      appearance: m.appearance || m.id,
       patrolRadius: m.patrolRadius || 30
     }));
 
@@ -373,13 +412,50 @@ class GameApp2D {
   bindInputs() {
     window.addEventListener('keydown', (e) => {
       this.keysDown[e.key] = true;
+      if (this.currentBattle) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          if (this.battleSkillMenuOpen) {
+            const skills = this.playerData ? this.playerData.getSkills() : [];
+            if (skills.length > 0) this.chooseCombatAction('skill', skills[0].id);
+          } else {
+            this.chooseCombatAction('attack');
+          }
+          return;
+        } else if (e.key === 'q' || e.key === 'Q') {
+          this.toggleSkillMenu(!this.battleSkillMenuOpen);
+          return;
+        } else if (e.key === 'w' || e.key === 'W') {
+          this.chooseCombatAction('defend');
+          return;
+        } else if (e.key === 'e' || e.key === 'E') {
+          this.chooseCombatAction('item');
+          return;
+        } else if (e.key === 'r' || e.key === 'R') {
+          this.chooseCombatAction('capture');
+          return;
+        }
+      }
+
       if (e.key === ' ' || e.key === 'Enter') {
         this.interactNearby();
       } else if (e.key === 'r' || e.key === 'R') {
         this.toggleMountRiding();
+      } else if (e.key === 'm' || e.key === 'M') {
+        this.toggleFoldableMenu();
       } else if (e.key === 'k' || e.key === 'K') {
         this.openClassSelectModal();
+      } else if (e.key === 'c' || e.key === 'C') {
+        this.openPlayerProfileModal();
+      } else if (e.key === 'b' || e.key === 'B') {
+        this.openInventoryModal('all');
+      } else if (e.key === '1') {
+        this.openPeachModal();
+      } else if (e.key === '3') {
+        this.openMountModal();
       } else if (e.key === 'Escape') {
+        if (this.isMenuOpen) {
+          this.toggleFoldableMenu(false);
+        }
         if (window.Dialogue) window.Dialogue.close();
         document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
       }
@@ -428,6 +504,7 @@ class GameApp2D {
       soundBtn.addEventListener('click', () => {
         const enabled = window.Sound.toggle();
         soundBtn.innerHTML = enabled ? '🔊 音效:开' : '🔇 音效:关';
+        this.updateMenuSoundLabel();
         if (enabled) window.Sound.playBeep();
       });
     }
@@ -825,6 +902,137 @@ class GameApp2D {
     const res = this.peachGarden.eatPeach(tierId, this.playerData, this.inventory);
     this.updatePlayerHud();
     window.showGameMessage(res.msg, res.success ? 'success' : 'warning');
+  }
+
+  // =========================================================================
+  // 📜 角色仙籍面板 (五维潜能自由分配、门派绝技查看、装备抗性加成)
+  // =========================================================================
+  openPlayerProfileModal() {
+    if (window.Dialogue) window.Dialogue.close();
+    document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+
+    const p = this.playerData;
+    const cData = (window.GAME_DATA && window.GAME_DATA.CLASSES && window.GAME_DATA.CLASSES[p.classId]) || { name: '散仙', title: '三界游侠' };
+    const nextExp = p.getNextLevelExp();
+    const expPercent = Math.min(100, Math.floor((p.exp / nextExp) * 100));
+
+    const attrDefs = [
+      { key: 'con', name: '体质', desc: '增加气血上限与气血恢复', value: p.attributes.con },
+      { key: 'str', name: '力量', desc: '提升强力物理攻击伤害', value: p.attributes.str },
+      { key: 'int', name: '灵气', desc: '提升法术攻击与法力上限', value: p.attributes.int },
+      { key: 'sta', name: '耐力', desc: '提升身躯硬度物理/法术防御', value: p.attributes.sta },
+      { key: 'dex', name: '敏捷', desc: '提升回合出手速度与身法', value: p.attributes.dex },
+    ];
+
+    const modalHtml = `
+      <div class="modal-overlay" onclick="this.remove()">
+        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:440px;width:92%;">
+          <div class="modal-header">
+            <span class="modal-title">📜 仙籍档案 · 人物五维与属性</span>
+            <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
+          </div>
+          <div class="modal-body" style="padding:10px;">
+            <!-- 角色名片与门派 -->
+            <div style="background:rgba(20,15,10,0.85);border:1px solid #5c4732;border-radius:8px;padding:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:14px;font-weight:bold;color:#ffd700;">${p.name} <span style="font-size:11px;color:#2ecc71;">Lv.${p.level}</span></div>
+                <div style="font-size:11px;color:#aaa;margin-top:2px;">门派：<span style="color:#e67e22;font-weight:bold;">${cData.name}</span> (${cData.title || '齐天后裔'})</div>
+              </div>
+              <div style="text-align:right;font-size:11px;">
+                <div>🪙 银两: <span style="color:#ffd700;">${p.silver}</span> 两</div>
+                <div>✨ 仙玉: <span style="color:#00ffff;">${p.ingots}</span></div>
+              </div>
+            </div>
+
+            <!-- 经验条 -->
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-bottom:2px;">
+                <span>修为经验: ${p.exp} / ${nextExp}</span>
+                <span>${expPercent}%</span>
+              </div>
+              <div style="background:#222;border-radius:4px;height:7px;overflow:hidden;border:1px solid #444;">
+                <div style="background:linear-gradient(90deg, #f1c40f, #e67e22);height:100%;width:${expPercent}%;"></div>
+              </div>
+            </div>
+
+            <!-- 核心战斗面板 -->
+            <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:6px;margin-bottom:10px;">
+              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
+                ❤️ 气血上限: <span style="color:#2ecc71;font-weight:bold;">${p.hp} / ${p.maxHp}</span>
+              </div>
+              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
+                💧 法力上限: <span style="color:#3498db;font-weight:bold;">${p.mp} / ${p.maxMp}</span>
+              </div>
+              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
+                ⚔️ 物理攻击: <span style="color:#e74c3c;font-weight:bold;">${p.atk}</span>
+              </div>
+              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
+                🛡️ 物理防御: <span style="color:#f39c12;font-weight:bold;">${p.def}</span>
+              </div>
+              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
+                🔮 法术伤害: <span style="color:#9b59b6;font-weight:bold;">${p.matk}</span>
+              </div>
+              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
+                ⚡ 出手速度: <span style="color:#1abc9c;font-weight:bold;">${p.spd}</span>
+              </div>
+            </div>
+
+            <!-- 五维自由潜能加点 -->
+            <div style="background:rgba(20,15,10,0.85);border:1px solid #5c4732;border-radius:8px;padding:8px;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:11px;font-weight:bold;color:#ffd700;">🌟 自由潜能点: <span style="color:#00ffcc;font-size:13px;">${p.potentialPoints}</span></span>
+                ${p.potentialPoints > 0 ? `<span style="font-size:10px;color:#f39c12;">点击加号分配潜能点</span>` : `<span style="font-size:10px;color:#888;">升级可获潜能点</span>`}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                ${attrDefs.map(attr => `
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:4px;border:1px solid #3d2c1c;">
+                    <div style="display:flex;flex-direction:column;">
+                      <span style="font-size:11px;color:#f5f0e6;font-weight:bold;">${attr.name} <span style="color:#ffd700;">${attr.value}</span></span>
+                      <span style="font-size:9px;color:#887766;">${attr.desc}</span>
+                    </div>
+                    <div>
+                      ${p.potentialPoints > 0 ? `
+                        <button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 1)" style="padding:2px 8px;font-size:10px;margin-left:4px;">+1</button>
+                        ${p.potentialPoints >= 5 ? `<button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 5)" style="padding:2px 6px;font-size:10px;background:#5c1d18;margin-left:2px;">+5</button>` : ''}
+                      ` : `
+                        <span style="font-size:10px;color:#555;">已配置</span>
+                      `}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- 抗性与仙宠限制 -->
+            <div style="background:rgba(15,20,15,0.7);border:1px solid #325c42;border-radius:6px;padding:6px 8px;font-size:10px;line-height:1.6;color:#9ec5ab;">
+              <div>🛡️ 门派专精抗性: 物抗+${Math.round((p.resistances.res_phy || 0)*100)}% · 佛光+${Math.round((p.resistances.res_foguang || 0)*100)}% · 舍生+${Math.round((p.resistances.res_shesheng || 0)*100)}%</div>
+              <div>🐾 战宠出阵上限: 同时出战 <span style="color:#ffd700;font-weight:bold;">${p.getMaxCombatPets()}</span> 只仙宠 (随等级解锁更多)</div>
+            </div>
+
+            <div style="margin-top:10px;display:flex;gap:6px;">
+              <button class="dialogue-opt-btn" onclick="window.App2D.openClassSelectModal();" style="flex:1;">☯️ 切换门派绝技 [K]</button>
+              <button class="dialogue-opt-btn" onclick="window.App2D.openInventoryModal('equip');" style="flex:1;">🛡️ 查看佩戴装备</button>
+              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove();" style="flex:1;background:#3a291a;">关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const v = document.getElementById('game-viewport') || document.body;
+    v.insertAdjacentHTML('beforeend', modalHtml);
+    if (window.Sound) window.Sound.playBeep();
+  }
+
+  allocateStat(attrKey, amount = 1) {
+    if (this.playerData.allocatePoints(attrKey, amount)) {
+      this.updatePlayerHud();
+      if (window.Sound) window.Sound.playBeep();
+      window.showGameMessage(`✨ 潜能分配成功！当前 ${attrKey}: ${this.playerData.attributes[attrKey]}`, 'success', 2000);
+      this.openPlayerProfileModal();
+    } else {
+      window.showGameMessage('潜能点不足！', 'warning', 2000);
+    }
   }
 
   // =========================================================================
@@ -1599,20 +1807,21 @@ class GameApp2D {
   // 4. 触发猛兽战斗
   triggerMonsterBattle(monsterChar) {
     const mob = {
-      id: 'mob_wolf_1',
+      id: monsterChar.id,
       name: monsterChar.name,
+      modelId: monsterChar.appearance || monsterChar.id,
       isMutated: false,
       isBoss: false,
-      level: 3,
-      hp: 150,
-      maxHp: 150,
+      level: monsterChar.level || 3,
+      hp: monsterChar.maxHp || 150,
+      maxHp: monsterChar.maxHp || 150,
       mp: 50,
       maxMp: 50,
-      atk: 32,
-      def: 16,
+      atk: monsterChar.atk || 32,
+      def: monsterChar.def || 16,
       matk: 10,
       mdef: 10,
-      spd: 20,
+      spd: monsterChar.spd || 20,
       skills: ['连击']
     };
 
@@ -1702,6 +1911,50 @@ class GameApp2D {
     window.Sound.playLevelUp();
     this.updatePlayerHud();
     window.showGameMessage('🎉【小白龙敖烈】化为龙马神驹加入！气血大幅增加，坐骑奔驰如电！', 'success', 4500);
+  }
+
+  // === 经典野外演武战斗 (复刻图3：野狼 vs 铁扇公主与无敌黄飞鸿) ===
+  triggerWolfBattle() {
+    if (window.Dialogue) window.Dialogue.close();
+    if (this.playerData) {
+      this.playerData.name = '无敌黄飞鸿';
+      this.playerData.level = Math.max(25, this.playerData.level);
+    }
+    // 添加铁扇公主为协同仙宠/同伴 (复刻图3仙宠1位)
+    this.companions = [{
+      id: 'companion_tieshan',
+      name: '铁扇公主',
+      modelId: 'tieshan',
+      roleId: 'tieshan',
+      level: 20,
+      hp: 3600,
+      maxHp: 3600,
+      mp: 1200,
+      maxMp: 1200,
+      atk: 145,
+      def: 80,
+      skills: [{ id: 'bajiao_feng', name: '芭蕉狂风', costMp: 45 }]
+    }];
+
+    const wolf = {
+      id: 'monster_wolf',
+      modelId: 'wild_wolf',
+      name: '野狼',
+      level: 15,
+      hp: 2200,
+      maxHp: 2200,
+      mp: 500,
+      maxMp: 500,
+      atk: 135,
+      def: 65,
+      matk: 40,
+      mdef: 45,
+      spd: 22,
+      skills: ['撕咬', '扑击', '野性呼唤']
+    };
+    this.start2DBattle([wolf], () => {
+      window.showGameMessage('🎉【斩妖降魔】降伏凶顽恶狼，获得大量修行道行与仙玉！', 'success', 3500);
+    });
   }
 
   // === 第五章：高老庄天蓬元帅猪八戒战 ===
@@ -1942,7 +2195,8 @@ class GameApp2D {
     });
   }
 
-  // 战斗桥接与全屏渲染 (彻底消除卡死，国风立绘)
+  // 战斗桥接与全屏渲染 (彻底消除卡死，国风立绘，战术时序与动作打击)
+  // 战斗桥接与全屏渲染 (经典汉风三栏布局：左敌方竖排，中操作竖排，右我方四位竖排)
   start2DBattle(enemies, onVictoryCallback) {
     if (window.Dialogue) {
       window.Dialogue.close();
@@ -1954,171 +2208,841 @@ class GameApp2D {
     battleEl.style.display = 'flex';
     this.isPaused = true;
 
-    const activeCompanion = this.companions[0] || null;
+    // 仙宠出战规则：20级带1只、30级带2只、40级带3只
+    const maxPets = this.playerData.getMaxCombatPets ? this.playerData.getMaxCombatPets() : 0;
+    let combatAllies = [];
+    if (this.activeCombatPets && this.activeCombatPets.length > 0) {
+      combatAllies = this.activeCombatPets.slice(0, maxPets);
+    } else if (this.pets && this.pets.length > 0) {
+      combatAllies = this.pets.slice(0, maxPets);
+    }
+
+    // 剧情协同同伴（若仙宠槽位有余且非重复则出战助威）
+    if (this.companions && this.companions.length > 0) {
+      for (const comp of this.companions) {
+        if (!combatAllies.some(p => p.name === comp.name) && combatAllies.length < 3) {
+          combatAllies.push(comp);
+        }
+      }
+    }
 
     this.currentBattle = new window.BattleEngine(
       this.playerData,
-      activeCompanion,
+      combatAllies,
       enemies
     );
 
     this.selectedTargetIndex = 0;
+    this.selectedAllyId = 'player';
     this.battleSkillMenuOpen = false;
-    this.renderBattleInterface();
+    this.battleCountdown = 30;
+    this.autoCombatEnabled = false;
+    this.combatSpeedMultiplier = 1;
     this.battleVictoryCallback = onVictoryCallback;
+
+    this.startBattleCountdown();
+    this.renderBattleInterface();
+    this.startBattleLoop();
+  }
+
+  startBattleCountdown() {
+    this.stopBattleCountdown();
+    this.battleCountdown = 30;
+    this.battleCountdownTimer = setInterval(() => {
+      if (!this.currentBattle) {
+        this.stopBattleCountdown();
+        return;
+      }
+      this.battleCountdown--;
+      const pillTextEl = document.getElementById('battle-acting-countdown-text');
+      if (pillTextEl) {
+        pillTextEl.innerText = `(${this.battleCountdown})`;
+      }
+      if (this.battleCountdown <= 0) {
+        this.battleCountdown = 30;
+        this.executeCombatRound();
+      }
+    }, 1000);
+  }
+
+  stopBattleCountdown() {
+    if (this.battleCountdownTimer) {
+      clearInterval(this.battleCountdownTimer);
+      this.battleCountdownTimer = null;
+    }
+  }
+
+  startBattleLoop() {
+    if (this.battleAnimId) {
+      cancelAnimationFrame(this.battleAnimId);
+      this.battleAnimId = null;
+    }
+    const loop = () => {
+      if (!this.currentBattle) return;
+      this.renderBattleCanvasFrame();
+      this.battleAnimId = requestAnimationFrame(loop);
+    };
+    this.battleAnimId = requestAnimationFrame(loop);
+  }
+
+  stopBattleLoop() {
+    if (this.battleAnimId) {
+      cancelAnimationFrame(this.battleAnimId);
+      this.battleAnimId = null;
+    }
   }
 
   toggleSkillMenu(isOpen) {
     this.battleSkillMenuOpen = isOpen;
+    const hexSvg = document.getElementById('battle-hex-svg');
+    const skillPanel = document.getElementById('battle-skill-panel');
+    if (hexSvg && skillPanel) {
+      hexSvg.style.display = isOpen ? 'none' : 'block';
+      skillPanel.style.display = isOpen ? 'flex' : 'none';
+      if (window.Sound) window.Sound.playBeep();
+      return;
+    }
     this.renderBattleInterface();
   }
 
+  selectTarget(idx) {
+    if (!this.currentBattle) return;
+    this.selectedTargetIndex = idx;
+    if (window.Sound) window.Sound.playBeep();
+    this.renderBattleInterface();
+  }
+
+  selectAlly(allyId) {
+    if (!this.currentBattle) return;
+    const targetAlly = this.currentBattle.allies.find(a => a.id === allyId);
+    if (!targetAlly || targetAlly.hp <= 0) return;
+    this.selectedAllyId = allyId;
+    this.battleSkillMenuOpen = false;
+    if (window.Sound) window.Sound.playBeep();
+    this.renderBattleInterface();
+  }
+
+  handleHexCombatAction(action) {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+    if (window.Sound) window.Sound.playBeep();
+    if (action === 'attack') {
+      this.chooseCombatAction('attack');
+    } else if (action === 'skill') {
+      this.toggleSkillMenu(!this.battleSkillMenuOpen);
+    } else if (action === 'capture') {
+      this.chooseCombatAction('capture');
+    } else if (action === 'item') {
+      this.chooseCombatAction('item');
+    } else if (action === 'pet') {
+      window.showGameMessage('🐾 仙宠正随你列阵战敌！点击右侧仙宠形象可直接指派出招。', 'info');
+    } else if (action === 'flee') {
+      this.chooseCombatAction('flee');
+    } else if (action === 'defend') {
+      this.chooseCombatAction('defend');
+    }
+  }
+
+  toggleAutoCombat() {
+    this.autoCombatEnabled = !this.autoCombatEnabled;
+    window.showGameMessage(this.autoCombatEnabled ? '⚔️ 已开启全员自动施法出招！' : '🛑 已解除自动出招', 'info');
+    this.renderBattleInterface();
+    if (this.autoCombatEnabled && this.currentBattle && this.currentBattle.status !== 'executing') {
+      this.executeCombatRound();
+    }
+  }
+
+  toggleCombatSpeed() {
+    this.combatSpeedMultiplier = (this.combatSpeedMultiplier === 2) ? 1 : 2;
+    window.showGameMessage(`⏩ 战斗演武速度已切换为 ${this.combatSpeedMultiplier}x`, 'info');
+    this.renderBattleInterface();
+  }
+
+  // 渲染经典MRP回合战场：顶部双龙金匾、中央全幅模型战场+六边形蜂窝阵、底部自动出招控制
   renderBattleInterface() {
     const layer = document.getElementById('battle-screen-layer');
     if (!layer || !this.currentBattle) return;
 
-    // 检查我方是否处于隐身咒状态 (属性隐匿)
-    const isPlayerInvis = this.currentBattle.playerBuffs.some(b => b.id === 'yinshen' || b.name === '隐身潜行' || b.hideAttributes);
-    const skills = this.playerData.getSkills();
+    const turnQueue = (this.currentBattle && this.currentBattle.turnQueue) || [];
+    const curTarget = this.currentBattle.enemies[this.selectedTargetIndex] || this.currentBattle.enemies[0];
+    const curAllyId = this.selectedAllyId || 'player';
+    const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
+    const skills = curAlly?.isPlayer ? this.playerData.getSkills() : (curAlly?.skills || []);
 
     layer.innerHTML = `
-      <div class="battle-container" style="width:100%;height:100%;background:radial-gradient(circle at center, #26190f 0%, #0d0906 100%);padding:14px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;">
-        <div class="battle-arena" id="battle-arena-2d" style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;">
-          <!-- 敌方阵容 (国风立绘) -->
-          <div class="enemy-formation" style="display:flex;gap:16px;">
-            ${this.currentBattle.enemies.map((e, idx) => `
-              <div class="combatant-unit ${idx === this.selectedTargetIndex ? 'selected-target' : ''}" data-enemy-index="${idx}" onclick="window.App2D.selectTarget(${idx})" style="background:rgba(20,15,10,0.88);border:2px solid ${idx === this.selectedTargetIndex ? '#ff3838' : '#c59b27'};border-radius:10px;padding:8px 14px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.8);position:relative;">
-                <!-- 敌方受控 Debuff 标记 -->
-                ${this.currentBattle.enemyBuffs[idx]?.map(b => `
-                  <div style="position:absolute;top:-8px;right:-4px;background:#c0392b;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;border:1px solid #ffd700;">
-                    ${b.name}
-                  </div>
-                `).join('') || ''}
-                <div class="combatant-sprite" style="display:flex;justify-content:center;margin-bottom:6px;">
-                  ${window.Portraits ? window.Portraits.getPortraitSvg(e.id, 68) : ''}
-                </div>
-                <div class="combatant-info" style="text-align:center;">
-                  <div class="combatant-name" style="color:#ff6b6b;font-weight:bold;font-size:12px;margin-bottom:4px;">${e.name} (Lv.${e.level})</div>
-                  <div class="bar-track" style="width:110px;height:7px;background:#333;border-radius:4px;overflow:hidden;margin:0 auto;">
-                    <div class="bar-fill-hp" style="width:${Math.max(0, (e.hp / e.maxHp) * 100)}%;height:100%;background:linear-gradient(90deg, #ff4757, #ff6b81);"></div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
+      <div class="battle-container" id="battle-main-container" style="width:100%;height:100%;background:#0a0c09;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;box-shadow:inset 0 0 35px #000;">
+
+        <!-- 1. 顶部双龙金匾与战术信息横幅 (复刻图3标准) -->
+        <div class="battle-dragon-header-bar">
+          <div class="dragon-plaque-container">
+            <span class="dragon-crest-icon">🐉</span>
+            <div class="dragon-plaque-text">战 斗</div>
+            <span class="dragon-crest-icon" style="transform: scaleX(-1);">🐉</span>
           </div>
 
-          <!-- 我方阵容 (支持大圣、八戒、沙僧并肩作战) -->
-          <div class="ally-formation" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;max-width:55%;">
-            <div class="combatant-unit" style="background:rgba(20,15,10,0.88);border:2px solid #ffd700;border-radius:10px;padding:8px 12px;box-shadow:0 4px 15px rgba(0,0,0,0.8);position:relative;">
-              <!-- 玩家 Buff 标记 -->
-              ${this.currentBattle.playerBuffs.map(b => `
-                <div style="position:absolute;top:-8px;left:-4px;background:#27ae60;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;border:1px solid #ffd700;">
-                  ${b.name}
-                </div>
+          <div class="battle-banner-pills-row">
+            <div class="battle-banner-pill" title="当前攻击目标">
+              <span>🎯 目标:</span>
+              <span style="color:#ff6b81;">${curTarget ? curTarget.name : '未指定'}</span>
+            </div>
+
+            <div class="battle-banner-pill acting-pill" title="当前指令角色与出招倒计时">
+              <span>⚡ ${curAlly ? curAlly.name : '侠士'}-出招</span>
+              <span id="battle-acting-countdown-text" style="color:#ffd700;font-weight:900;">(${this.battleCountdown || 30})</span>
+            </div>
+
+            <div class="battle-banner-pill" title="指挥玩家本尊">
+              <span>👤 ${this.playerData ? this.playerData.name : '侠士'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 战术时序速度轴 -->
+        <div class="battle-timeline-bar" style="margin: 3px 10px 1px 10px; padding: 2px 8px; font-size: 10px; border-radius: 4px;">
+          <span class="timeline-title" style="font-size:10px;">📜 行动序:</span>
+          ${turnQueue.map(item => `
+            <div class="timeline-badge ${item.side === 'ally' ? 'timeline-ally' : 'timeline-enemy'}" style="padding: 1px 6px; font-size: 10px;">
+              <span class="timeline-num">#${item.turnOrder}</span>
+              <span class="timeline-name">${item.name}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- 动效浮层 (飘字、刀光、雷霆) -->
+        <div id="battle-fx-layer" class="battle-fx-layer"></div>
+
+        <!-- 2. 战场主舞台：Canvas模型站立阵列 + 中央六边形蜂窝操作矩阵 -->
+        <div class="battle-stage-area" id="battle-stage-area" style="flex:1;position:relative;width:100%;min-height:280px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          <!-- 战场全景与角色模型 Canvas -->
+          <canvas id="battle-scene-canvas"></canvas>
+
+          <!-- 3. 中央：暗红漆金蜂窝六边形按键矩阵 (复刻图3核心按键) 与 绝技选择面板 (常驻DOM，稳定定位) -->
+          <div class="battle-honeycomb-menu-container" id="battle-honeycomb-menu" style="${this.currentBattle.status === 'executing' ? 'opacity:0.35;pointer-events:none;' : 'opacity:1;pointer-events:auto;'}">
+            <!-- 常驻七蜂窝指令矩阵 -->
+            <svg viewBox="0 0 148 240" class="hex-btn-cluster" id="battle-hex-svg" style="display:${this.battleSkillMenuOpen ? 'none' : 'block'};width:142px;height:230px;">
+              <defs>
+                <linearGradient id="lacquerRedGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#b32424" />
+                  <stop offset="50%" stop-color="#7a1414" />
+                  <stop offset="100%" stop-color="#3d0606" />
+                </linearGradient>
+                <linearGradient id="lacquerRedHoverGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#d63031" />
+                  <stop offset="50%" stop-color="#991b1b" />
+                  <stop offset="100%" stop-color="#550c0c" />
+                </linearGradient>
+              </defs>
+
+              <!-- 左列: 4个六边形 (x: 4) -->
+              <!-- 攻击 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('attack')" transform="translate(4, 2)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">攻击</text>
+                <text x="28" y="44" class="hex-btn-key">[Space]</text>
+              </g>
+              <!-- 收服 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('capture')" transform="translate(4, 58)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">收服</text>
+                <text x="28" y="44" class="hex-btn-key">[R]</text>
+              </g>
+              <!-- 仙宠 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('pet')" transform="translate(4, 114)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">仙宠</text>
+                <text x="28" y="44" class="hex-btn-key">🐾</text>
+              </g>
+              <!-- 休息 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('defend')" transform="translate(4, 170)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">休息</text>
+                <text x="28" y="44" class="hex-btn-key">[W]</text>
+              </g>
+
+              <!-- 右列: 3个六边形 (x: 52, y偏移28) -->
+              <!-- 技能 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('skill')" transform="translate(52, 30)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">技能</text>
+                <text x="28" y="44" class="hex-btn-key">[Q]</text>
+              </g>
+              <!-- 物品 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('item')" transform="translate(52, 86)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">物品</text>
+                <text x="28" y="44" class="hex-btn-key">[E]</text>
+              </g>
+              <!-- 逃跑 -->
+              <g class="hex-svg-btn" onclick="window.App2D.handleHexCombatAction('flee')" transform="translate(52, 142)">
+                <polygon points="28,0 56,16 56,48 28,64 0,48 0,16" class="hex-polygon-bg"/>
+                <text x="28" y="27" class="hex-btn-label">逃跑</text>
+                <text x="28" y="44" class="hex-btn-key">💨</text>
+              </g>
+            </svg>
+
+            <!-- 绝技选择面板 (常驻DOM，通过display互斥，不破坏布局，杜绝重叠与重排闪烁) -->
+            <div class="battle-skill-popup-panel" id="battle-skill-panel" style="display:${this.battleSkillMenuOpen ? 'flex' : 'none'};">
+              <div style="font-size:12px;font-weight:bold;color:#ffd700;border-bottom:1px solid #c59b27;padding-bottom:3px;display:flex;justify-content:space-between;align-items:center;">
+                <span>✨ 施展门派绝技</span>
+                <span style="font-size:10.5px;cursor:pointer;color:#ffd700;" onclick="window.App2D.toggleSkillMenu(false)">✕ 返回指令</span>
+              </div>
+              ${skills.length === 0 ? `<div style="font-size:10px;color:#888;text-align:center;padding:10px 0;">尚未领悟绝技</div>` : skills.map(sk => `
+                <button class="battle-skill-item-btn" onclick="window.App2D.chooseCombatAction('skill', '${sk.id}')">
+                  <div>
+                    <div style="color:#ffd700;font-weight:bold;font-size:11.5px;">${sk.icon || '🔥'} ${sk.name}</div>
+                    <div style="font-size:9px;color:#a8e6cf;">消耗: ${sk.costMp ? `${sk.costMp}精力` : '无'}</div>
+                  </div>
+                  <span style="font-size:10px;color:#f5cd79;">出招 ▶</span>
+                </button>
               `).join('')}
-
-              <div class="combatant-sprite" style="display:flex;justify-content:center;margin-bottom:6px;filter:${isPlayerInvis ? 'opacity(0.55) blur(1px)' : 'none'};">
-                ${window.Portraits ? window.Portraits.getPortraitSvg(this.playerChar.appearance, 64) : ''}
-              </div>
-              <div class="combatant-info" style="text-align:center;">
-                <div class="combatant-name" style="color:#ffd700;font-weight:bold;font-size:12px;margin-bottom:4px;">
-                  ${this.playerData.name} ${isPlayerInvis ? '<span style="color:#70a1ff;font-size:10px;">[隐身匿气]</span>' : `(Lv.${this.playerData.level})`}
-                </div>
-                <div class="bar-track" style="width:95px;height:7px;background:#333;border-radius:4px;overflow:hidden;margin:0 auto 3px auto;">
-                  <div class="bar-fill-hp" style="width:${Math.max(0, (this.playerData.hp / this.playerData.maxHp) * 100)}%;height:100%;background:linear-gradient(90deg, #2ed573, #7bed9f);"></div>
-                </div>
-                <div class="bar-track" style="width:95px;height:5px;background:#333;border-radius:3px;overflow:hidden;margin:0 auto;">
-                  <div class="bar-fill-mp" style="width:${Math.max(0, (this.playerData.mp / this.playerData.maxMp) * 100)}%;height:100%;background:linear-gradient(90deg, #1e90ff, #70a1ff);"></div>
-                </div>
-                <div style="font-size:9px;color:#bbb;margin-top:2px;">
-                  ${isPlayerInvis ? '属性: ??? / ???' : `${this.playerData.hp}/${this.playerData.maxHp} HP`}
-                </div>
-              </div>
+              <button class="mrp-vertical-btn" style="padding:4px;font-size:11px;margin-top:2px;" onclick="window.App2D.toggleSkillMenu(false)">◀ 返回指令</button>
             </div>
-
-            <!-- 同伴护法神队伍 (孙悟空 / 猪八戒 / 沙悟净) -->
-            ${this.companions.slice(0, 3).map(comp => `
-              <div class="combatant-unit" style="background:rgba(20,15,10,0.88);border:2px solid #f39c12;border-radius:10px;padding:8px 12px;box-shadow:0 4px 15px rgba(0,0,0,0.8);">
-                <div class="combatant-sprite" style="display:flex;justify-content:center;margin-bottom:6px;">
-                  ${window.Portraits ? window.Portraits.getPortraitSvg(comp.portraitId || (comp.name.includes('悟空') ? 'sun_wukong' : (comp.name.includes('八戒') ? 'zhu_bajie' : 'sha_wujing')), 64) : ''}
-                </div>
-                <div class="combatant-info" style="text-align:center;">
-                  <div class="combatant-name" style="color:#f39c12;font-weight:bold;font-size:11px;margin-bottom:4px;">${comp.name}</div>
-                  <div class="bar-track" style="width:95px;height:7px;background:#333;border-radius:4px;overflow:hidden;margin:0 auto;">
-                    <div class="bar-fill-hp" style="width:${Math.max(0, (comp.hp / comp.maxHp) * 100)}%;height:100%;background:linear-gradient(90deg, #2ed573, #7bed9f);"></div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
           </div>
         </div>
 
-        <!-- 战斗指令动作栏 (支持绝技二级子菜单) -->
-        <div class="battle-cmd-container" style="margin:6px 0;">
-          ${this.battleSkillMenuOpen ? `
-            <!-- 绝技选择菜单 -->
-            <div style="background:rgba(25, 18, 12, 0.95);border:1.5px solid #c59b27;border-radius:8px;padding:8px 12px;box-shadow:0 4px 15px rgba(0,0,0,0.7);">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font-size:12px;font-weight:bold;color:#ffd700;">✨ 选择门派绝技 (${this.playerData.className})</span>
-                <button class="dialogue-opt-btn" style="padding:2px 8px;font-size:11px;" onclick="window.App2D.toggleSkillMenu(false)">↩️ 返回主指令</button>
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                ${skills.map(sk => `
-                  <button class="dialogue-opt-btn" style="flex:1;min-width:160px;text-align:left;padding:7px 10px;background:linear-gradient(180deg,#3d2212 0%,#241409 100%);" onclick="window.App2D.execCombat('skill', '${sk.id}')">
-                    <div style="color:#ffd700;font-weight:bold;font-size:12px;">${sk.icon || '✨'} ${sk.name}</div>
-                    <div style="font-size:10px;color:#7bed9f;margin-top:2px;">
-                      消耗: ${sk.costMp ? `${sk.costMp}精力` : '无'}${sk.costHpRatio ? ` + ${Math.floor(sk.costHpRatio*100)}%自身HP` : ''}
-                    </div>
-                    <div style="font-size:9px;color:#ddd;margin-top:2px;line-height:1.2;">${sk.desc.slice(0, 24)}...</div>
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          ` : `
-            <!-- 常规主指令栏 -->
-            <div class="battle-cmd-grid" style="display:flex;gap:12px;justify-content:center;">
-              <button class="dialogue-opt-btn" style="flex:1;max-width:130px;padding:10px;font-size:13px;" onclick="window.App2D.execCombat('attack')">⚔️ 普攻</button>
-              <button class="dialogue-opt-btn" style="flex:1;max-width:130px;padding:10px;font-size:13px;background:linear-gradient(180deg,#8e44ad 0%,#5b2c6f 100%);border-color:#d4af37;" onclick="window.App2D.toggleSkillMenu(true)">✨ 绝技</button>
-              <button class="dialogue-opt-btn" style="flex:1;max-width:130px;padding:10px;font-size:13px;" onclick="window.App2D.execCombat('defend')">🛡️ 防御</button>
-              <button class="dialogue-opt-btn" style="flex:1;max-width:130px;padding:10px;font-size:13px;" onclick="window.App2D.execCombat('item')">💊 灵药</button>
-            </div>
-          `}
+        <!-- 4. 底部状态与操作控制栏 (复刻图3：开启自动出招、快进设置与区派商世标签) -->
+        <div class="battle-bottom-controls-bar">
+          <button class="auto-combat-btn ${this.autoCombatEnabled ? 'auto-active' : ''}" onclick="window.App2D.toggleAutoCombat()" title="切换全员自动普攻/绝技出手">
+            ⚔️ ${this.autoCombatEnabled ? '正在自动出招...' : '开启自动出招'}
+          </button>
+
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="mrp-chat-tab-btn" onclick="window.App2D.toggleCombatSpeed()" title="切换战斗打击节奏倍速">
+              ⏩ ${this.combatSpeedMultiplier || 1}x
+            </button>
+            <button class="mrp-chat-tab-btn" onclick="window.App2D.openPlayerProfileModal()" title="角色属性">
+              ⚙️
+            </button>
+          </div>
+
+          <div class="mrp-chat-tabs-bar">
+            <button class="mrp-chat-tab-btn active">区</button>
+            <button class="mrp-chat-tab-btn">派</button>
+            <button class="mrp-chat-tab-btn">商</button>
+            <button class="mrp-chat-tab-btn">世</button>
+          </div>
         </div>
 
-        <!-- 实时战斗日志框 -->
-        <div class="battle-log-box" id="battle-log-box-2d" style="background:rgba(0,0,0,0.68);border:1px solid #5c4732;border-radius:6px;padding:8px 12px;font-size:12px;line-height:1.7;color:#fef0cd;max-height:80px;overflow-y:auto;">
-          ${this.currentBattle.logs.slice(-4).map(l => `<div>${l}</div>`).join('')}
+        <!-- 实时战斗日志框 (底部极简滚动条) -->
+        <div class="battle-log-box" id="battle-log-box-2d" style="background:rgba(10,8,6,0.92);border-top:1px solid #4a3824;padding:3px 12px;font-size:11px;line-height:1.5;color:#fef0cd;max-height:42px;overflow-y:auto;">
+          ${this.currentBattle.logs.slice(-2).map(l => `<div>${l}</div>`).join('')}
         </div>
       </div>
     `;
+
+    // 初始化画布与交互事件
+    this.initBattleCanvas();
   }
 
-  selectTarget(idx) {
-    this.selectedTargetIndex = idx;
-    window.Sound.playBeep();
-    this.renderBattleInterface();
+  // 初始化战场舞台画布
+  initBattleCanvas() {
+    const canvas = document.getElementById('battle-scene-canvas');
+    if (!canvas) return;
+
+    const container = document.getElementById('battle-stage-area');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      canvas.width = Math.max(560, Math.floor(rect.width));
+      canvas.height = Math.max(280, Math.floor(rect.height));
+    } else {
+      canvas.width = 640;
+      canvas.height = 320;
+    }
+
+    canvas.onclick = (e) => {
+      if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
+      this.handleBattleCanvasClick(clickX, clickY);
+    };
   }
 
-  async execCombat(type, skillId = null) {
+  // 点击画布判定选择目标与切换友方
+  handleBattleCanvasClick(clickX, clickY) {
     if (!this.currentBattle) return;
 
-    window.Sound.playHit();
-    this.battleSkillMenuOpen = false;
+    // 左侧区域：指定敌方目标
+    if (clickX < this.battleCanvasWidth * 0.42 || clickX < 240) {
+      const enemies = this.currentBattle.enemies;
+      let closestIdx = -1;
+      let minDis = 99999;
+      enemies.forEach((e, idx) => {
+        if (e.hp <= 0) return;
+        const pos = e._battlePos;
+        if (pos) {
+          const d = Math.hypot(clickX - pos.x, clickY - pos.y);
+          if (d < 65 && d < minDis) {
+            minDis = d;
+            closestIdx = idx;
+          }
+        }
+      });
+      if (closestIdx !== -1) {
+        this.selectTarget(closestIdx);
+      }
+    }
+    // 右侧区域：切换受指派友方角色
+    else if (clickX > this.battleCanvasWidth * 0.58 || clickX > 360) {
+      const allies = this.currentBattle.allies;
+      let closestAlly = null;
+      let minDis = 99999;
+      allies.forEach(a => {
+        if (a.hp <= 0) return;
+        const pos = a._battlePos;
+        if (pos) {
+          const d = Math.hypot(clickX - pos.x, clickY - pos.y);
+          if (d < 65 && d < minDis) {
+            minDis = d;
+            closestAlly = a;
+          }
+        }
+      });
+      if (closestAlly) {
+        this.selectAlly(closestAlly.id);
+      }
+    }
+  }
 
-    this.currentBattle.setPlayerAction({
-      type: type,
-      targetIndex: this.selectedTargetIndex || 0,
-      skillId: skillId || this.playerData.getSkills()[0]?.id
+  // 绘制战场Canvas全景：草地绿茵、左侧真实站立怪物模型、右侧站立角色/仙宠模型、通天金黄光柱
+  renderBattleCanvasFrame() {
+    const canvas = document.getElementById('battle-scene-canvas');
+    if (!canvas || !this.currentBattle) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    this.battleCanvasWidth = width;
+    this.battleCanvasHeight = height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // 1. 绘制草地/仙境自然战场背景 (复刻图3：绿茵草地与远景光影)
+    const groundGrad = ctx.createLinearGradient(0, 0, 0, height);
+    groundGrad.addColorStop(0, '#557c2c');
+    groundGrad.addColorStop(0.3, '#436820');
+    groundGrad.addColorStop(0.7, '#345217');
+    groundGrad.addColorStop(1, '#1e320d');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // 自然草地碎斑质感
+    ctx.fillStyle = 'rgba(92, 138, 48, 0.35)';
+    for (let i = 12; i < width; i += 28) {
+      const py = ((i * 19) % (height - 35)) + 15;
+      ctx.fillRect(i, py, 14, 4.5);
+    }
+
+    // 柔和圣境天光
+    const radial = ctx.createRadialGradient(width * 0.5, -20, 30, width * 0.5, height * 0.5, width * 0.7);
+    radial.addColorStop(0, 'rgba(255, 255, 225, 0.16)');
+    radial.addColorStop(1, 'rgba(0, 0, 0, 0.22)');
+    ctx.fillStyle = radial;
+    ctx.fillRect(0, 0, width, height);
+
+    const animTimer = Date.now() / 150;
+
+    // 2. 左侧：敌方阵容 (竖排排列，真实全身模型站立于战场大地，非头像卡片)
+    const enemies = this.currentBattle.enemies;
+    const enemyX = Math.floor(width * 0.18);
+    enemies.forEach((e, idx) => {
+      if (e.hp <= 0) return;
+      let ey;
+      if (enemies.length === 1) ey = Math.floor(height * 0.52);
+      else if (enemies.length === 2) ey = Math.floor(height * (idx === 0 ? 0.35 : 0.68));
+      else ey = Math.floor(height * (0.22 + idx * 0.28));
+
+      e._battlePos = { x: enemyX, y: ey };
+      const isTargeted = (this.selectedTargetIndex === idx);
+
+      // 若被锁定为攻击目标，脚底绘制赤金锁定法阵光环
+      if (isTargeted) {
+        ctx.save();
+        const pulse = Math.sin(animTimer * 0.25) * 2.5;
+        ctx.strokeStyle = '#ff4757';
+        ctx.lineWidth = 2.4;
+        ctx.shadowColor = '#ff4757';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.ellipse(enemyX, ey + 12, 22 + pulse, 9 + pulse * 0.4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(enemyX, ey + 12, 15, 6, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 敌方全身模型派发
+      let mId = e.modelId || e.appearance || e.id || '';
+      if (e.name.includes('狼') || mId.includes('wolf') || mId.includes('huangpao')) mId = 'wild_wolf';
+      else if (e.name.includes('虎') || mId.includes('tiger') || mId.includes('huxianfeng') || mId.includes('huangfeng')) mId = 'hu_xianfeng';
+      else if (e.name.includes('蛇') || mId.includes('snake')) mId = 'pet_snake';
+      else if (e.name.includes('骨') || e.name.includes('骷髅') || mId.includes('baigu')) mId = 'baigu_jing';
+      else if (e.name.includes('八戒') || e.name.includes('猪') || mId.includes('bajie')) mId = 'zhu_bajie';
+      else if (e.name.includes('鼠') || mId.includes('rat')) mId = 'giant_rat';
+      else if (e.name.includes('龟') || mId.includes('gui') || mId.includes('turtle')) mId = 'turtle';
+      else if (e.name.includes('沙') || mId.includes('wujing') || mId.includes('shaseng')) mId = 'sha_wujing';
+      else if (e.name.includes('龙') || mId.includes('bailong')) mId = 'bailongma';
+      else if (e.name.includes('猴') || e.name.includes('悟空') || mId.includes('wukong')) mId = 'sun_wukong';
+      else if (e.name.includes('铁扇') || mId.includes('tieshan')) mId = 'tieshan';
+      else if (e.name.includes('镇元') || mId.includes('zhenyuanzi')) mId = 'tang_seng';
+      else if (e.name.includes('天神') || e.name.includes('天将') || mId.includes('heaven')) mId = 'heaven_general';
+
+      if (window.CharacterRenderer) {
+        window.CharacterRenderer.drawModel(ctx, enemyX, ey, mId, {
+          direction: 'right',
+          scale: 1.32,
+          animTimer: animTimer + idx,
+          isActing: false
+        });
+      }
+
+      // 头顶醒目姓名 (粗白字 + 纯黑描边，复刻图3标准)
+      ctx.save();
+      ctx.font = 'bold 12.5px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3.5;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(e.name, enemyX, ey - 28);
+      ctx.fillStyle = isTargeted ? '#ff4757' : (e.isBoss ? '#ffd700' : '#ffffff');
+      ctx.fillText(e.name, enemyX, ey - 28);
+
+      // 头顶锁定小红箭头指示
+      if (isTargeted) {
+        const arrowY = ey - 44 + Math.sin(Date.now() / 150) * 3;
+        ctx.fillStyle = '#ff4757';
+        ctx.beginPath();
+        ctx.moveTo(enemyX, arrowY);
+        ctx.lineTo(enemyX - 5.5, arrowY - 8);
+        ctx.lineTo(enemyX + 5.5, arrowY - 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // 脚底生命条与时序编号
+      const barW = 48;
+      const barH = 5;
+      const barX = enemyX - barW / 2;
+      const barY = ey + 20;
+      const hpPct = Math.max(0, Math.min(1, e.hp / e.maxHp));
+
+      ctx.fillStyle = 'rgba(12, 9, 6, 0.85)';
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.strokeStyle = '#3d2503';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(barX, barY, barW, barH);
+
+      ctx.fillStyle = '#ff4757';
+      ctx.fillRect(barX + 0.5, barY + 0.5, (barW - 1) * hpPct, barH - 1);
+
+      if (e.turnOrder) {
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.95)';
+        ctx.fillRect(barX - 18, barY - 1, 16, 7);
+        ctx.font = 'bold 8.5px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('#' + e.turnOrder, barX - 10, barY + 2.5);
+      }
+      ctx.restore();
     });
 
-    await this.currentBattle.executeRound(async (step) => {
+    // 3. 右侧：我方阵容 (竖排四位：玩家、仙宠1、仙宠2、仙宠3)
+    const allyX = Math.floor(width * 0.82);
+    const pLevel = this.playerData ? this.playerData.level : 1;
+    const petAllies = this.currentBattle.allies.filter(a => !a.isPlayer);
+    const slots = [
+      { id: 'player', ally: this.currentBattle.allies.find(a => a.isPlayer) || this.currentBattle.allies[0], name: this.playerData.name, reqLvl: 1, y: Math.floor(height * 0.20) },
+      { id: 'pet1', ally: petAllies[0], name: '仙宠1', reqLvl: 20, y: Math.floor(height * 0.42) },
+      { id: 'pet2', ally: petAllies[1], name: '仙宠2', reqLvl: 30, y: Math.floor(height * 0.64) },
+      { id: 'pet3', ally: petAllies[2], name: '仙宠3', reqLvl: 40, y: Math.floor(height * 0.84) }
+    ];
+
+    slots.forEach(slot => {
+      const ay = slot.y;
+      const isPlayerSlot = (slot.id === 'player');
+      const ally = slot.ally;
+
+      if (!isPlayerSlot && pLevel < slot.reqLvl) {
+        // 未解锁槽位
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 10, 8, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(allyX, ay + 6, 20, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#4a3824';
+        ctx.stroke();
+
+        ctx.font = '10px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#776655';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`🔒 ${slot.reqLvl}级解锁`, allyX, ay + 4);
+        ctx.restore();
+        return;
+      }
+
+      if (!ally) {
+        // 空闲槽位
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 10, 8, 0.38)';
+        ctx.beginPath();
+        ctx.ellipse(allyX, ay + 6, 20, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(197, 155, 39, 0.4)';
+        ctx.stroke();
+
+        ctx.font = '10px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#8e734c';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`🐾 空闲`, allyX, ay + 4);
+        ctx.restore();
+        return;
+      }
+
+      if (ally.hp <= 0) return;
+
+      ally._battlePos = { x: allyX, y: ay };
+      const isActing = (this.selectedAllyId === ally.id);
+
+      // 若为当前出招者：先在底层绘制通天神圣金黄光柱！(完全复刻图3震撼效果)
+      if (isActing && window.CharacterRenderer) {
+        window.CharacterRenderer.drawActingLightPillar(ctx, allyX, ay, 58, 105);
+      }
+
+      // 确定角色模型 (无敌黄飞鸿武学宗师、铁扇公主、大圣、元帅或神将)
+      let mId = ally.modelId || ally.appearance || '';
+      if (isPlayerSlot) {
+        mId = 'martial_hero';
+      } else {
+        if (ally.name.includes('悟空') || ally.name.includes('猴') || ally.roleId === 'sun_wukong') mId = 'sun_wukong';
+        else if (ally.name.includes('八戒') || ally.name.includes('猪') || ally.roleId === 'zhu_bajie') mId = 'zhu_bajie';
+        else if (ally.name.includes('沙') || ally.roleId === 'sha_wujing') mId = 'sha_wujing';
+        else if (ally.name.includes('铁扇') || ally.roleId === 'tieshan' || mId.includes('tieshan')) mId = 'tieshan';
+        else if (ally.name.includes('蛇') || ally.roleId === 'pet_snake' || mId.includes('she')) mId = 'pet_snake';
+        else if (ally.name.includes('龟') || mId.includes('gui')) mId = 'turtle';
+        else mId = mId || 'tieshan';
+      }
+
+      if (window.CharacterRenderer) {
+        window.CharacterRenderer.drawModel(ctx, allyX, ay, mId, {
+          direction: 'left',
+          scale: 1.32,
+          animTimer: animTimer + 2,
+          isActing: isActing
+        });
+      }
+
+      // 头顶清晰姓名 (加粗白色 + 黑色描边)
+      ctx.save();
+      ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3.5;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(ally.name, allyX, ay - 26);
+      ctx.fillStyle = isActing ? '#fffa65' : (isPlayerSlot ? '#ffeaa7' : '#f5cd79');
+      ctx.fillText(ally.name, allyX, ay - 26);
+
+      // 脚底生命/精力槽与时序
+      const barW = 48;
+      const barH = 5;
+      const barX = allyX - barW / 2;
+      const barY = ay + 18;
+      const hpPct = Math.max(0, Math.min(1, ally.hp / ally.maxHp));
+
+      ctx.fillStyle = 'rgba(12, 9, 6, 0.85)';
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.strokeStyle = '#3d2503';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(barX, barY, barW, barH);
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(barX + 0.5, barY + 0.5, (barW - 1) * hpPct, barH - 1);
+
+      if (ally.maxMp) {
+        const mpPct = Math.max(0, Math.min(1, ally.mp / ally.maxMp));
+        ctx.fillStyle = 'rgba(12, 9, 6, 0.85)';
+        ctx.fillRect(barX, barY + 6, barW, 3);
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(barX + 0.5, barY + 6.5, (barW - 1) * mpPct, 2);
+      }
+
+      if (ally.turnOrder) {
+        ctx.fillStyle = 'rgba(39, 174, 96, 0.95)';
+        ctx.fillRect(barX + barW + 2, barY - 1, 16, 7);
+        ctx.font = 'bold 8.5px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('#' + ally.turnOrder, barX + barW + 10, barY + 2.5);
+      }
+
+      ctx.restore();
+    });
+  }
+
+  // 触发战斗动作动效与伤害飘字
+  spawnBattleFloatingText(targetEl, text, type = 'damage') {
+    const fxLayer = document.getElementById('battle-fx-layer');
+    if (!fxLayer) return;
+
+    let posX = 150;
+    let posY = 150;
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      const container = document.getElementById('battle-main-container');
+      if (container) {
+        const cRect = container.getBoundingClientRect();
+        posX = rect.left - cRect.left + rect.width / 2 - 25;
+        posY = rect.top - cRect.top + 6;
+      }
+    }
+
+    const el = document.createElement('div');
+    el.className = `floating-text ${type === 'crit' ? 'float-crit' : (type === 'heal' ? 'float-heal' : 'float-damage')}`;
+    el.innerText = text;
+    el.style.left = `${posX}px`;
+    el.style.top = `${posY}px`;
+
+    fxLayer.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+
+  spawnBattleFloatingTextAtCoords(posX, posY, text, type = 'damage') {
+    const fxLayer = document.getElementById('battle-fx-layer');
+    if (!fxLayer) return;
+
+    const el = document.createElement('div');
+    el.className = `floating-text ${type === 'crit' ? 'float-crit' : (type === 'heal' ? 'float-heal' : 'float-damage')}`;
+    el.innerText = text;
+    el.style.left = `${posX - 20}px`;
+    el.style.top = `${posY - 30}px`;
+
+    fxLayer.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+
+  // 选择当前角色的战斗指令，并自动推进或执行
+  chooseCombatAction(type, skillId = null) {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+
+    this.battleSkillMenuOpen = false;
+
+    // 默认若选择药品，优先使用金创药
+    const medicineItem = this.inventory ? this.inventory.getItems().find(s => s.itemId === 'jinchuang_yao' || s.itemId === 'dahuan_dan') : null;
+
+    const curAllyId = this.selectedAllyId || 'player';
+    const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
+
+    const actionData = {
+      type: type,
+      targetIndex: this.selectedTargetIndex || 0,
+      skillId: skillId || (curAlly && curAlly.skills && curAlly.skills[0] ? curAlly.skills[0].id : null),
+      itemId: medicineItem ? medicineItem.itemId : 'jinchuang_yao'
+    };
+
+    this.currentBattle.setAllyAction(curAlly.id, actionData);
+
+    if (type === 'flee') {
+      this.executeCombatRound();
+      return;
+    }
+
+    // 检查是否还有存活友方未下指令
+    const aliveAllies = this.currentBattle.allies.filter(a => a.hp > 0);
+    const unassigned = aliveAllies.find(a => !this.currentBattle.actions[a.id]);
+
+    if (unassigned) {
+      this.selectedAllyId = unassigned.id;
+      if (window.Sound) window.Sound.playBeep();
       this.renderBattleInterface();
-      await new Promise(r => setTimeout(r, 450));
+    } else {
+      // 全员指令就绪，执行交锋！
+      this.executeCombatRound();
+    }
+  }
+
+  // 执行战斗交锋回合与动作打击演算
+  async executeCombatRound() {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+
+    this.battleSkillMenuOpen = false;
+
+    // 锁定指令菜单，杜绝交锋演算期间鼠标滑过触发重排与重叠
+    const menuContainer = document.getElementById('battle-honeycomb-menu');
+    if (menuContainer) {
+      menuContainer.style.pointerEvents = 'none';
+      menuContainer.style.opacity = '0.35';
+    }
+
+    // 为未指定行动的友方默认设置普攻
+    this.currentBattle.allies.forEach(a => {
+      if (a.hp > 0 && !this.currentBattle.actions[a.id]) {
+        this.currentBattle.setAllyAction(a.id, {
+          type: 'attack',
+          targetIndex: this.selectedTargetIndex || 0
+        });
+      }
+    });
+
+    const speedDelay = (this.combatSpeedMultiplier === 2) ? 320 : 600;
+
+    await this.currentBattle.executeRound(async (step) => {
+      // 实时更新底部战报条，无需摧毁主舞台DOM
+      const logBox = document.getElementById('battle-log-box-2d');
+      if (logBox && this.currentBattle.logs) {
+        logBox.innerHTML = this.currentBattle.logs.slice(-2).map(l => `<div>${l}</div>`).join('');
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      const stage = document.getElementById('battle-stage-area');
+
+      // 视觉打击感反馈
+      if (step.type === 'damage') {
+        const isAllyAttacker = !step.attacker.startsWith('enemy_');
+        const targetEntity = isAllyAttacker
+          ? this.currentBattle.enemies[step.targetIndex]
+          : this.currentBattle.allies.find(a => a.id === step.target);
+
+        if (targetEntity && targetEntity._battlePos) {
+          this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, step.isCrit ? 'crit' : 'damage');
+        }
+
+        if (stage) {
+          stage.classList.add('arena-shake');
+          setTimeout(() => stage.classList.remove('arena-shake'), 320);
+        }
+      } else if (step.type === 'heal' || step.type === 'mana') {
+        const targetEntity = this.currentBattle.allies.find(a => a.id === step.target);
+        if (targetEntity && targetEntity._battlePos) {
+          this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
+        }
+      } else if (step.text) {
+        const targetEntity = this.currentBattle.enemies[step.targetIndex] || this.currentBattle.allies[0];
+        if (targetEntity && targetEntity._battlePos) {
+          this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'damage');
+        }
+      }
+
+      await new Promise(r => setTimeout(r, speedDelay));
     });
 
     if (this.currentBattle.status === 'victory') {
+      this.stopBattleLoop();
+      this.stopBattleCountdown();
       window.Sound.playVictory();
-      window.showGameMessage('【对决得胜】敌将败退！降妖除魔大获全胜！', 'success', 3000);
+      window.showGameMessage('🎉【对决得胜】敌军溃败！斩妖除魔大获全胜！', 'success', 3500);
       const layer = document.getElementById('battle-screen-layer');
       if (layer) layer.style.display = 'none';
 
@@ -2130,16 +3054,43 @@ class GameApp2D {
         this.battleVictoryCallback = null;
       }
     } else if (this.currentBattle.status === 'defeat') {
+      this.stopBattleLoop();
+      this.stopBattleCountdown();
       window.Sound.playFailure();
-      window.showGameMessage('【体力不支】败退调养，气血已由天界灵泉抚平……', 'error', 3000);
+      window.showGameMessage('⚠️【气血枯竭】负伤败退，天界神泉已重新抚平体魄……', 'error', 3500);
       const layer = document.getElementById('battle-screen-layer');
       if (layer) layer.style.display = 'none';
       this.isPaused = false;
       this.playerData.hp = this.playerData.maxHp;
       this.currentBattle = null;
+    } else if (this.currentBattle.status === 'escaped') {
+      this.stopBattleLoop();
+      this.stopBattleCountdown();
+      window.Sound.playBeep();
+      window.showGameMessage('💨【险象环生】施展遁地妙术成功脱离了战斗！', 'info', 2500);
+      const layer = document.getElementById('battle-screen-layer');
+      if (layer) layer.style.display = 'none';
+      this.isPaused = false;
+      this.currentBattle = null;
     } else {
+      this.selectedAllyId = 'player';
+      this.startBattleCountdown();
       this.renderBattleInterface();
+
+      // 若开启了自动出招，自动进入下一回合
+      if (this.autoCombatEnabled) {
+        setTimeout(() => {
+          if (this.currentBattle && this.autoCombatEnabled && this.currentBattle.status !== 'executing') {
+            this.executeCombatRound();
+          }
+        }, 600);
+      }
     }
+  }
+
+  // 兼容调用接口
+  execCombat(type, skillId = null) {
+    return this.chooseCombatAction(type, skillId);
   }
 
   // =========================================================================

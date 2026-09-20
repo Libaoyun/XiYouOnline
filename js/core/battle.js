@@ -41,6 +41,23 @@ class BattleEngine {
     this.calcTurnOrders();
   }
 
+  // 安全访问接口
+  get playerBuffs() {
+    const player = this.allies.find(a => a.isPlayer);
+    return player ? (player.buffs || []) : [];
+  }
+
+  get enemyBuffs() {
+    return this.enemies.map(e => e.buffs || []);
+  }
+
+  setPlayerAction(action) {
+    const player = this.allies.find(a => a.isPlayer);
+    if (player) {
+      this.setAllyAction(player.id, action);
+    }
+  }
+
   log(msg) {
     this.logs.push(msg);
   }

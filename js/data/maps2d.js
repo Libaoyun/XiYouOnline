@@ -232,9 +232,9 @@ window.GAME_DATA.MAPS_2D = {
         id: 'npc_qixiannv',
         name: '红衣仙女',
         title: '【采桃仙子】',
-        x: 16 * 32,
-        y: 10 * 32,
-        appearance: 'xiannv',
+        x: 14 * 32,
+        y: 7 * 32,
+        appearance: 'tieshan',
         icon: '🧚‍♀️',
         dialogueKey: 'qixiannv_talk'
       }
@@ -280,6 +280,14 @@ window.GAME_DATA.MAPS_2D = {
         g[r][18] = 'water';
         g[r][19] = 'water';
       }
+
+      // 凡间关隘木拒马鹿砦 (复刻图2木拒马)
+      g[9][2] = 'wooden_barricade';
+      g[11][2] = 'wooden_barricade';
+      g[9][24] = 'wooden_barricade';
+      g[11][24] = 'wooden_barricade';
+      g[1][11] = 'wooden_barricade';
+      g[1][13] = 'wooden_barricade';
       return g;
     })(),
     playerSpawn: { x: 6 * 32, y: 9 * 32, direction: 'down' },
@@ -320,8 +328,9 @@ window.GAME_DATA.MAPS_2D = {
         id: 'mob_rat_1',
         name: '偷粮硕鼠',
         icon: '🐀',
+        appearance: 'giant_rat',
         x: 14 * 32,
-        y: 15 * 32,
+        y: 13 * 32,
         level: 2,
         hp: 90,
         maxHp: 90,
@@ -344,14 +353,15 @@ window.GAME_DATA.MAPS_2D = {
         def: 14,
         spd: 20,
         skills: ['冲撞'],
-        patrolRadius: 35
+        patrolRadius: 25
       },
       {
         id: 'mob_wolf_1',
         name: '双叉岭恶狼',
         icon: '🐺',
-        x: 16 * 32,
-        y: 5 * 32,
+        appearance: 'wild_wolf',
+        x: 17 * 32,
+        y: 6 * 32,
         level: 4,
         hp: 160,
         maxHp: 160,
@@ -365,8 +375,9 @@ window.GAME_DATA.MAPS_2D = {
         id: 'mob_tiger_1',
         name: '下山吊睛猛虎',
         icon: '🐅',
-        x: 21 * 32,
-        y: 13 * 32,
+        appearance: 'hu_xianfeng',
+        x: 20 * 32,
+        y: 12 * 32,
         level: 6,
         hp: 280,
         maxHp: 280,
@@ -407,6 +418,18 @@ window.GAME_DATA.MAPS_2D = {
         g[r][44] = 'city_wall';
         g[r][45] = 'city_wall';
       }
+      // 北侧宏伟宫殿飞檐与大红灯笼 (复刻图1顶部建筑)
+      for (let c = 1; c < 43; c++) {
+        g[1][c] = 'palace_eaves';
+      }
+
+      // 中央皇家汉白玉御道 (复刻图1御道：贯通南北大中轴线)
+      for (let r = 2; r <= 33; r++) {
+        g[r][21] = 'imperial_way_left';
+        g[r][22] = 'imperial_way_center';
+        g[r][23] = 'imperial_way_right';
+      }
+
       // 西城门通往刘家村 (开口宽阔)
       g[16][0] = 'changan_stone'; g[16][1] = 'changan_stone';
       g[17][0] = 'changan_stone'; g[17][1] = 'changan_stone';
@@ -427,6 +450,9 @@ window.GAME_DATA.MAPS_2D = {
       }
       // 化生寺大殿正门前台阶空开
       g[7][33] = 'changan_stone';
+
+      // 铁匠工坊锻造火炉 (复刻图1铁匠铺火炉)
+      g[24][30] = 'blacksmith_forge';
 
       // 西北·大唐府衙官署 (户籍司大堂)
       for (let r = 3; r <= 6; r++) {
@@ -478,7 +504,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【通达三界】',
         x: 7 * 32,
         y: 14 * 32,
-        appearance: 'liu_boqin',
+        appearance: 'shopkeeper',
         icon: '💰',
         dialogueKey: 'qianzhuang_talk'
       },
@@ -488,7 +514,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【妙手回春】',
         x: 13 * 32,
         y: 14 * 32,
-        appearance: 'tang_seng',
+        appearance: 'shopkeeper',
         icon: '🏥',
         dialogueKey: 'yishi_talk'
       },
@@ -498,7 +524,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【定居户籍】',
         x: 10 * 32,
         y: 7 * 32,
-        appearance: 'tang_seng',
+        appearance: 'heaven_general',
         icon: '📜',
         dialogueKey: 'huji_talk'
       },
@@ -518,7 +544,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【大慈大悲】',
         x: 36 * 32,
         y: 8 * 32,
-        appearance: 'tang_seng',
+        appearance: 'guanyin',
         icon: '🪷',
         dialogueKey: 'guanyin_talk'
       },
@@ -528,7 +554,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【神兵淬火】',
         x: 31 * 32,
         y: 24 * 32,
-        appearance: 'liu_boqin',
+        appearance: 'blacksmith',
         icon: '🔨',
         dialogueKey: 'blacksmith_talk'
       },
@@ -538,7 +564,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【百宝货铺】',
         x: 37 * 32,
         y: 24 * 32,
-        appearance: 'liu_boqin',
+        appearance: 'shopkeeper',
         icon: '🏮',
         dialogueKey: 'shop_talk'
       },
@@ -906,7 +932,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【水族智者】',
         x: 10 * 32,
         y: 9 * 32,
-        appearance: 'tang_seng',
+        appearance: 'turtle',
         icon: '🐢',
         dialogueKey: 'guichengxiang_talk'
       }
@@ -1171,6 +1197,7 @@ window.GAME_DATA.MAPS_2D = {
         id: 'mob_water_serpent',
         name: '寒潭黑水玄蛇',
         icon: '🐍',
+        appearance: 'pet_snake',
         x: 12 * 32,
         y: 6 * 32,
         level: 12,
@@ -1253,7 +1280,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【高府三小姐】',
         x: 8 * 32,
         y: 6 * 32,
-        appearance: 'tang_seng',
+        appearance: 'tieshan',
         icon: '👧',
         dialogueKey: 'cuilan_talk'
       },
@@ -1273,6 +1300,7 @@ window.GAME_DATA.MAPS_2D = {
         id: 'mob_pig_minion',
         name: '云栈洞黑风小猪妖',
         icon: '🐗',
+        appearance: 'zhu_bajie',
         x: 18 * 32,
         y: 15 * 32,
         level: 16,
@@ -1491,7 +1519,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【五庄观执事】',
         x: 8 * 32,
         y: 6 * 32,
-        appearance: 'tang_seng',
+        appearance: 'martial_hero',
         icon: '👦',
         dialogueKey: 'qingfeng_talk'
       },
@@ -1501,7 +1529,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【五庄观执事】',
         x: 11 * 32,
         y: 6 * 32,
-        appearance: 'tang_seng',
+        appearance: 'martial_hero',
         icon: '👦',
         dialogueKey: 'mingyue_talk'
       },
@@ -1511,7 +1539,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【地仙之祖·与天同齐】',
         x: 18 * 32,
         y: 8 * 32,
-        appearance: 'zhenyuanzi',
+        appearance: 'tang_seng',
         icon: '仙',
         dialogueKey: 'zhenyuanzi_encounter'
       }
@@ -1562,6 +1590,7 @@ window.GAME_DATA.MAPS_2D = {
         id: 'mob_bone_skeleton',
         name: '白虎岭怨灵骷髅兵',
         icon: '💀',
+        appearance: 'baigu_jing',
         x: 8 * 32,
         y: 7 * 32,
         level: 28,
@@ -1627,7 +1656,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【披香殿侍女转世】',
         x: 8 * 32,
         y: 5 * 32,
-        appearance: 'tang_seng',
+        appearance: 'tieshan',
         icon: '👸',
         dialogueKey: 'baihuaxiu_talk'
       },
@@ -1637,7 +1666,7 @@ window.GAME_DATA.MAPS_2D = {
         title: '【二十八宿奎宿星君】',
         x: 20 * 32,
         y: 17 * 32,
-        appearance: 'huangpao_guai',
+        appearance: 'wild_wolf',
         icon: '🐺',
         dialogueKey: 'huangpao_boss_encounter'
       }

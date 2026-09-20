@@ -65,11 +65,12 @@ class DialogueEngine {
     this.isTyping = true;
     let charIdx = 0;
 
-    window.Sound.playBeep();
-
     this.typeInterval = setInterval(() => {
       if (charIdx < fullText.length) {
         this.displayedText += fullText[charIdx];
+        if (charIdx % 3 === 0 && window.Sound) {
+          window.Sound.playDialogueType();
+        }
         charIdx++;
         this.render();
       } else {
@@ -77,7 +78,7 @@ class DialogueEngine {
         clearInterval(this.typeInterval);
         this.render();
       }
-    }, 20);
+    }, 22);
 
     this.render();
   }

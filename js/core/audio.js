@@ -5,7 +5,12 @@
 class SoundEngine {
   constructor() {
     this.ctx = null;
-    this.enabled = true;
+    try {
+      const saved = localStorage.getItem('hanfeng_sound_enabled');
+      this.enabled = saved !== null ? saved === 'true' : false; // 默认静音关闭
+    } catch (e) {
+      this.enabled = false;
+    }
   }
 
   init() {
@@ -22,6 +27,9 @@ class SoundEngine {
 
   toggle() {
     this.enabled = !this.enabled;
+    try {
+      localStorage.setItem('hanfeng_sound_enabled', this.enabled ? 'true' : 'false');
+    } catch (e) {}
     return this.enabled;
   }
 

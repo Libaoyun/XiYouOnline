@@ -570,11 +570,16 @@ class GameApp2D {
     }
   }
 
-  // 同步主菜单中的音效开关状态文案
+  // 同步主菜单中的音效开关状态文案与图标
   updateMenuSoundLabel() {
     const labelEl = document.getElementById('menu-sound-label');
     if (labelEl && window.Sound) {
       labelEl.innerText = window.Sound.enabled ? '八音仙乐: 开' : '八音仙乐: 关';
+      const card = labelEl.closest('.menu-tile-card');
+      if (card) {
+        const iconBox = card.querySelector('.tile-icon-box');
+        if (iconBox) iconBox.innerText = window.Sound.enabled ? '🔊' : '🔇';
+      }
     }
   }
 
@@ -828,14 +833,20 @@ class GameApp2D {
       });
     }
 
-    // 音效开关
+    // 音效一键开关 (默认关闭，支持随时一键开启/关闭)
     const soundBtn = document.getElementById('toggle-sound-btn');
     if (soundBtn) {
+      soundBtn.innerHTML = (window.Sound && window.Sound.enabled) ? '🔊 音效:开' : '🔇 音效:关';
       soundBtn.addEventListener('click', () => {
         const enabled = window.Sound.toggle();
         soundBtn.innerHTML = enabled ? '🔊 音效:开' : '🔇 音效:关';
         this.updateMenuSoundLabel();
-        if (enabled) window.Sound.playBeep();
+        if (enabled) {
+          window.Sound.playBeep();
+          window.showGameMessage('🔊 八音仙乐已开启', 'info');
+        } else {
+          window.showGameMessage('🔇 仙乐已静音关闭', 'info');
+        }
       });
     }
   }

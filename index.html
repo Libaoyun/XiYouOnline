@@ -34,8 +34,8 @@
       <button id="top-save-btn" onclick="window.App2D.saveAutoProgress(); window.showGameMessage('💾 历练进度已手动保存！', 'success');" class="nav-btn nav-btn-save" title="立即手动保存历练进度">
         <span id="save-status-indicator" style="color:#2ed573;font-size:10px;">●</span> 存档
       </button>
-      <button id="toggle-sound-btn" class="nav-btn" title="开启或关闭复古 8-bit 音效">
-        🔊 音效:开
+      <button id="toggle-sound-btn" class="nav-btn" title="一键开启或关闭复古 8-bit 音效">
+        🔇 音效:关
       </button>
       <button id="toggle-mode-btn" class="nav-btn" title="在经典按键机与大屏模式之间切换">
         📱 掌机
@@ -185,10 +185,10 @@
                         <div class="tile-sub">掌机外壳 / 沉浸大屏</div>
                       </div>
                     </div>
-                    <div class="menu-tile-card" onclick="document.getElementById('toggle-sound-btn').click(); window.App2D.updateMenuSoundLabel();" title="开启或关闭8-bit音效">
-                      <div class="tile-icon-box">🔊</div>
+                    <div class="menu-tile-card" onclick="document.getElementById('toggle-sound-btn').click(); window.App2D.updateMenuSoundLabel();" title="一键开启或关闭8-bit音效">
+                      <div class="tile-icon-box">🔇</div>
                       <div class="tile-info">
-                        <div class="tile-name" id="menu-sound-label">八音仙乐: 开</div>
+                        <div class="tile-name" id="menu-sound-label">八音仙乐: 关</div>
                         <div class="tile-sub">复古 8-Bit 经典音效</div>
                       </div>
                     </div>

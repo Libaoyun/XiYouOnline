@@ -119,6 +119,8 @@ class TilemapEngine {
 
   // 绘制高品质瓦片
   drawTile(ctx, tileType, screenX, screenY, c = 0, r = 0, mapData = null) {
+    const col = c;
+    const row = r;
     const s = this.tileSize;
 
     switch (tileType) {

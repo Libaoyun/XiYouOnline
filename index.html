@@ -6,7 +6,7 @@
   <title>汉风西游 - 正统2D自由探索与西游大闹天宫复刻版</title>
   <meta name="description" content="正统复刻《汉风西游》2D自由行走探索RPG：威灵显赫大将军天宫执勤，御马监选坐骑，蟠桃园采摘仙桃经验飞升，暗助孙悟空大闹天宫，贬落凡尘刘家村，随刘伯钦打猎，长安见玄奘菩萨，五行山揭帖破封救大圣！">
   <meta name="keywords" content="汉风西游, 威灵显赫大将军, 孙悟空大闹天宫, 蟠桃园, 御马监, 刘伯钦, 五行山, 2DRPG, 冒泡社区怀旧">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=3.5">
 </head>
 <body class="modern-mode">
 
@@ -17,7 +17,8 @@
       <span class="brand-badge">正统2D神话</span>
     </div>
     <!-- 玩家实时状态简报 HUD -->
-    <div id="player-hud" class="top-player-hud" onclick="window.App2D.openPlayerProfileModal()" title="点击打开人物属性与潜能面板 (按C键)">
+    <div id="player-hud" class="top-player-hud" onclick="window.App2D.openPlayerProfileModal()" title="点击打开人物属性与潜能面板 (按C键)" style="display:flex;align-items:center;gap:8px;">
+      <div id="hud-avatar-circle" class="hud-avatar-circle" style="width:26px;height:26px;border-radius:50%;border:1.5px solid #ffd700;overflow:hidden;background:#2a1a0c;display:flex;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,215,0,0.4);flex-shrink:0;"></div>
       <span id="hud-player-name" class="hud-player-name">威灵大将 (Lv.50)</span>
       <div class="hud-hp-group">
         <span class="hud-label-hp">HP</span>
@@ -31,6 +32,9 @@
       </div>
     </div>
     <nav class="nav-controls">
+      <button id="top-restart-btn" onclick="window.App2D.restartGame()" class="nav-btn nav-btn-restart" title="放弃当前所有历练与属性，格式化恢复到游戏最开始">
+        🔄 重新开始
+      </button>
       <button id="top-save-btn" onclick="window.App2D.saveAutoProgress(); window.showGameMessage('💾 历练进度已手动保存！', 'success');" class="nav-btn nav-btn-save" title="立即手动保存历练进度">
         <span id="save-status-indicator" style="color:#2ed573;font-size:10px;">●</span> 存档
       </button>
@@ -61,13 +65,19 @@
           <!-- 场景标题悬浮浮条 (右上角) -->
           <div style="position:absolute;top:8px;right:8px;z-index:10;display:flex;gap:6px;">
             <span class="scene-location-badge" id="scene-location-text">🏯 天宫·南天门与凌霄宝殿</span>
+            <button onclick="window.App2D.toggleSceneRosterModal()" id="scene-roster-btn" class="nav-btn" style="padding:2px 8px;font-size:11px;background:rgba(20,15,10,0.85);border-color:#ffd700;" title="查看当前场景NPC与野怪生灵名册 (快捷键: Tab)">
+              📜 名册 [Tab]
+            </button>
             <button onclick="window.App2D.toggleMountRiding()" id="quick-ride-btn" class="nav-btn" style="padding:2px 8px;font-size:11px;background:rgba(20,15,10,0.85);border-color:#ffd700;">
               🏇 状态:骑乘中
             </button>
           </div>
 
-          <!-- 2D 真实游戏地图 Canvas 画布 (大屏高清默认 760x480) -->
-          <canvas id="game-canvas" width="760" height="480"></canvas>
+          <!-- 场景切换平滑过渡黑幕层 (走动0.75s/对话1.0s) -->
+          <div id="scene-transition-overlay" class="scene-transition-overlay"></div>
+
+          <!-- 2D 真实游戏地图 Canvas 画布 (大屏高清默认 760x580) -->
+          <canvas id="game-canvas" width="760" height="580"></canvas>
 
           <!-- 回合战斗无缝全屏层 -->
           <div id="battle-screen-layer"></div>
@@ -272,6 +282,9 @@
 
         <!-- 常用快捷操作按钮组 -->
         <div class="bottom-quick-bar">
+          <button class="quick-action-btn" onclick="window.App2D.openPlayerProfileModal()" title="打开人物状态与个人信息面板 (快捷键: C)">
+            <span>📜</span> 状态 <span class="kbd-sub">[C]</span>
+          </button>
           <button class="quick-action-btn" onclick="window.App2D.interactNearby()" title="与附近NPC或场景物体互动 (快捷键: Space)">
             <span>💬</span> 互动 <span class="kbd-sub">[Space]</span>
           </button>

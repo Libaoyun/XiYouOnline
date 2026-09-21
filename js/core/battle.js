@@ -194,6 +194,62 @@ class BattleEngine {
       };
     }
 
+    // === 前戏剧情战役专属数值法则（刘家村前的序章天宫战役）===
+    // 1. 玩家大战醉酒天蓬元帅：玩家打天蓬约 50% 血，天蓬打玩家约 10% 血
+    if (target.id === 'tianpeng_boss') {
+      const flux = getFlux();
+      const tpDmg = Math.max(1, Math.floor(maxHpTarget * 0.50 * flux));
+      return {
+        isDodge: false,
+        isFatal: false,
+        isCrit: false,
+        comboCount: 0,
+        damages: [tpDmg],
+        comboHits: [tpDmg],
+        totalDamage: tpDmg
+      };
+    }
+    if (attacker.id === 'tianpeng_boss') {
+      const flux = getFlux();
+      const pDmg = Math.max(1, Math.floor(maxHpTarget * 0.10 * flux));
+      return {
+        isDodge: false,
+        isFatal: false,
+        isCrit: false,
+        comboCount: 0,
+        damages: [pDmg],
+        comboHits: [pDmg],
+        totalDamage: pDmg
+      };
+    }
+
+    // 2. 四天将大阵决战齐天大圣：队友打大圣约 5% 血，大圣出手神威极境一下秒一人
+    if (target.id === 'wukong_havoc_boss') {
+      const flux = getFlux();
+      const wkDmg = Math.max(1, Math.floor(maxHpTarget * 0.05 * flux));
+      return {
+        isDodge: false,
+        isFatal: false,
+        isCrit: false,
+        comboCount: 0,
+        damages: [wkDmg],
+        comboHits: [wkDmg],
+        totalDamage: wkDmg
+      };
+    }
+    if (attacker.id === 'wukong_havoc_boss') {
+      const killDmg = Math.max(target.hp || 0, maxHpTarget);
+      return {
+        isDodge: false,
+        isFatal: true,
+        isCrit: true,
+        comboCount: 0,
+        damages: [killDmg],
+        comboHits: [killDmg],
+        totalDamage: killDmg
+      };
+    }
+
     // 3. 基础伤害 = 攻击力 - 防御力，防御力>=攻击力保底造成 1 点伤害
     const baseDamage = Math.max(1, atkVal - defVal);
 
@@ -792,12 +848,23 @@ class BattleEngine {
       return;
     }
 
+    const getAdjustedSkillDamage = (targetUnit, rawDmg) => {
+      if (targetUnit.id === 'wukong_havoc_boss') {
+        return Math.max(1, Math.floor(targetUnit.maxHp * (0.048 + Math.random() * 0.006)));
+      }
+      if (targetUnit.id === 'tianpeng_boss') {
+        return Math.max(1, Math.floor(targetUnit.maxHp * (0.48 + Math.random() * 0.05)));
+      }
+      return rawDmg;
+    };
+
     // 4. 妖魔系：雷霆万钧 (单体高伤)
     if (skill.name === '雷霆万钧' || skill.id === 'sk_ym_leiting') {
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_leiting) || 0;
       const lvl = skill.level || 1;
       const profBonus = (skill.proficiency || 0) * 0.002 + lvl * 0.35;
-      const dmg = Math.max(60, Math.floor(((ally.matk || ally.atk) * (3.2 + profBonus) - targetEnemy.mdef * 0.3) * (1 - res)));
+      let dmg = Math.max(60, Math.floor(((ally.matk || ally.atk) * (3.2 + profBonus) - targetEnemy.mdef * 0.3) * (1 - res)));
+      dmg = getAdjustedSkillDamage(targetEnemy, dmg);
       targetEnemy.hp = Math.max(0, targetEnemy.hp - dmg);
       this.log(`【雷霆万钧 Lv.${lvl}】九天狂雷轰顶！对【${targetEnemy.name}】造成 ${dmg} 点极高雷法伤害！`);
       window.Sound.playCrit();
@@ -812,7 +879,8 @@ class BattleEngine {
       const profBonus = (skill.proficiency || 0) * 0.001 + lvl * 0.25;
       for (const e of aliveEnemies) {
         const res = (e.resistances && e.resistances.res_feisha) || 0;
-        const dmg = Math.max(40, Math.floor(((ally.matk || ally.atk) * (1.8 + profBonus) - e.mdef * 0.4) * (1 - res)));
+        let dmg = Math.max(40, Math.floor(((ally.matk || ally.atk) * (1.8 + profBonus) - e.mdef * 0.4) * (1 - res)));
+        dmg = getAdjustedSkillDamage(e, dmg);
         e.hp = Math.max(0, e.hp - dmg);
         if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `飞沙 -${dmg}` });
       }
@@ -828,7 +896,8 @@ class BattleEngine {
       const profBonus = (skill.proficiency || 0) * 0.001 + lvl * 0.25;
       for (const e of aliveEnemies) {
         const res = (e.resistances && e.resistances.res_sanmei) || 0;
-        const dmg = Math.max(45, Math.floor(((ally.matk || ally.atk) * (2.0 + profBonus) - e.mdef * 0.3) * (1 - res)));
+        let dmg = Math.max(45, Math.floor(((ally.matk || ally.atk) * (2.0 + profBonus) - e.mdef * 0.3) * (1 - res)));
+        dmg = getAdjustedSkillDamage(e, dmg);
         e.hp = Math.max(0, e.hp - dmg);
         if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `真火 -${dmg}` });
       }

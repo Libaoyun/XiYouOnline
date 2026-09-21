@@ -70,6 +70,10 @@ window.GAME_DATA.STORY_DIALOGUES = {
             text: '【🌿 遁法传送：返回两界山·刘家村】',
             action: () => {
               if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D && window.App2D.storyPhase && window.App2D.storyPhase.startsWith('heaven_')) {
+                window.showGameMessage('☁️ 九重天阙仙宴正盛，下界罡风封禁，大将军当在天宫值守，不可私下凡尘！', 'warn', 3500);
+                return;
+              }
               window.App2D.loadMap('liujiacun', { x: 23 * 32, y: 10 * 32 });
               window.showGameMessage('🌿 土地公念咒引动遁地金光，已将你安全送回刘家村！', 'info');
             }
@@ -143,77 +147,57 @@ window.GAME_DATA.STORY_DIALOGUES = {
     ]
   },
 
-  // === 序章：天宫变故 ===
-  taibai_intro: {
+  // === 序章：天宫蟠桃盛会与三大因缘事件 ===
+  pantao_intro: {
     steps: [
       {
         speaker: '太白金星',
         speakerTitle: '【天庭老仙】',
         speakerIcon: '👴',
-        text: '哎呀呀！威灵显赫大将军，你可算在此值守了！出天大的乱子了！'
+        text: '威灵显赫大将军！今日乃西王母娘娘瑶池蟠桃胜会，三界真仙毕集于九重天阙！'
       },
       {
         speaker: '太白金星',
         speakerTitle: '【天庭老仙】',
         speakerIcon: '👴',
-        text: '那弼马温……不，那花果山齐天大圣孙悟空，因未被请入蟠桃胜会，一怒之下反出天庭，偷吃了老君的金丹，如今正手提金箍棒一路杀上凌霄殿来了！'
-      },
-      {
-        speaker: '太白金星',
-        speakerTitle: '【天庭老仙】',
-        speakerIcon: '👴',
-        text: '托塔李天王正在前头调兵遣将，将军速速前去相助！'
+        text: '大将军奉玉帝敕令值守南天门与瑶池仙宴。将军且移步瑶池水阁巡视，莫让宵小之徒惊扰了仙家胜会！'
       }
     ]
   },
 
-  litianwang_intro: {
+  // 1. 因缘事件一：天蓬调戏嫦娥
+  tianpeng_change_encounter: {
     steps: [
       {
-        speaker: '托塔李天王',
-        speakerTitle: '【降魔大元帅】',
-        speakerIcon: '👑',
-        text: '威灵大将军听令！天罗地网已经布下，那妖猴狂妄至极，今日断不可让他冲撞了玉帝圣驾！'
+        speaker: '嫦娥仙子',
+        speakerTitle: '【广寒月神】',
+        speakerIcon: '🧚‍♀️',
+        text: '天蓬元帅请自重！妾身乃广寒仙侍，此乃瑶池仙宴重地，休得借酒无礼拉扯！'
       },
       {
-        speaker: '托塔李天王',
-        speakerTitle: '【降魔大元帅】',
-        speakerIcon: '👑',
-        text: '速与本帅并力合围，布阵擒猴！'
-      }
-    ]
-  },
-
-  wukong_heaven_encounter: {
-    steps: [
-      {
-        speaker: '孙悟空',
-        speakerTitle: '【齐天大圣】',
-        speakerIcon: '🐒',
-        text: '嘿嘿嘿！吃俺老孙一棒！玉帝老儿无道，这九霄天阙俺老孙踏得，你们也拦得？！'
+        speaker: '天蓬元帅',
+        speakerTitle: '【天河水军统帅】',
+        speakerIcon: '🐷',
+        text: '嗝……嫦娥妹妹何必这般生分！老猪……不，本帅统领天河八万水军，威名赫赫，配你月宫仙子有何不可？且陪本帅畅饮三百杯！'
       },
       {
         speaker: '威灵大将军 (玩家)',
         speakerTitle: '【天界神将】',
         speakerIcon: '🧙‍♂️',
-        text: '（凝视眼前桀骜不驯的神猴，心中暗赞这通天豪情与敢破枷锁的傲骨……）'
+        text: '天蓬元帅！住手！尔身为天河统帅，竟敢在王母蟠桃胜会借酒逞凶，欺辱广寒仙子，将天规戒律置于何地？！'
       },
       {
-        speaker: '孙悟空',
-        speakerTitle: '【齐天大圣】',
-        speakerIcon: '🐒',
-        text: '看你这身金甲气度不凡，也是个铁骨铮铮的好汉，何必为这腐朽天庭卖命？要战便战！'
-      },
-      {
-        speaker: '威灵大将军 (玩家)',
-        speakerTitle: '【抉择时刻】',
-        speakerIcon: '🧙‍♂️',
-        text: '大圣，我敬你顶天立地！天兵后路已被我悄然引开，你速破虚空而去！',
+        speaker: '天蓬元帅',
+        speakerTitle: '【醉眼朦胧】',
+        speakerIcon: '🐷',
+        text: '好你个威灵大将！敢坏本帅的好事，今日便让你尝尝本帅九齿钉耙的厉害！',
         options: [
           {
-            text: '【暗中相助孙悟空，阻挡追捕天兵】',
+            text: '【⚔️ 挺身出击，制伏醉酒天蓬元帅】',
             action: () => {
-              window.App2D.triggerHeavenBattle();
+              if (window.App2D) {
+                window.App2D.triggerTianpengBattle();
+              }
             }
           }
         ]
@@ -221,78 +205,550 @@ window.GAME_DATA.STORY_DIALOGUES = {
     ]
   },
 
-  heaven_banishment: {
+  // 制伏天蓬后：王母降旨贬猪胎
+  tianpeng_after_battle: {
     steps: [
       {
-        speaker: '天庭宣旨金甲天神',
-        speakerTitle: '【天威浩荡】',
+        speaker: '王母娘娘法旨',
+        speakerTitle: '【天威震怒】',
         speakerIcon: '⚡',
-        text: '奉玉皇大天尊敕令：威灵显赫大将军居心叵测，私纵妖猴！'
+        text: '【王母玉旨】天蓬元帅酗酒失德，调戏嫦娥仙子，秽乱天规！着金甲天将即刻押往斩妖台重责两千神锤，褫夺帅印，贬落凡尘投胎成猪！钦此！'
       },
       {
-        speaker: '天庭宣旨金甲天神',
-        speakerTitle: '【天罚降临】',
-        speakerIcon: '⚡',
-        text: '今如来佛祖已降五指山将妖猴镇压。着即剥夺威灵大将神金甲胄与一身仙法，清空宿世记忆，重重贬落凡尘两界山下受苦轮回！钦此！'
-      },
-      {
-        speaker: '天道神雷',
-        speakerTitle: '【轰然巨响】',
-        speakerIcon: '💥',
-        text: '【九霄惊雷撕裂虚空！你的神力被生生剥离，意识陷入了无尽的黑暗与深渊……】',
+        speaker: '嫦娥仙子',
+        speakerTitle: '【广寒月神】',
+        speakerIcon: '🧚‍♀️',
+        text: '多谢威灵大将军仗义出手相护！若非将军神力制伏天蓬，奴家今日危矣，大恩永志不忘！凌霄殿前琼浆大宴已启，将军速速前往值守吧。',
         action: () => {
-          window.App2D.executeBanishment();
+          if (window.App2D) {
+            window.App2D.storyPhase = 'heaven_saved_change';
+            window.showGameMessage('✨ 【因缘事件一完成】仗义解救嫦娥仙子！请前往凌霄殿前值守。', 'success', 3500);
+            window.App2D.refreshMapNpcs();
+          }
         }
       }
     ]
   },
 
-  // === 第一章：凡间刘家村 ===
+  change_talk: {
+    steps: [
+      {
+        speaker: '嫦娥仙子',
+        speakerTitle: '【广寒月神】',
+        speakerIcon: '🧚‍♀️',
+        text: '威灵大将军浩气凛然，小仙铭感五内。愿将军福寿齐天！'
+      }
+    ]
+  },
+
+  // 2. 因缘事件二：卷帘打碎琉璃盏
+  juanlian_break_cup: {
+    steps: [
+      {
+        speaker: '碎玉鸣响',
+        speakerTitle: '【殿前惊变】',
+        speakerIcon: '💥',
+        text: '【喀嚓——！】一声清脆巨响，卷帘大将奉酒失手，将一只温润剔透的九曲玉琉璃宝盏跌得粉碎，玉琼四溢！'
+      },
+      {
+        speaker: '卷帘大将',
+        speakerTitle: '【御前侍卫】',
+        speakerIcon: '🧔',
+        text: '陛下饶命！小臣心神恍惚一时失手跌碎御盏，小臣知罪，伏乞天恩赦免！'
+      },
+      {
+        speaker: '玉皇大天尊',
+        speakerTitle: '【九五至尊】',
+        speakerIcon: '👑',
+        text: '大胆卷帘！此乃西王母娘娘特赐镇殿至宝，尔竟在百仙面前打碎！来人，推下斩妖台立刻斩首示众！'
+      },
+      {
+        speaker: '威灵大将军 (玩家)',
+        speakerTitle: '【出列力保】',
+        speakerIcon: '🧙‍♂️',
+        text: '启奏陛下！卷帘大将素日南征北战、侍卫御前忠谨无双，此番实属无心之过！万望陛下念其往昔赤胆忠心，从轻发落，留其一命！'
+      },
+      {
+        speaker: '玉皇大天尊',
+        speakerTitle: '【圣意宽宥】',
+        speakerIcon: '👑',
+        text: '也罢！念威灵大将代为力保求情，免去死罪！着改判神杖八百，贬落凡尘流沙河，每七日命飞剑穿胸三百回以惩天条！'
+      },
+      {
+        speaker: '太白金星',
+        speakerTitle: '【天庭老仙】',
+        speakerIcon: '👴',
+        text: '大将军！出天大的祸事了！那花果山齐天大圣孙悟空因未被请入蟠桃胜会，一怒之下反出天庭，偷吃了老君金丹与仙桃！陛下降旨命李天王、哪吒为帅，请威灵将军速速率部下界围剿东胜神洲花果山！',
+        options: [
+          {
+            text: '【☁️ 奉旨领兵，下界征讨东胜神洲·花果山】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'heaven_huaguoshan';
+                window.App2D.loadMap('huaguoshan');
+                window.showGameMessage('☁️ 大军降临东胜神洲花果山！前方前锋天将正与妖群搏杀！', 'info', 3500);
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 3. 因缘事件三：花果山前戏过渡（主山前哨 -> 水帘洞探查 -> 水帘洞战赤毛马猴 -> 救小猴战巨灵神 -> 回花果山战大圣）
+  huaguoshan_arrival: {
+    steps: [
+      {
+        speaker: '天庭前锋营神将',
+        speakerTitle: '【前线神将】',
+        speakerIcon: '⚔️',
+        text: '末将参见威灵显赫大将军！李天王大军正于花果山漫山遍野合围群妖！'
+      },
+      {
+        speaker: '天庭前锋营神将',
+        speakerTitle: '【军情紧急】',
+        speakerIcon: '⚔️',
+        text: '但方才探得有一支凶悍猴妖精锐退守进入瀑布后的【水帘洞天】！李天王传下军令：请大将军速速穿过瀑布进入水帘洞探查虚实，切莫让妖邪暗藏杀机！',
+        options: [
+          {
+            text: '【🌊 领帅令，穿过飞瀑进入水帘洞天探查】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'heaven_huaguoshan_shuilien';
+                window.App2D.loadMap('huaguoshan_shuilien');
+                window.showGameMessage('🌊 穿过轰鸣飞瀑，踏入灵气缭绕的水帘洞天！', 'info', 3500);
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  chimao_in_shuilien: {
+    steps: [
+      {
+        speaker: '赤毛马猴',
+        speakerTitle: '【守山健将】',
+        speakerIcon: '🐒',
+        text: '站住！何方天将竟敢擅闯俺花果山水帘洞禁地！俺老马乃大圣麾下守山健将，吃俺一拳！',
+        options: [
+          {
+            text: '【⚔️ 亮枪交手，与赤毛马猴切磋一番】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.triggerChimaoBattle();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  chimao_shuilien_after: {
+    steps: [
+      {
+        speaker: '赤毛马猴',
+        speakerTitle: '【花果山健将】',
+        speakerIcon: '🐒',
+        text: '好厉害的金甲枪法……大将军且慢动手！洞府深处出天大祸事了！'
+      },
+      {
+        speaker: '赤毛马猴',
+        speakerTitle: '【悲愤恳求】',
+        speakerIcon: '🐒',
+        text: '那天庭前锋巨灵神趁大圣外出，杀入水帘洞深处，对手无寸铁的幼小猴儿赶尽杀绝！大将军一身正气，求求您快去内洞阻止巨灵神，救救那些孩儿们吧！',
+        options: [
+          {
+            text: '【🔥 岂有此理！速去水帘洞深处阻止巨灵神行凶】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'heaven_huaguoshan_rescue';
+                window.showGameMessage('🔥 深入水帘洞深处！前方巨灵神正凶相毕露！', 'warn', 3500);
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  juling_shuilien_battle: {
+    steps: [
+      {
+        speaker: '征讨先锋·巨灵神',
+        speakerTitle: '【凶煞天将】',
+        speakerIcon: '👹',
+        text: '哈哈哈哈！大元帅李天王有令：妖猴抗旨，花果山猴群小怪不论老幼，趁人之危给我赶尽杀绝，统统斩草除根！'
+      },
+      {
+        speaker: '花果山受困小猴',
+        speakerTitle: '【惊恐哀啼】',
+        speakerIcon: '🐒',
+        text: '吱吱！神仙爷爷饶命啊！我们从小在水帘洞吃桃玩耍，从未伤天害理，不要杀我们……大圣爷爷救命啊！'
+      },
+      {
+        speaker: '威灵大将军 (玩家)',
+        speakerTitle: '【大义浩然】',
+        speakerIcon: '🧙‍♂️',
+        text: '住手！巨灵神！降妖除魔乃正天道，尔身为堂堂天将，安能对寸铁不执之弱小幼猴赶尽杀绝？！我威灵大将绝不容尔借天庭之名滥杀无辜！'
+      },
+      {
+        speaker: '征讨先锋·巨灵神',
+        speakerTitle: '【暴怒拔斧】',
+        speakerIcon: '👹',
+        text: '威灵大将！你敢违抗帅令私护妖孽？吃我开山神斧！',
+        options: [
+          {
+            text: '【⚔️ 挺身大战巨灵神，舍身保全花果山猴群】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.triggerJulingBattle();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  huaguo_monkey_talk: {
+    steps: [
+      {
+        speaker: '花果山小猴',
+        speakerTitle: '【花果仙眷】',
+        speakerIcon: '🐒',
+        text: '多谢金甲大将军救命之恩！大将军是天底下最好的神仙！大圣爷爷马上就回来收拾恶天兵啦！'
+      }
+    ]
+  },
+
+  tongbi_talk: {
+    steps: [
+      {
+        speaker: '通臂猿猴',
+        speakerTitle: '【水帘洞总管】',
+        speakerIcon: '🐒',
+        text: '水帘洞天宛若仙境，大将军仗义护我花果山一脉，水帘洞上下万载感念！'
+      }
+    ]
+  },
+
+  // 击败巨灵神后：指引走出水帘洞，返回花果山主山与齐天大圣决战
+  juling_defeated_to_huaguoshan: {
+    steps: [
+      {
+        speaker: '小猴欢呼',
+        speakerTitle: '【幼猴脱困】',
+        speakerIcon: '🐒',
+        text: '【巨灵神被大将军神枪击溃败退！受困幼猴尽数获救，欢喜啼鸣感激大将军活命天恩！】'
+      },
+      {
+        speaker: '洞外震天长啸',
+        speakerTitle: '【神猴归山】',
+        speakerIcon: '💥',
+        text: '【轰隆隆——！洞外苍穹震动，齐天大圣孙悟空一声震天怒吼回响整座东胜神洲！天兵号角齐鸣！】'
+      },
+      {
+        speaker: '传令天兵',
+        speakerTitle: '【天将飞报】',
+        speakerIcon: '⚡',
+        text: '威灵大将！齐天大圣已杀回花果山主峰！李天王传法旨：请大将速速走出水帘洞，返回花果山主山与哪吒、雷公结阵合围！',
+        options: [
+          {
+            text: '【⛰️ 走出水帘洞，返回花果山主山迎战大圣】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'heaven_final_wukong';
+                window.App2D.loadMap('huaguoshan');
+                window.showGameMessage('⛰️ 返回花果山主山！金箍棒神芒直冲九霄！', 'info', 3500);
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 花果山主山：与齐天大圣决战（大圣神威极境 Lv.99 一棒秒杀天将）
+  wukong_huaguoshan_havoc: {
+    steps: [
+      {
+        speaker: '齐天大圣孙悟空',
+        speakerTitle: '【满怀敬重】',
+        speakerIcon: '🐒',
+        text: '威灵大将军！俺老孙适才在云端全看在眼里！天庭那帮脓包赶尽杀绝，唯独你金甲大将竟肯为了我花果山无辜孩儿拔枪大战巨灵神！'
+      },
+      {
+        speaker: '齐天大圣孙悟空',
+        speakerTitle: '【豪义万丈】',
+        speakerIcon: '🐒',
+        text: '俺老孙平生最重英雄好汉！这份天大恩义，俺老孙记在心坎上了！看在大将军大义面上，此番合围，俺老孙最后才出棒迎你！来战吧！'
+      },
+      {
+        speaker: '托塔李天王',
+        speakerTitle: '【天兵压境】',
+        speakerIcon: '👑',
+        text: '四神天阵起！哪吒、雷公、威灵大将，随本天王全力合围拿下反天妖猴！',
+        options: [
+          {
+            text: '【⚔️ 结成四天将大阵，在花果山决战齐天大圣】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.triggerWukongHavocBattle();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 决战大圣战败后：二郎神杨戬降临花果山擒圣，随后大圣输了押回天宫
+  yangjian_capture_and_banishment: {
+    steps: [
+      {
+        speaker: '齐天大圣孙悟空',
+        speakerTitle: '【神威极境】',
+        speakerIcon: '🐒',
+        text: '【金箍棒神威惊天动地，法天象地千钧棒一挥横扫！李天王、哪吒、雷公与威灵大将被大圣恐怖神力一击击溃倒地，四天将大阵未能胜过大圣！】'
+      },
+      {
+        speaker: '二郎真君杨戬',
+        speakerTitle: '【昭惠显圣二郎真君】',
+        speakerIcon: '👁️',
+        text: '泼猴休得猖狂！清源妙道二郎真君杨戬奉旨降临花果山！哮天神犬，去！'
+      },
+      {
+        speaker: '花果山二郎擒圣',
+        speakerTitle: '【杨戬大胜生擒大圣】',
+        speakerIcon: '⚡',
+        text: '【二郎神额间天眼迸发万道金芒，哮天神犬疾如雷霆扑咬，与大圣在花果山各展七十二变大战天昏地暗！杨戬与哮天犬终胜出战斗，生擒孙悟空！】'
+      },
+      {
+        speaker: '托塔李天王',
+        speakerTitle: '【押赴天庭】',
+        speakerIcon: '👑',
+        text: '杨真君神威无双！天兵听令，即刻将反天妖猴锁拿，押解返回天宫凌霄宝殿，听候玉帝圣旨发落！',
+        options: [
+          {
+            text: '【☁️ 随天兵凯旋，押解齐天大圣返回天宫凌霄宝殿】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'heaven_tiangong_trial';
+                window.App2D.loadMap('tiangong_palace');
+                window.showGameMessage('☁️ 大军凯旋回朝！凌霄殿前百官伏阶听旨！', 'info', 3500);
+                setTimeout(() => {
+                  if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.tiangong_banishment_scene) {
+                    window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.tiangong_banishment_scene);
+                  }
+                }, 500);
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 回到天宫：玉帝升殿发落四人因果贬落凡间
+  tiangong_banishment_scene: {
+    steps: [
+      {
+        speaker: '玉皇大天尊圣旨',
+        speakerTitle: '【发落四人因果】',
+        speakerIcon: '👑',
+        text: '【九五至尊神旨】孙悟空大闹天宫，押往斩妖台，着如来佛祖镇压于【两界山·五行山】下；天蓬元帅调戏嫦娥，贬落凡尘投胎猪妖，盘踞于【乌斯藏·高老庄】；卷帘大将碎玉琉璃盏，贬落【八百里·流沙河】受飞剑之苦！'
+      },
+      {
+        speaker: '天庭宣旨金甲天神',
+        speakerTitle: '【天威浩荡】',
+        speakerIcon: '⚡',
+        text: '而威灵显赫大将！抗旨违逆帅令击退前锋巨灵神、私自包庇花果山妖群！着即剥夺威灵大将金甲战袍与通天神力，清空宿世记忆，重重贬落凡尘【双叉岭·刘家村】受苦轮回！钦此！'
+      },
+      {
+        speaker: '天道神雷',
+        speakerTitle: '【轰然巨响】',
+        speakerIcon: '💥',
+        text: '【九霄惊雷撕裂苍穹！你的神力被生生抽离，眼前陷入无尽黑暗，一同坠入凡尘……】',
+        options: [
+          {
+            text: '【⚡ 贬落凡尘，坠入无尽深渊……】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.executeBanishment();
+              }
+            }
+          }
+        ],
+        action: () => {
+          if (window.App2D) {
+            window.App2D.executeBanishment();
+          }
+        }
+      }
+    ],
+    onComplete: () => {
+      if (window.App2D) {
+        window.App2D.executeBanishment();
+      }
+    }
+  },
+
+  // === 第一章：凡间刘家村（蘑菇生火、五行山砍柴、除硕鼠、同赴长安） ===
   liuboqin_talk: {
     steps: [
       {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '喂！这位兄弟，快醒醒！你怎生一身单薄布衫倒在双叉岭山涧旁？'
+        text: '喂！这位壮士，快醒醒！你怎生一身单薄布衣倒在双叉岭山涧旁？'
       },
       {
         speaker: '失忆玩家',
         speakerTitle: '【茫然不知】',
         speakerIcon: '🧙‍♂️',
-        text: '我……我是谁？我胸口仿佛被神雷击中，过往之事竟一丝一毫都记不得了……'
+        text: '我……我是谁？我胸口仿佛被神雷击碎，过往前世之事竟一丝一毫都记不得了……'
       },
       {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '唉，定是遭了强人洗劫伤了头颅！在下刘伯钦，人称镇山太保，以打猎为生。'
+        text: '定是遭了猛兽或强人洗劫！在下刘伯钦，以打猎为生。看你虚弱饥寒，我家中正要开火做饭，但少些菜肴下锅。'
       },
       {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '这双叉岭凶兽极多，这把【猎虎短刃】与【鹿皮短靴】你先拿去防身！东边林子里有只恶狼四处咬人，你随我前去斩了它，权当活络筋骨！',
+        text: '刘家村草地上正长着不少野蕈，烦请少侠在村中草地上采摘 4 朵【野生青蘑菇】回来，我好生火做饭为你接风暖身！这把短剑与皮靴你先拿去防身！',
         action: () => {
           window.App2D.grantStarterItems();
+          window.App2D.storyPhase = 'liujiacun_find_mushrooms';
+          window.showGameMessage('🍄 请在刘家村草地上寻找并拾取 4 朵【野生青蘑菇】！', 'info', 4000);
+          if (window.App2D.showChapterBanner) {
+            window.App2D.showChapterBanner('第一回 · 梦断九霄', '谪仙落两界，山野逢太保', '西游序章');
+          }
+          window.App2D.refreshMapNpcs();
         }
       }
     ]
   },
 
-  liuboqin_post_hunt: {
+  pickup_mushroom: {
+    steps: [
+      {
+        speaker: '采摘野蕈',
+        speakerTitle: '【山野珍馐】',
+        speakerIcon: '🍄',
+        text: '【地面草丛中生长着一丛鲜嫩欲滴的野生青蘑菇，散发着诱人菌香。是否将其采摘入囊？】',
+        options: [
+          {
+            text: '【🍄 采摘这朵野生青蘑菇】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.collectMushroom();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  liuboqin_mushroom_done: {
     steps: [
       {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '好身手！小兄弟虽失了记忆，但举手投足间隐有大将之风！'
+        text: '哈哈！少侠好利落的身手！这 4 朵青蘑菇肥美鲜嫩，正是做羹汤的上等好料！'
       },
       {
         speaker: '刘伯钦',
-        speakerTitle: '【镇山太保】',
+        speakerTitle: '【缺少柴火】',
         speakerIcon: '🏹',
-        text: '听闻向东百里的大唐都城【长安城】，化生寺高僧玄奘法师正开水陆大会，更常有仙家神迹显化。你若想寻回身世，不妨前往长安一探究竟！'
+        text: '只是不巧，家中灶台下的干柴刚好用尽。西边五行山脚下，有许多成了精的枯树精拦路。少侠且与我同去五行山，伐倒 4 株【百年枯树精】，收集坚韧柴木回来生火！',
+        action: () => {
+          window.App2D.storyPhase = 'liujiacun_go_cut_wood';
+          window.showGameMessage('🪓 前往两界山·五行山脚下，击败 4 株百年枯树精收集坚韧柴木！', 'info', 4000);
+          window.App2D.refreshMapNpcs();
+        }
+      }
+    ]
+  },
+
+  liuboqin_wood_done: {
+    steps: [
+      {
+        speaker: '刘伯钦',
+        speakerTitle: '【生火做饭】',
+        speakerIcon: '🏹',
+        text: '太好了！4 捆坚韧柴木带回来了！火旺汤滚，香菇野味浓香扑鼻，少侠快快请进屋趁热饱餐一顿！'
+      },
+      {
+        speaker: '饱餐一顿',
+        speakerTitle: '【精力充沛】',
+        speakerIcon: '🍲',
+        text: '【吃下一大碗热气腾腾的野山蕈汤，周身暖流涌动，伤痛尽去，气血与法力全满！获得经验 +300！】',
+        action: () => {
+          window.App2D.playerData.gainExp(300);
+          window.App2D.playerData.hp = window.App2D.playerData.maxHp;
+          window.App2D.playerData.mp = window.App2D.playerData.maxMp;
+          window.App2D.updatePlayerHud();
+        }
+      },
+      {
+        speaker: '刘伯钦',
+        speakerTitle: '【粮仓鼠患】',
+        speakerIcon: '🏹',
+        text: '实不相瞒，最近村中粮仓周围出了不少成精的硕鼠，四处偷啃庄稼谷物，祸害乡邻！少侠若已恢复气力，可否帮村里除灭 4 只【偷粮硕鼠】？',
+        action: () => {
+          window.App2D.storyPhase = 'liujiacun_rat_hunting';
+          window.showGameMessage('🐀 请在刘家村田垄粮仓周围，消灭 4 只偷粮硕鼠除害安民！', 'warn', 4000);
+          window.App2D.refreshMapNpcs();
+        }
+      }
+    ]
+  },
+
+  liuboqin_rats_done: {
+    steps: [
+      {
+        speaker: '刘伯钦',
+        speakerTitle: '【除害大吉】',
+        speakerIcon: '🏹',
+        text: '痛快！少侠果然武艺超群，4 只祸害庄稼的硕鼠被你一网打尽，村中老少皆感激不尽！'
+      },
+      {
+        speaker: '除害犒赏',
+        speakerTitle: '【丰厚酬谢】',
+        speakerIcon: '💰',
+        text: '【刘家村乡亲酬谢少侠义举！获得经验 +500、银两 +300两！】',
+        action: () => {
+          window.App2D.playerData.gainExp(500);
+          window.App2D.playerData.silver += 300;
+          window.App2D.updatePlayerHud();
+          window.Sound.playSuccess();
+        }
+      },
+      {
+        speaker: '刘伯钦',
+        speakerTitle: '【同赴长安】',
+        speakerIcon: '🏹',
+        text: '听闻向东百里的大唐王都【长安城】近来热闹非凡，当朝圣僧玄奘法师正开坛讲法，集市百戏盛会游人如织。在下正要送山货入京，少侠若想探寻身世，你我正好一同前往长安城！',
+        action: () => {
+          window.App2D.storyPhase = 'liujiacun_go_changan';
+          window.showGameMessage('🏮 东门官道已开！与刘伯钦一同前往大唐王都·长安城！', 'success', 4000);
+          window.App2D.refreshMapNpcs();
+        }
       }
     ]
   },
@@ -308,20 +764,296 @@ window.GAME_DATA.STORY_DIALOGUES = {
     ]
   },
 
-  // === 第二章：大唐长安城 ===
+  // === 第二章：大唐长安城与陈塘关海乱 ===
+  changan_tea_news: {
+    steps: [
+      {
+        speaker: '茶肆阿婆',
+        speakerTitle: '【市井百晓】',
+        speakerIcon: '🍵',
+        text: '客官请坐！尝尝老身刚沏的雨前香茗！客官也是来长安瞻仰玄奘圣僧开坛讲法的吧？'
+      },
+      {
+        speaker: '茶肆阿婆',
+        speakerTitle: '【东海风波】',
+        speakerIcon: '🌊',
+        text: '不过听说东南海疆【陈塘关】近来可不太平！东海深处妖气滚滚，海妖夜叉阻绝航路，渔民死伤惨重，贡品海鲜更是进不得京！李总兵正张贴榜文悬赏勇士前往陈塘关除妖呢！',
+        action: () => {
+          window.App2D.storyPhase = 'chentang_investigate';
+          window.showGameMessage('🌊 探得东海陈塘关海妖作祟！请由长安东南门前往【陈塘关】！', 'info', 4000);
+          window.App2D.refreshMapNpcs();
+        }
+      }
+    ]
+  },
+
+  chentang_lijing_talk: {
+    steps: [
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【陈塘总兵】',
+        speakerIcon: '👑',
+        text: '壮士来得正好！东海巡海夜叉李艮近来狂妄至极，在东海之滨掀起千层浊浪，击沉渔船，伤我军民！'
+      },
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【陈塘总兵】',
+        speakerIcon: '👑',
+        text: '壮士若能前往东海之滨制伏那凶残夜叉，还东南百姓朗朗乾坤，陈塘关上下感激不尽！',
+        action: () => {
+          window.App2D.storyPhase = 'donghai_yecha_ready';
+          window.showGameMessage('🔱 前往【东海之滨】，迎战作恶多端的巡海夜叉李艮！', 'warn', 4000);
+          window.App2D.refreshMapNpcs();
+        }
+      }
+    ]
+  },
+
+  fisherman_talk: {
+    steps: [
+      {
+        speaker: '海滨老渔翁',
+        speakerTitle: '【东海老渔】',
+        speakerIcon: '🎣',
+        text: '那东海之滨的夜叉凶神恶煞，手提钢叉驱使巨蟹虾兵，少侠去时千万要小心啊！'
+      }
+    ]
+  },
+
+  // 东海之滨：巡海夜叉大战
+  donghai_yecha_battle: {
+    steps: [
+      {
+        speaker: '巡海夜叉·李艮',
+        speakerTitle: '【东海凶煞】',
+        speakerIcon: '🔱',
+        text: '哇呀呀！哪来的凡夫俗子，竟敢擅闯东海天险重地！今日便教你尝尝你夜叉爷爷的三股托天叉！'
+      },
+      {
+        speaker: '威灵大将 (玩家)',
+        speakerTitle: '【浩然正气】',
+        speakerIcon: '🧙‍♂️',
+        text: '恶夜叉休得猖狂！残害无辜渔民、掀浪阻绝海疆，今日定不饶你！',
+        options: [
+          {
+            text: '【⚔️ 挺身出击，大战东海巡海夜叉李艮！】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.triggerYechaBattle();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 击败夜叉后：东海龙王敖广引万顷波涛赶来赔罪，引往龙宫挑选神装
+  donghai_dragon_apology: {
+    steps: [
+      {
+        speaker: '巡海夜叉',
+        speakerTitle: '【跪地求饶】',
+        speakerIcon: '🔱',
+        text: '【夜叉被大将打得丢盔弃甲，钢叉寸断，连滚带爬瘫倒在海水里惨叫求饶！】'
+      },
+      {
+        speaker: '狂浪奔涌',
+        speakerTitle: '【龙王现身】',
+        speakerIcon: '🌊',
+        text: '【海面波涛轰然向两旁分开，东海龙王敖广身披龙袍踏水疾驰而至，定睛一看大惊失色！】'
+      },
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【惊骇赔罪】',
+        speakerIcon: '🐉',
+        text: '哎呀呀！大水冲了龙王庙！犬奴有眼无珠，竟没认出您是当年在天庭威名赫赫的【威灵显赫大将军】！'
+      },
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【诚惶诚恐】',
+        speakerIcon: '🐉',
+        text: '昔日将军在南天门威震三界，老龙深为敬佩！今日夜叉冲撞尊驾，是老龙治下不严！快请将军移步东海龙宫，老龙已开启龙宫宝库，特备一套初级龙神套装，任将军随意穿戴挑选，权当老龙为大将赔罪接风！',
+        options: [
+          {
+            text: '【🐉 随龙王移步东海龙宫大殿，挑选神装】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'longgong_visit';
+                window.App2D.loadMap('longgong_palace');
+                window.showGameMessage('🐉 步入水晶珊瑚雕砌的东海龙宫大殿！', 'success', 3500);
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 东海龙宫大殿：赠送一套初级龙宫神装
+  longgong_receive_armor: {
+    steps: [
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【龙宫宝库】',
+        speakerIcon: '🐉',
+        text: '将军请看！这是老龙命水晶宫巧匠以深海蛟龙蜕鳞、定海玄铁精淬而成的整套【初级龙神战装】！'
+      },
+      {
+        speaker: '龙王奉宝',
+        speakerTitle: '【龙神套装赠大将】',
+        speakerIcon: '🎁',
+        text: '【东海龙王敖广奉上：覆海点钢枪、龙鳞轻钢甲、碧水定海盔、踏浪穿云靴、龙珠凝霜佩一套！战力大增，神威初现！】',
+        options: [
+          {
+            text: '【💎 欣然收下整套龙神装备并即刻装备】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.grantLonggongArmorSet();
+              }
+            }
+          }
+        ]
+      },
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【躬身相送】',
+        speakerIcon: '🐉',
+        text: '宝甲赠英雄！将军如今神装在身，真乃威风凛凛！老龙这便送将军返回陈塘关码头！',
+        action: () => {
+          if (window.Dialogue) window.Dialogue.close();
+          if (window.App2D) {
+            window.App2D.storyPhase = 'chentang_guanyin_revelation';
+            window.App2D.loadMap('chentangguan');
+            window.showGameMessage('☁️ 返回陈塘关！天际祥云缭绕，仙乐阵阵！', 'info', 3500);
+          }
+        }
+      }
+    ]
+  },
+
+  // 陈塘关：观音菩萨显圣点化前世因果与西行宿命
+  chentang_guanyin_revelation: {
+    steps: [
+      {
+        speaker: '大慈大悲观世音菩萨',
+        speakerTitle: '【佛光显圣】',
+        speakerIcon: '🪷',
+        text: '威灵显赫大将军，别来无恙乎？'
+      },
+      {
+        speaker: '失忆玩家',
+        speakerTitle: '【心神巨震】',
+        speakerIcon: '🧙‍♂️',
+        text: '菩萨！您……认得我？我究竟是谁？'
+      },
+      {
+        speaker: '大慈大悲观世音菩萨',
+        speakerTitle: '【前世因果】',
+        speakerIcon: '🪷',
+        text: '你本是九霄天庭威灵显赫大将，蟠桃胜会力救嫦娥、殿前出列保全卷帘性命，更在花果山以身挡斧抗旨救下无数幼小猴群。你虽被削去神力贬落凡尘，但那份浩然仁义，早已惊动西方佛老。'
+      },
+      {
+        speaker: '大慈大悲观世音菩萨',
+        speakerTitle: '【点化西行】',
+        speakerIcon: '🪷',
+        text: '如今南赡部洲多贪多杀，大唐长安城中，金蝉子转世为【玄奘法师】，正承唐天子圣旨欲往西天求取大乘真经。你具宿世仁勇，正当为西行护法真灵！速回长安城拜见玄奘法师与大唐天子，共启西天取经大业！',
+        action: () => {
+          window.App2D.storyPhase = 'changan_meet_xuanzang';
+          window.showGameMessage('✨ 【观音点化】明悟前世因果！速回长安城拜见玄奘法师与唐天子！', 'success', 5000);
+          window.App2D.refreshMapNpcs();
+        }
+      }
+    ]
+  },
+
+  // 长安城：拜见玄奘法师
   xuanzang_talk: {
     steps: [
       {
         speaker: '玄奘法师',
         speakerTitle: '【金山寺高僧】',
         speakerIcon: '🧘‍♂️',
-        text: '阿弥陀佛。施主远道而来，贫僧见施主眉宇间有浩然浩荡之气，绝非池中之物。'
+        text: '阿弥陀佛！贫僧适才忽见紫气东来，施主眉宇间浩气冲霄、龙神宝甲护体，菩萨曾托梦于贫僧，施主便是贫僧西行取经命中注定的护法贵人！'
       },
       {
         speaker: '玄奘法师',
-        speakerTitle: '【金山寺高僧】',
+        speakerTitle: '【金蝉发愿】',
         speakerIcon: '🧘‍♂️',
-        text: '贫僧受大唐天子重托，发下大愿欲往西天拜佛求取大乘真经，超度天下苦难亡灵。奈何西行十万八千里妖魔横行，正需施主这般义薄云天的豪杰护持！'
+        text: '大唐圣天子李世民陛下正在金銮宝殿高阶御前，欲为我等赐封御弟法号并颁发通关文牒！施主请随贫僧移步殿前，觐见太宗陛下！',
+        action: () => {
+          window.App2D.storyPhase = 'changan_meet_taizong';
+          window.showGameMessage('👑 请登上长安城顶部金銮宝殿，觐见唐太宗李世民陛下！', 'info', 4000);
+          window.App2D.refreshMapNpcs();
+        }
+      }
+    ]
+  },
+
+  // 长安金銮殿：唐太宗李世民殿前赐宝与通关文牒
+  tangtaizong_talk: {
+    steps: [
+      {
+        speaker: '唐太宗·李世民',
+        speakerTitle: '【大唐圣天子】',
+        speakerIcon: '👑',
+        text: '朕的大唐好男儿！朕已听玄奘御弟与观音菩萨赞叹将军英烈大义！'
+      },
+      {
+        speaker: '唐太宗·李世民',
+        speakerTitle: '【御赐文牒】',
+        speakerIcon: '📜',
+        text: '西行十万八千里路途艰险、妖魔遍野，朕特赐下【大唐西域通关文牒】与【紫金钵盂】，更将御弟玄奘托付于将军！愿将军一路披荆斩棘，早日求取大乘真经造福苍生！',
+        options: [
+          {
+            text: '【📜 领旨谢恩，誓保玄奘西天求得真经！】',
+            action: () => {
+              window.App2D.inventory.addItem('feixing_fu', 5);
+              window.App2D.inventory.addItem('jiuzhuan_dan', 3);
+              window.App2D.playerData.gainExp(1000);
+              window.App2D.playerData.silver += 500;
+              window.App2D.storyPhase = 'changan_farewell';
+              window.Sound.playSuccess();
+              window.showGameMessage('📜 获得太宗御赐通关文牒、飞行符*5、九转金丹*3、经验+1000、银两+500！', 'success', 5000);
+              window.App2D.refreshMapNpcs();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 长安西门：刘伯钦送行依依惜别
+  changan_farewell_liuboqin: {
+    steps: [
+      {
+        speaker: '刘伯钦',
+        speakerTitle: '【镇山太保】',
+        speakerIcon: '🏹',
+        text: '哈哈！少侠！伯钦在长安集市听闻少侠受太宗敕封护持圣僧西天取经，特在城门口备了些山野干粮盘缠为你送行！'
+      },
+      {
+        speaker: '刘伯钦',
+        speakerTitle: '【依依惜别】',
+        speakerIcon: '🏹',
+        text: '想当初在两界山涧救起少侠，便知少侠是顶天立地的英雄！此番西去山高水长，第一站便是那压着神猴的五行山，少侠千万保重！伯钦祝少侠功德圆满、早载真经归唐！',
+        options: [
+          {
+            text: '【🌅 拜别刘兄，西行大业正式启程！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'wuxingshan_ready';
+                window.showGameMessage('🌅 【西行序章启程】第一站：前往【五行山】解救齐天大圣孙悟空！', 'success', 5000);
+                if (window.App2D.showChapterBanner) {
+                  window.App2D.showChapterBanner('第二回 · 梦启长安', '水陆法会闻大法，金蝉发愿向西天', '西游正传');
+                }
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
       }
     ]
   },
@@ -332,25 +1064,29 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '观音菩萨 (化身)',
         speakerTitle: '【南海普陀落伽山】',
         speakerIcon: '🪷',
-        text: '善哉善哉！威灵大将军，别来无恙乎？'
+        text: '善哉善哉！威灵大将军，别来无恙乎？',
+        emotion: 'divine'
       },
       {
         speaker: '玩家',
         speakerTitle: '【神魂震动】',
         speakerIcon: '🧙‍♂️',
-        text: '菩萨！您……您唤我何名？！我脑海中似乎有金甲裂空之景掠过！'
+        text: '菩萨！您……您唤我何名？！我脑海中似乎有金甲裂空之景掠过！',
+        emotion: 'exclamation'
       },
       {
         speaker: '观音菩萨 (化身)',
         speakerTitle: '【南海普陀落伽山】',
         speakerIcon: '🪷',
-        text: '因缘际会，果报不爽。你五百年前暗释大圣触犯天条，受贬人间。今大乘佛法将兴，正是你修成正果重列仙班之时！'
+        text: '因缘际会，果报不爽。你五百年前暗释大圣触犯天条，受贬人间。今大乘佛法将兴，正是你修成正果重列仙班之时！',
+        emotion: 'divine'
       },
       {
         speaker: '观音菩萨 (化身)',
         speakerTitle: '【南海普陀落伽山】',
         speakerIcon: '🪷',
         text: '你速西行至五行山下，揭下佛祖六字大明咒金帖，救出孙悟空一同保唐僧西行取经！赐你【破封佛咒】与【紫金钵盂】！',
+        emotion: 'divine',
         action: () => {
           window.App2D.grantGuanyinGift();
         }
@@ -453,15 +1189,20 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '六字大明咒压帖',
         speakerTitle: '【唵嘛呢叭咪吽】',
         speakerIcon: '📜',
-        text: '山巅金光万道，佛帖牢牢镇住五行山龙脉。你念动菩萨传授的破封真言，伸手轻轻一揭——'
+        text: '山巅金光万道，佛帖牢牢镇住五行山龙脉。你念动菩萨传授的破封真言，伸手轻轻一揭——',
+        emotion: 'divine'
       },
       {
         speaker: '天摇地动',
         speakerTitle: '【山崩地裂】',
         speakerIcon: '💥',
         text: '【金帖随风化作一道金光直上重霄！整座五行山剧烈轰鸣崩裂，碎石穿云！】',
+        emotion: 'exclamation',
         action: () => {
           window.App2D.releaseWukong();
+          if (window.App2D && window.App2D.showChapterBanner) {
+            window.App2D.showChapterBanner('第三回 · 破封五行', '六字真言金帖揭，齐天大圣踏云归', '大圣破封');
+          }
         }
       }
     ]
@@ -1377,4 +2118,9 @@ window.GAME_DATA.STORY_DIALOGUES = {
   }
 };
 
-
+// 兼容别名绑定 (确保新旧测试用例与历史存档平滑兼容)
+if (window.GAME_DATA && window.GAME_DATA.STORY_DIALOGUES) {
+  window.GAME_DATA.STORY_DIALOGUES.huaguoshan_battle_intro = window.GAME_DATA.STORY_DIALOGUES.juling_shuilien_battle;
+  window.GAME_DATA.STORY_DIALOGUES.wukong_respect_scene = window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan;
+  window.GAME_DATA.STORY_DIALOGUES.wukong_final_spar = window.GAME_DATA.STORY_DIALOGUES.wukong_huaguoshan_havoc;
+}

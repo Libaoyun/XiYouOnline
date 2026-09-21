@@ -598,6 +598,88 @@ window.GAME_DATA.ITEMS = {
     price: 0,
     quality: 'blue',
     desc: '长安总督衙门与大唐镖局所托之重金军饷，需沿陆路历经艰险送达前方要塞关隘，中途切莫遗失！'
+  },
+
+  // === 主线任务道具 ===
+  item_fresh_mushroom: {
+    id: 'item_fresh_mushroom',
+    name: '野生青蘑菇',
+    type: 'misc',
+    icon: '🍄',
+    price: 10,
+    quality: 'white',
+    desc: '在刘家村草地上采摘的新鲜野生青蘑菇，香气扑鼻，乃生火做饭的极佳食材。'
+  },
+  item_dry_wood: {
+    id: 'item_dry_wood',
+    name: '坚韧柴木',
+    type: 'misc',
+    icon: '🪵',
+    price: 15,
+    quality: 'white',
+    desc: '五行山脚百年枯树精所掉落的干燥硬木，耐烧火旺，刘猎户烧柴做饭必不可少。'
+  },
+
+  // === 东海龙宫初级神装全套 (东海龙王敖广赔罪所赠) ===
+  longgong_weapon: {
+    id: 'longgong_weapon',
+    name: '覆海点钢枪',
+    type: 'equip',
+    slot: 'weapon',
+    reqLevel: 5,
+    icon: '🔱',
+    price: 1800,
+    quality: 'blue',
+    attrs: { atk: 68, matk: 42, spd: 8 },
+    desc: '东海龙王特赠宝兵！枪身点钢冷冽，枪头龙须飘拂，刺出隐有狂澜怒涛之声！'
+  },
+  longgong_armor: {
+    id: 'longgong_armor',
+    name: '龙鳞轻钢甲',
+    type: 'equip',
+    slot: 'armor',
+    reqLevel: 5,
+    icon: '🥋',
+    price: 1500,
+    quality: 'blue',
+    attrs: { def: 48, hp: 380 },
+    desc: '以深海蛟龙蜕鳞密密织就的战甲，轻便坚韧，水火不侵！'
+  },
+  longgong_helmet: {
+    id: 'longgong_helmet',
+    name: '碧水定海盔',
+    type: 'equip',
+    slot: 'helmet',
+    reqLevel: 5,
+    icon: '🪖',
+    price: 1200,
+    quality: 'blue',
+    attrs: { def: 32, mdef: 28, mp: 200 },
+    desc: '龙宫匠师萃取深海寒铁精淬的战盔，清心护顶，神识大增！'
+  },
+  longgong_boots: {
+    id: 'longgong_boots',
+    name: '踏浪穿云靴',
+    type: 'equip',
+    slot: 'boots',
+    reqLevel: 5,
+    icon: '👢',
+    price: 1200,
+    quality: 'blue',
+    attrs: { spd: 18, def: 22 },
+    desc: '附着避水龙咒的皮靴，踏浪无痕，步履如疾风掠影！'
+  },
+  longgong_necklace: {
+    id: 'longgong_necklace',
+    name: '龙珠凝霜佩',
+    type: 'equip',
+    slot: 'necklace',
+    reqLevel: 5,
+    icon: '📿',
+    price: 1600,
+    quality: 'blue',
+    attrs: { hp: 220, matk: 38, mp: 150 },
+    desc: '嵌有深渊千年水龙宝珠，温润凝神，极大拓宽气血与法力元海！'
   }
 };
 

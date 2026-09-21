@@ -15,16 +15,31 @@ class GameApp2D {
     this.ctx = null;
 
     this.tilemap = new window.TilemapEngine(32);
-    this.camera = new window.Camera(760, 480);
+    this.camera = new window.Camera(760, 580);
     this.pathfinding = new window.PathfindingEngine(32);
     this.minimap = window.MiniMapEngine;
 
     // 主线进度: 'heaven_prologue' | 'liujiacun_start' | 'liujiacun_hunted' | 'changan_met_monk' | 'wuxingshan_ready' | 'wuxing_freed'
     this.storyPhase = 'heaven_prologue';
+    this.isSealTriggered = false;
+    this.isSealTriggering = false;
 
     this.currentMapId = 'tiangong_palace';
-    this.playerChar = null;
-    this.playerData = null;
+    this.playerData = (typeof window !== 'undefined' && window.Player) ? new window.Player({
+      name: '威灵大将',
+      classId: 'jingang',
+      gender: 'male',
+      level: 50,
+      silver: 15000,
+      appearance: 'heaven_general'
+    }) : null;
+    this.playerChar = (typeof window !== 'undefined' && window.Character) ? new window.Character({
+      id: 'player',
+      name: '威灵大将',
+      type: 'player',
+      appearance: 'heaven_general',
+      speed: 3.2
+    }) : null;
     this.inventory = null;
 
     // 坐骑与蟠桃系统
@@ -47,6 +62,7 @@ class GameApp2D {
     this.autoMovePath = [];
     this.autoMoveTargetCallback = null;
     this.clickRipples = [];
+    this.isTransitioning = false;
 
     // 钟馗日常抓鬼任务
     this.ghostQuest = {
@@ -70,6 +86,9 @@ class GameApp2D {
 
     // 已交互/已点击 NPC 记录集合 (点击后永久消除头顶感叹号)
     this.interactedNpcSet = new Set();
+
+    // 收集与击杀任务计数器 (蘑菇、枯树精、硕鼠)
+    this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
 
     // 输入与循环状态
     this.keysDown = {};
@@ -105,17 +124,18 @@ class GameApp2D {
 
     // 默认设置为大屏高清画质
     this.canvas.width = 760;
-    this.canvas.height = 480;
+    this.canvas.height = 580;
     this.camera.viewportWidth = 760;
-    this.camera.viewportHeight = 480;
+    this.camera.viewportHeight = 580;
 
-    // 1. 初始化玩家数据 (天将开局)
+    // 1. 初始化玩家数据 (序章：九重天阙威灵大将军开局)
     this.playerData = new window.Player({
       name: '威灵大将',
       classId: 'jingang',
       gender: 'male',
       level: 50,
-      silver: 15000
+      silver: 15000,
+      appearance: 'heaven_general'
     });
 
     this.inventory = new window.Inventory([
@@ -167,17 +187,17 @@ class GameApp2D {
     this.pets = [pet1, pet2, pet3].filter(Boolean);
     this.activeCombatPets = [pet1, pet2].filter(Boolean); // 初始出战2只
 
-    // 初始获得御马监龙马坐骑并骑乘
+    // 初始获得御马监龙马坐骑 (按R键随时自由骑乘或下马)
     this.mountSystem.addMount('xuelong_ma', '威灵踏雪龙马');
-    this.mountSystem.isRiding = true;
-    this.playerData.recalculateStats(true);
+    this.mountSystem.isRiding = false;
+    this.playerData.recalculateStats(false);
 
-    // 2. 玩家 2D 实体
+    // 2. 玩家 2D 实体 (天界金甲威灵大将)
     this.playerChar = new window.Character({
       id: 'player',
       name: this.playerData.name,
       type: 'player',
-      appearance: 'martial_hero',
+      appearance: 'heaven_general',
       speed: 3.2
     });
 
@@ -417,9 +437,15 @@ class GameApp2D {
         window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES[testDialogue]);
       }, 50);
     } else if (!loadedSave && (!urlParams.get('map') || urlParams.get('map') === 'tiangong_palace')) {
-      // 仅在无存档新建时触发序章大闹天宫剧本开篇
+      // 仅在无存档新建时触发天宫蟠桃胜会序章开篇，确保随从绝对为空！
+      this.companions = [];
+      this.pets = [];
+      this.activeCombatPets = [];
       setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.taibai_intro);
+        const introDlg = window.GAME_DATA.STORY_DIALOGUES.pantao_intro || window.GAME_DATA.STORY_DIALOGUES.taibai_intro;
+        if (introDlg && window.Dialogue) {
+          window.Dialogue.start(introDlg);
+        }
       }, 50);
     }
   }
@@ -510,7 +536,11 @@ class GameApp2D {
         this.mountSystem.activeMountId = state.mountState.activeMountId || null;
         this.mountSystem.isRiding = !!state.mountState.isRiding;
       }
-      if (state.companions) {
+      if (state.storyPhase && state.storyPhase.startsWith('heaven_')) {
+        this.companions = [];
+        this.pets = [];
+        this.activeCombatPets = [];
+      } else if (state.companions) {
         this.companions = state.companions;
       }
       if (state.storyPhase) {
@@ -524,7 +554,10 @@ class GameApp2D {
       this.playerData.recalculateStats(true);
 
       const targetMap = (state.mapId && window.GAME_DATA.MAPS_2D[state.mapId]) ? state.mapId : 'tiangong_palace';
-      const spawn = state.playerPos || null;
+      let spawn = state.playerPos || null;
+      if (spawn && typeof this.ensurePlayerSafePosition === 'function') {
+        spawn = this.ensurePlayerSafePosition(targetMap, spawn.x, spawn.y);
+      }
       this.loadMap(targetMap, spawn);
       this.playerChar.isRiding = this.mountSystem.isRiding;
 
@@ -626,24 +659,324 @@ class GameApp2D {
     };
   }
 
-  // 重新启程（清空存档回到序章）
+  // 重新启程（清空存档彻底回到序章大将军起点：天宫·南天门与凌霄宝殿）
   restartGame() {
     this.showConfirmModal({
-      title: '西行轮回归原',
-      content: '少侠，确定要清空当前的西行历练存档，重新启程回到开篇吗？此举将重置所有历练进度！',
-      confirmText: '重新启程',
-      cancelText: '继续修行',
+      title: '西行轮回 · 乾坤归原',
+      content: '少侠，确定要清空当前的全部西行历练存档与修为属性吗？\n\n此举将格式化清空全部金两、仙宠、神兵与任务历练，重回九重天阙威灵大将军初始篇章！',
+      confirmText: '确认格式化重置',
+      cancelText: '继续当前修行',
       onConfirm: () => {
-        if (window.SaveManager) {
-          window.SaveManager.clearProgress();
+        try {
+          if (window.SaveManager) {
+            window.SaveManager.clearProgress();
+          }
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('xiyou_2d_save');
+            localStorage.removeItem('xiyou_online_save_v3');
+            localStorage.removeItem('xiyou_story_progress');
+            localStorage.removeItem('xiyou_pet_save');
+            localStorage.removeItem('hanfeng_xy_save_auto_progress');
+          }
+        } catch (e) {
+          console.warn('清空存档异常:', e);
         }
-        window.location.href = window.location.pathname;
+
+        // 内存状态立即同步复位至天宫序章
+        this.storyPhase = 'heaven_prologue';
+        this.isSealTriggered = false;
+        this.isSealTriggering = false;
+        this.currentMapId = 'tiangong_palace';
+        this.companions = [];
+        this.pets = [];
+        this.activeCombatPets = [];
+        if (this.playerData) {
+          this.playerData.name = '威灵大将';
+          this.playerData.level = 50;
+          this.playerData.appearance = 'heaven_general';
+          this.playerData.recalculateStats(false);
+        }
+        if (this.playerChar) {
+          this.playerChar.name = '威灵大将';
+          this.playerChar.appearance = 'heaven_general';
+        }
+
+        const originUrl = window.location && window.location.origin
+          ? (window.location.origin + (window.location.pathname || ''))
+          : (window.location && window.location.pathname ? window.location.pathname : '');
+
+        if (typeof window !== 'undefined' && window.location && typeof window.location.assign === 'function') {
+          window.location.href = originUrl ? (originUrl + '?map=tiangong_palace') : '?map=tiangong_palace';
+        } else if (typeof window !== 'undefined' && window.location && 'href' in window.location) {
+          window.location.href = originUrl ? (originUrl + '?map=tiangong_palace') : '?map=tiangong_palace';
+        } else {
+          this.loadMap('tiangong_palace');
+        }
       }
     });
   }
 
-  // 载入指定地图
-  loadMap(mapId, customSpawn = null) {
+  // 🛡️ 玩家安全落脚点保证：确保玩家坐标必须处于可行走平地，彻底根除出生卡水或卡墙 Bug
+  ensurePlayerSafePosition(mapId, targetX, targetY) {
+    const mapData = window.GAME_DATA.MAPS_2D[mapId];
+    if (!mapData || !mapData.tiles) return { x: targetX, y: targetY };
+
+    const ts = 32;
+    const tileX = Math.floor(targetX / ts);
+    const tileY = Math.floor(targetY / ts);
+
+    const isTileWalkable = (tx, ty) => {
+      if (tx < 0 || ty < 0 || tx >= mapData.width || ty >= mapData.height) return false;
+      if (!mapData.tiles[ty]) return false;
+      const t = mapData.tiles[ty][tx];
+      if (!t) return false;
+      if (t === 'water' || t === 'dark_water' || t === 'mountain_rock' || t === 'wall' || t === 'stone_wall' || t === 'void' || t === 'abyss') {
+        return false;
+      }
+      return true;
+    };
+
+    if (isTileWalkable(tileX, tileY)) {
+      return { x: targetX, y: targetY };
+    }
+
+    console.warn(`[SafeSpawn] 检测到目标坐标 (${tileX}, ${tileY}) 不可行走，触发地脉神行自动矫正...`);
+
+    // 螺旋扩散搜寻最近的可通行瓦片 (向外搜寻最多 10 格)
+    for (let r = 1; r <= 10; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+          const nx = tileX + dx;
+          const ny = tileY + dy;
+          if (isTileWalkable(nx, ny)) {
+            return { x: nx * ts + 16, y: ny * ts + 16 };
+          }
+        }
+      }
+    }
+
+    // 终极保底：回退到地图官方 playerSpawn
+    if (mapData.playerSpawn && isTileWalkable(Math.floor(mapData.playerSpawn.x / ts), Math.floor(mapData.playerSpawn.y / ts))) {
+      return { x: mapData.playerSpawn.x, y: mapData.playerSpawn.y };
+    }
+
+    return { x: targetX, y: targetY };
+  }
+
+  // 📜 剧情驱动 NPC 可见性：未到达指定剧情阶段前，后续主线 NPC 绝不提前现身
+  isNpcVisibleInStoryPhase(npcId, storyPhase, mapId) {
+    const phaseWeights = {
+      heaven_prologue: 0,
+      liujiacun_start: 10,
+      liujiacun_hunted: 20,
+      changan_guided: 30,
+      changan_met_monk: 30,
+      wuxingshan_ready: 40,
+      wuxing_freed: 50,
+      yingchou_cleared: 60,
+      gaolao_cleared: 70,
+      huangfeng_cleared: 80,
+      liusha_cleared: 90,
+      wuzhuang_cleared: 100,
+      baihu_cleared: 110,
+      baoxiang_cleared: 120,
+      pingding_cleared: 130,
+      huoyun_cleared: 140,
+      poer_cleared: 150,
+      chedi_cleared: 160,
+      tongtian_cleared: 170,
+      huoyan_cleared: 180,
+      pansi_cleared: 190,
+      shituo_cleared: 200,
+      journey_completed: 999
+    };
+
+    const currentWeight = phaseWeights[storyPhase] !== undefined ? phaseWeights[storyPhase] : 0;
+
+    // 1. 五行山被压孙悟空：仅在前往五行山揭帖破封阶段 (wuxingshan_ready) 可见
+    if (npcId === 'npc_wukong_sealed') {
+      return storyPhase === 'wuxingshan_ready';
+    }
+
+    // 2. 蛇盘山鹰愁涧：唐僧与小白龙必须在五行山揭帖破封大圣脱困之后 (wuxing_freed 及之后) 才会到达！
+    // 刚坠落凡间 (liujiacun_start)、刘家村、长安城阶段绝对不可见！
+    if (npcId === 'npc_tang_seng_yingchou') {
+      return currentWeight >= phaseWeights.wuxing_freed;
+    }
+    if (npcId === 'npc_bailong_human') {
+      return currentWeight === phaseWeights.wuxing_freed;
+    }
+
+    // 3. 高老庄剧情 NPC：必须在收服白龙马之后 (yingchou_cleared 及之后) 才会出现
+    if (npcId === 'npc_gao_taigong' || npcId === 'npc_zhubajie') {
+      return currentWeight >= phaseWeights.yingchou_cleared;
+    }
+
+    // 4. 黄风岭剧情 NPC：必须在高老庄收猪八戒之后 (gaolao_cleared 及之后) 出现
+    if (npcId === 'npc_lingji_pusa' || npcId === 'boss_huangfeng') {
+      return currentWeight >= phaseWeights.gaolao_cleared;
+    }
+
+    // 5. 浮屠山与流沙河剧情 NPC：必须在黄风岭平息之后 (huangfeng_cleared 及之后) 出现
+    if (npcId === 'npc_wuchao_master' || npcId === 'npc_muzha' || npcId === 'npc_shawujing') {
+      return currentWeight >= phaseWeights.huangfeng_cleared;
+    }
+
+    // 6. 五庄观：必须在流沙河平息之后 (liusha_cleared 及之后) 出现
+    if (npcId === 'npc_zhenyuan_daxian' || npcId === 'npc_qingfeng_mingyue') {
+      return currentWeight >= phaseWeights.liusha_cleared;
+    }
+
+    // 7. 白虎岭白骨夫人：必须在五庄观之后 (wuzhuang_cleared 及之后) 出现
+    if (npcId === 'npc_baigu_furen') {
+      return currentWeight >= phaseWeights.wuzhuang_cleared;
+    }
+
+    // 8. 宝象国黄袍怪与公主：必须在三打白骨精之后 (baihu_cleared 及之后) 出现
+    if (npcId === 'npc_huangpao_guai' || npcId === 'npc_baihuaxiu') {
+      return currentWeight >= phaseWeights.baihu_cleared;
+    }
+
+    // 9. 东胜神洲·花果山与水帘洞：仅在天宫序章大圣反天、奉旨下界征剿阶段出现
+    const isHeavenPhase = storyPhase && storyPhase.startsWith('heaven_');
+    if (mapId === 'huaguoshan' || mapId === 'huaguoshan_shuilien') {
+      if (!isHeavenPhase) return false;
+      // 天庭前锋营神将：在花果山主山，指引大将前往水帘洞探查
+      if (npcId === 'npc_tianbing_scout') {
+        return storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_huaguoshan';
+      }
+      // 赤毛马猴：在水帘洞内入口迎敌切磋
+      if (npcId === 'npc_chimao_mahou' || npcId === 'npc_chimaomahou') {
+        return storyPhase === 'heaven_huaguoshan_shuilien';
+      }
+      // 巨灵神：在水帘洞深处赶尽杀绝幼猴，大战制伏后退场
+      if (npcId === 'npc_juling_shen') {
+        return storyPhase === 'heaven_huaguoshan_rescue';
+      }
+      // 受困啼哭小猴：水帘洞中
+      if (npcId === 'npc_huaguo_monkey') {
+        return storyPhase === 'heaven_huaguoshan_rescue' || storyPhase === 'heaven_juling_defeated';
+      }
+      // 齐天大圣：在花果山主山现身决战！
+      if (npcId === 'npc_wukong_huaguo' || npcId === 'npc_wukong_shadow') {
+        return storyPhase === 'heaven_final_wukong';
+      }
+      // 通臂猿猴：水帘洞前指路老猴
+      if (npcId === 'npc_tongbi_yuan' || npcId === 'npc_tongbi_monkey') {
+        return true;
+      }
+      return true;
+    }
+
+    // 10. 天宫序章的专属神仙NPC：仅在天宫序章出现，并按三大因缘事件逐步显隐
+    if (mapId === 'tiangong_palace' || mapId === 'tiangong_pantao') {
+      if (!isHeavenPhase) return false; // 贬落凡间后，天宫神仙退隐
+
+      // 太白金星：天庭老仙，始终接引
+      if (npcId === 'npc_taibai') return true;
+
+      // 事件一：天蓬调戏嫦娥（开局出现，解围后天蓬被王母降旨贬猪胎退场）
+      if (npcId === 'npc_tianpeng' || npcId === 'npc_change') {
+        return storyPhase === 'heaven_prologue' || storyPhase === 'heaven_pantao_start';
+      }
+
+      // 事件二：卷帘失手打碎琉璃盏（救嫦娥后登场，求情免死贬流沙河后退场）
+      if (npcId === 'npc_juanlian') {
+        return storyPhase === 'heaven_saved_change';
+      }
+
+      // 押解大圣凯旋与玉帝发落因果阶段
+      if (npcId === 'npc_wukong_heaven' || npcId === 'npc_yangjian') {
+        return storyPhase === 'heaven_tiangong_trial';
+      }
+
+      if (npcId === 'npc_litianwang' || npcId === 'npc_nezha' || npcId === 'npc_leigong') {
+        return storyPhase === 'heaven_prologue' || storyPhase === 'heaven_pantao_start' || storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_tiangong_trial';
+      }
+
+      return true;
+    }
+
+    // 11. 凡间刘家村：野生青蘑菇仅在采摘阶段可见
+    if (npcId.startsWith('prop_mushroom_')) {
+      return storyPhase === 'liujiacun_find_mushrooms';
+    }
+
+    // 12. 东海之滨与东海龙宫主线 NPC 显隐
+    if (npcId === 'npc_yecha') {
+      return storyPhase === 'donghai_yecha_ready';
+    }
+    if (npcId === 'npc_aoguang_coast') {
+      return storyPhase === 'donghai_dragon_arrived';
+    }
+    if (npcId === 'npc_aoguang') {
+      return storyPhase === 'longgong_visit';
+    }
+
+    // 13. 陈塘关观音菩萨显圣
+    if (npcId === 'npc_guanyin_pu_sa') {
+      return storyPhase === 'chentang_guanyin_revelation';
+    }
+
+    // 14. 长安城金銮殿唐太宗与城门刘伯钦送行
+    if (npcId === 'npc_tangtaizong') {
+      return storyPhase === 'changan_meet_taizong';
+    }
+    if (npcId === 'npc_liuboqin_changan') {
+      return storyPhase === 'changan_farewell';
+    }
+
+    // 常规市井生活 NPC（长安商人、医馆、老渔翁、茶肆阿婆、土地公等）：始终驻扎提供服务
+    return true;
+  }
+
+  // 刷新当前地图 NPC 显隐与感叹号状态
+  refreshMapNpcs() {
+    if (!this.playerChar) return;
+    this.loadMap(this.currentMapId, { x: this.playerChar.x, y: this.playerChar.y });
+  }
+
+  // 载入指定地图（支持场景平滑过渡动效：走动切图约0.75s，对话剧情切图约1.0s，无DOM或单测瞬时）
+  loadMap(mapId, customSpawn = null, options = {}) {
+    let duration = 0;
+    if (typeof options === 'number') {
+      duration = options;
+    } else if (options && typeof options.duration === 'number') {
+      duration = options.duration;
+    } else if (typeof document !== 'undefined' && options?.duration === undefined) {
+      duration = (window.Dialogue && window.Dialogue.currentDialogue) ? 1.0 : 0.75;
+    }
+
+    const overlay = (typeof document !== 'undefined') ? document.getElementById('scene-transition-overlay') : null;
+
+    if (overlay && duration > 0 && !this.isTransitioning) {
+      this.isTransitioning = true;
+      this.autoMovePath = [];
+      this.autoMoveTargetCallback = null;
+
+      const halfMs = Math.max(120, Math.round((duration * 1000) / 2));
+      overlay.style.transition = `opacity ${halfMs / 1000}s ease-in-out`;
+      overlay.classList.add('active');
+
+      setTimeout(() => {
+        this._applyMapData(mapId, customSpawn);
+        setTimeout(() => {
+          overlay.classList.remove('active');
+          setTimeout(() => {
+            this.isTransitioning = false;
+          }, halfMs);
+        }, 50);
+      }, halfMs);
+      return;
+    }
+
+    this._applyMapData(mapId, customSpawn);
+    this.isTransitioning = false;
+  }
+
+  // 内部执行地图数据与生灵加载
+  _applyMapData(mapId, customSpawn = null) {
     const mapData = window.GAME_DATA.MAPS_2D[mapId];
     if (!mapData) return;
 
@@ -651,37 +984,86 @@ class GameApp2D {
     this.autoMovePath = [];
     this.autoMoveTargetCallback = null;
 
-    const spawn = customSpawn || mapData.playerSpawn;
-    this.playerChar.x = spawn.x;
-    this.playerChar.y = spawn.y;
-    this.playerChar.direction = spawn.direction || 'down';
+    const rawSpawn = customSpawn || mapData.playerSpawn;
+    const safePos = this.ensurePlayerSafePosition(mapId, rawSpawn.x, rawSpawn.y);
+    this.playerChar.x = safePos.x;
+    this.playerChar.y = safePos.y;
+    this.playerChar.direction = rawSpawn.direction || 'down';
 
-    // 动态计算 NPC 是否应显示金色感叹号 (已交互/点击过的 NPC 永久清除感叹号，仅当前主线接引 NPC 显示)
+    // 严格主线任务感叹号唯一制：同一时刻全游戏只允许当前唯一步骤的 1 位 NPC 拥有金色感叹号！
+    const MAIN_QUEST_TARGETS = {
+      // 天宫序章三大因缘
+      'heaven_prologue': 'npc_tianpeng',
+      'heaven_pantao_start': 'npc_tianpeng',
+      'heaven_saved_change': 'npc_juanlian',
+      'heaven_saved_juanlian': 'npc_tianbing_scout',
+      'heaven_huaguoshan': 'npc_tianbing_scout',
+      'heaven_huaguoshan_shuilien': 'npc_chimao_mahou',
+      'heaven_huaguoshan_rescue': 'npc_juling_shen',
+      'heaven_final_wukong': 'npc_wukong_huaguo',
+      'heaven_yangjian_capture': 'npc_litianwang',
+      'heaven_tiangong_trial': 'npc_taibai',
+
+      // 凡间刘家村
+      'liujiacun_start': 'npc_liuboqin',
+      'liujiacun_find_mushrooms': null,           // 采蘑菇中
+      'liujiacun_mushrooms_collected': 'npc_liuboqin',
+      'liujiacun_go_cut_wood': 'npc_liuboqin',
+      'liujiacun_wood_gathering': null,           // 砍柴中
+      'liujiacun_wood_collected': 'npc_liuboqin',
+      'liujiacun_rat_hunting': null,              // 打硕鼠中
+      'liujiacun_rats_cleared': 'npc_liuboqin',
+      'liujiacun_go_changan': 'npc_liuboqin',
+
+      // 长安与陈塘关东海
+      'changan_arrived': 'npc_changan_tea',
+      'chentang_investigate': 'npc_li_jing',
+      'donghai_yecha_ready': 'npc_yecha',
+      'donghai_dragon_arrived': 'npc_aoguang_coast',
+      'longgong_visit': 'npc_aoguang',
+      'chentang_guanyin_revelation': 'npc_guanyin_pu_sa',
+      'changan_meet_xuanzang': 'npc_xuanzang',
+      'changan_meet_taizong': 'npc_tangtaizong',
+      'changan_farewell': 'npc_liuboqin_changan',
+
+      // 西行正传
+      'wuxingshan_ready': 'npc_wukong_sealed',
+      'wuxing_freed': 'npc_wukong_sealed',
+      'yingchou_cleared': 'npc_zhubajie',
+      'gaolao_cleared': 'npc_lingji_pusa',
+      'huangfeng_cleared': 'npc_shawujing'
+    };
+
     const shouldShowQuestExclamation = (n) => {
-      if (this.interactedNpcSet && this.interactedNpcSet.has(n.id)) return false;
-      if (this.storyPhase === 'heaven_prologue') {
-        return n.id === 'npc_taibai' || n.id === 'npc_litianwang' || n.id === 'npc_wukong_heaven';
+      // 1. 无关闲聊、或点开只是一两句空话的 NPC，绝不悬挂感叹号
+      const chattyIdleNpcs = [
+        'npc_changan_girl', 'npc_changan_scholar', 'npc_changan_hawker',
+        'npc_changan_child', 'npc_changan_guard', 'npc_village_elder',
+        'npc_qingfeng', 'npc_mingyue', 'npc_huaguo_monkey', 'npc_change',
+        'npc_fisherman'
+      ];
+      if (chattyIdleNpcs.includes(n.id)) return false;
+
+      // 2. 地面采摘物不显示感叹号
+      if (n.id.startsWith('prop_mushroom_')) return false;
+
+      // 3. 支线副本 NPC：如果有专属支线标识，可显示支线感叹号
+      if (n.isSideQuest) {
+        return !this.interactedNpcSet || !this.interactedNpcSet.has(n.id);
       }
-      if (this.storyPhase === 'liujiacun_start') {
-        return n.id === 'npc_liuboqin';
+
+      // 4. 主线感叹号严格唯一匹配：只有当前阶段指定的唯一 NPC 显示感叹号！
+      const currentMainTarget = MAIN_QUEST_TARGETS[this.storyPhase];
+      if (currentMainTarget && n.id === currentMainTarget) {
+        return true;
       }
-      if (this.storyPhase === 'liujiacun_hunted') {
-        return n.id === 'npc_liuboqin' || n.id === 'npc_liujia_tudi';
-      }
-      if (this.storyPhase === 'changan_met_monk') {
-        return n.id === 'npc_xuanzang' || n.id === 'npc_guanyin';
-      }
-      if (this.storyPhase === 'wuxingshan_ready') {
-        return n.id === 'npc_wukong_sealed' || n.id === 'npc_mountain_god';
-      }
-      if (mapId === 'tiangong_pantao') {
-        return n.id === 'npc_pantao_tudi';
-      }
+
       return false;
     };
 
-    // 实例化 NPC (拒绝 Emoji，外观配置清晰，已点击/非任务 NPC 头顶绝不乱悬浮感叹号)
-    this.npcs = mapData.npcs.map(n => new window.Character({
+    // 实例化 NPC (拒绝 Emoji，外观配置清晰，已点击/非任务 NPC 头顶绝不乱悬浮感叹号；依据剧情进度过滤未到出场时机的人物)
+    const visibleNpcList = (mapData.npcs || []).filter(n => this.isNpcVisibleInStoryPhase(n.id, this.storyPhase, mapId));
+    this.npcs = visibleNpcList.map(n => new window.Character({
       id: n.id,
       name: n.name,
       title: n.title,
@@ -739,6 +1121,16 @@ class GameApp2D {
     if (hpEl) hpEl.style.width = `${Math.max(0, (this.playerData.hp / this.playerData.maxHp) * 100)}%`;
     const silverEl = document.getElementById('hud-silver');
     if (silverEl) silverEl.innerText = `${this.playerData.silver} 两`;
+
+    const avatarCircleEl = document.getElementById('hud-avatar-circle');
+    if (avatarCircleEl) {
+      const isGeneral = this.playerData && (this.playerData.appearance === 'heaven_general' || (this.playerChar && this.playerChar.appearance === 'heaven_general'));
+      const roleId = isGeneral ? 'heaven_general' : 'shaoxia';
+      if (!avatarCircleEl.dataset.roleId || avatarCircleEl.dataset.roleId !== roleId) {
+        avatarCircleEl.dataset.roleId = roleId;
+        avatarCircleEl.innerHTML = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 26) : '🧙‍♂️';
+      }
+    }
   }
 
   // 输入监听
@@ -769,6 +1161,12 @@ class GameApp2D {
         }
       }
 
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        this.toggleSceneRosterModal();
+        return;
+      }
+
       if (e.key === ' ' || e.key === 'Enter') {
         this.interactNearby();
       } else if (e.key === 'r' || e.key === 'R') {
@@ -791,8 +1189,10 @@ class GameApp2D {
         if (this.isMenuOpen) {
           this.toggleFoldableMenu(false);
         }
+        this.toggleSceneRosterModal(false);
         if (window.Dialogue) window.Dialogue.close();
         document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+        document.querySelectorAll('.roster-modal-overlay').forEach(m => m.remove());
       }
     });
 
@@ -810,6 +1210,14 @@ class GameApp2D {
       });
     }
 
+    // 名册顶部快捷按钮绑定
+    const rosterBtn = document.getElementById('btn-scene-roster');
+    if (rosterBtn) {
+      rosterBtn.addEventListener('click', () => {
+        this.toggleSceneRosterModal();
+      });
+    }
+
     // 模式切换按钮
     const modeBtn = document.getElementById('toggle-mode-btn');
     if (modeBtn) {
@@ -820,9 +1228,9 @@ class GameApp2D {
 
         if (isModern) {
           this.canvas.width = 760;
-          this.canvas.height = 480;
+          this.canvas.height = 580;
           this.camera.viewportWidth = 760;
-          this.camera.viewportHeight = 480;
+          this.camera.viewportHeight = 580;
         } else {
           this.canvas.width = 320;
           this.canvas.height = 380;
@@ -853,7 +1261,12 @@ class GameApp2D {
 
   // 场景鼠标点击智能分发
   handleClickCanvas(screenX, screenY) {
-    if (this.isPaused || window.Dialogue.currentDialogue || this.currentBattle) return;
+    if (this.isPaused || this.currentBattle) return;
+    if (window.Dialogue && window.Dialogue.currentDialogue) {
+      // 用户点击了场景画布，直接解除对话并走完流程
+      window.Dialogue.completeAllAndClose();
+      return;
+    }
 
     const worldPos = this.camera.screenToWorld(screenX, screenY);
     const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
@@ -950,7 +1363,7 @@ class GameApp2D {
 
   // 统一传送门进入与等级门禁校验
   tryEnterPortal(p) {
-    if (!p) return;
+    if (!p || this.isTransitioning) return;
     // 关隘与练功区等级限制校验
     if (p.minLevel && this.player && this.player.level < p.minLevel) {
       // 玩家向后轻微反弹 28px 防止贴门循环触发
@@ -971,7 +1384,7 @@ class GameApp2D {
       return;
     }
 
-    this.loadMap(p.targetMap, { x: p.targetX, y: p.targetY });
+    this.loadMap(p.targetMap, { x: p.targetX, y: p.targetY }, { duration: 0.75 });
   }
 
   // 生成点击金色仙气光圈涟漪
@@ -994,7 +1407,7 @@ class GameApp2D {
 
   // 状态更新
   update() {
-    if (this.isPaused || window.Dialogue.currentDialogue || this.currentBattle) return;
+    if (this.isPaused || (window.Dialogue && window.Dialogue.currentDialogue) || this.currentBattle) return;
 
     const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
     if (!mapData) return;
@@ -1065,16 +1478,17 @@ class GameApp2D {
       }
     }
 
-    // 7. 五行山金符压帖检测
-    if (this.currentMapId === 'wuxingshan' && this.storyPhase !== 'wuxing_freed') {
+    // 7. 五行山金符压帖检测 (严控时空门禁：仅在西行启程后且未破封前可交互，严防死循环)
+    if (this.currentMapId === 'wuxingshan' && this.storyPhase === 'wuxingshan_ready' && !this.isSealTriggered && !this.isSealTriggering) {
       const sealDist = Math.hypot(12 * 32 - this.playerChar.x, 3 * 32 - this.playerChar.y);
       if (sealDist < 26) {
+        this.isSealTriggering = true;
         window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.wuxing_seal_trigger);
       }
     }
 
     // 8. 更新环境粒子系统与马蹄踏云烟尘
-    if (this.particleSystem) {
+    if (this.particleSystem && this.canvas) {
       this.particleSystem.update(this.currentMapId, this.canvas.width, this.canvas.height);
       if (this.playerChar.isMoving && this.playerChar.isRiding) {
         this.particleSystem.spawnHorseDust(this.playerChar.x, this.playerChar.y);
@@ -1373,119 +1787,375 @@ class GameApp2D {
   // =========================================================================
   // 📜 角色仙籍面板 (五维潜能自由分配、门派绝技查看、装备抗性加成)
   // =========================================================================
+  // =========================================================================
+  // 个人信息与状态面板 (1:1 像素级复刻图3：正统深紫褐暗纹锦缎、四极雷达罗盘、11项金菱条目)
+  // =========================================================================
   openPlayerProfileModal() {
     if (window.Dialogue) window.Dialogue.close();
-    document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+    document.querySelectorAll('.profile-v3-overlay, .modal-overlay').forEach(m => m.remove());
 
     const p = this.playerData;
-    const cData = (window.GAME_DATA && window.GAME_DATA.CLASSES && window.GAME_DATA.CLASSES[p.classId]) || { name: '散仙', title: '三界游侠' };
     const nextExp = p.getNextLevelExp();
-    const expPercent = Math.min(100, Math.floor((p.exp / nextExp) * 100));
+    const isPanda = p.name.includes('熊猫') || (this.playerChar && this.playerChar.appearance === 'panda_hero');
 
-    const attrDefs = [
-      { key: 'con', name: '体质', desc: '增加气血上限与气血恢复', value: p.attributes.con },
-      { key: 'str', name: '力量', desc: '提升强力物理攻击伤害', value: p.attributes.str },
-      { key: 'int', name: '灵气', desc: '提升法术攻击与法力上限', value: p.attributes.int },
-      { key: 'sta', name: '耐力', desc: '提升身躯硬度物理/法术防御', value: p.attributes.sta },
-      { key: 'dex', name: '敏捷', desc: '提升回合出手速度与身法', value: p.attributes.dex },
-    ];
+    const gold = Math.floor(p.silver / 1000);
+    const taels = p.silver % 1000;
 
     const modalHtml = `
-      <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:440px;width:92%;">
-          <div class="modal-header">
-            <span class="modal-title">📜 仙籍档案 · 人物五维与属性</span>
-            <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
-          </div>
-          <div class="modal-body" style="padding:10px;">
-            <!-- 角色名片与门派 -->
-            <div style="background:rgba(20,15,10,0.85);border:1px solid #5c4732;border-radius:8px;padding:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-size:14px;font-weight:bold;color:#ffd700;">${p.name} <span style="font-size:11px;color:#2ecc71;">Lv.${p.level}</span></div>
-                <div style="font-size:11px;color:#aaa;margin-top:2px;">门派：<span style="color:#e67e22;font-weight:bold;">${cData.name}</span> (${cData.title || '齐天后裔'})</div>
-              </div>
-              <div style="text-align:right;font-size:11px;">
-                <div>🪙 银两: <span style="color:#ffd700;">${p.silver}</span> 两</div>
-                <div>✨ 仙玉: <span style="color:#00ffff;">${p.ingots}</span></div>
-              </div>
-            </div>
+      <div class="profile-v3-overlay" onclick="this.remove()">
+        <div class="profile-v3-window" onclick="event.stopPropagation()">
+          <!-- 顶部金色中式门扣牌坊 -->
+          <div class="profile-v3-top-crest"></div>
+          <button class="profile-v3-close" onclick="this.closest('.profile-v3-overlay').remove()" title="关闭 (Esc)">✕</button>
 
-            <!-- 经验条 -->
-            <div style="margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-bottom:2px;">
-                <span>修为经验: ${p.exp} / ${nextExp}</span>
-                <span>${expPercent}%</span>
+          <!-- 1. 顶部身份与四极雷达上半区 (复刻图3左右双栏) -->
+          <div class="profile-v3-header">
+            <!-- 左侧身份名片 -->
+            <div class="profile-v3-identity">
+              <!-- 圆形金色双环发光头像 (支持点击一键切换少侠/熊猫大侠/天将造型) -->
+              <div class="profile-v3-avatar-ring" onclick="window.App2D.togglePlayerAppearance()" style="cursor:pointer;" title="点击切换造型 (少侠 / 熊猫大侠 / 威灵神将)">
+                <canvas id="profile-avatar-canvas" class="profile-v3-avatar-canvas" width="60" height="60"></canvas>
               </div>
-              <div style="background:#222;border-radius:4px;height:7px;overflow:hidden;border:1px solid #444;">
-                <div style="background:linear-gradient(90deg, #f1c40f, #e67e22);height:100%;width:${expPercent}%;"></div>
-              </div>
-            </div>
 
-            <!-- 核心战斗面板 -->
-            <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:6px;margin-bottom:10px;">
-              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
-                ❤️ 气血上限: <span style="color:#2ecc71;font-weight:bold;">${p.hp} / ${p.maxHp}</span>
-              </div>
-              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
-                💧 法力上限: <span style="color:#3498db;font-weight:bold;">${p.mp} / ${p.maxMp}</span>
-              </div>
-              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
-                ⚔️ 物理攻击: <span style="color:#e74c3c;font-weight:bold;">${p.atk}</span>
-              </div>
-              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
-                🛡️ 物理防御: <span style="color:#f39c12;font-weight:bold;">${p.def}</span>
-              </div>
-              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
-                🔮 法术伤害: <span style="color:#9b59b6;font-weight:bold;">${p.matk}</span>
-              </div>
-              <div style="background:rgba(25,18,12,0.7);padding:5px 8px;border-radius:6px;border:1px solid #4a3824;font-size:11px;">
-                ⚡ 出手速度: <span style="color:#1abc9c;font-weight:bold;">${p.spd}</span>
-              </div>
-            </div>
-
-            <!-- 五维自由潜能加点 -->
-            <div style="background:rgba(20,15,10,0.85);border:1px solid #5c4732;border-radius:8px;padding:8px;margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font-size:11px;font-weight:bold;color:#ffd700;">🌟 自由潜能点: <span style="color:#00ffcc;font-size:13px;">${p.potentialPoints}</span></span>
-                ${p.potentialPoints > 0 ? `<span style="font-size:10px;color:#f39c12;">点击加号分配潜能点</span>` : `<span style="font-size:10px;color:#888;">升级可获潜能点</span>`}
-              </div>
-              <div style="display:flex;flex-direction:column;gap:5px;">
-                ${attrDefs.map(attr => `
-                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:4px;border:1px solid #3d2c1c;">
-                    <div style="display:flex;flex-direction:column;">
-                      <span style="font-size:11px;color:#f5f0e6;font-weight:bold;">${attr.name} <span style="color:#ffd700;">${attr.value}</span></span>
-                      <span style="font-size:9px;color:#887766;">${attr.desc}</span>
-                    </div>
-                    <div>
-                      ${p.potentialPoints > 0 ? `
-                        <button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 1)" style="padding:2px 8px;font-size:10px;margin-left:4px;">+1</button>
-                        ${p.potentialPoints >= 5 ? `<button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 5)" style="padding:2px 6px;font-size:10px;background:#5c1d18;margin-left:2px;">+5</button>` : ''}
-                      ` : `
-                        <span style="font-size:10px;color:#555;">已配置</span>
-                      `}
-                    </div>
+              <!-- 身份文字信息 -->
+              <div class="profile-v3-id-info">
+                <div class="profile-v3-name">${p.name}</div>
+                <div class="profile-v3-subid">ID: ${p.id || 2058}</div>
+                <div class="profile-v3-subid" style="color:#ffd700;font-size:9.5px;cursor:pointer;" onclick="window.App2D.togglePlayerAppearance()">🔄 点击头像切换造型</div>
+                <!-- 徽章三件套：LV胶囊 + 【仙】古印 + 五行水波印 -->
+                <div class="profile-v3-badges-row">
+                  <div class="profile-v3-lv-pill">
+                    <span class="profile-v3-lv-txt">LV</span>
+                    <span class="profile-v3-lv-num">${p.level}</span>
                   </div>
-                `).join('')}
+                  <div class="profile-v3-xian-seal" title="仙界正统仙籍">仙</div>
+                  <div class="profile-v3-wuxing-icon" title="五行命属：天一生水">♒</div>
+                </div>
+                <!-- 红底金边【仙童】小牌匾 -->
+                <div class="profile-v3-plaque">
+                  <span class="profile-v3-plaque-dash">―</span>
+                  <span class="profile-v3-plaque-text">${p.level >= 50 ? '大 将' : (p.level >= 30 ? '散 仙' : '仙 童')}</span>
+                  <span class="profile-v3-plaque-dash">―</span>
+                </div>
               </div>
             </div>
 
-            <!-- 抗性与仙宠限制 -->
-            <div style="background:rgba(15,20,15,0.7);border:1px solid #325c42;border-radius:6px;padding:6px 8px;font-size:10px;line-height:1.6;color:#9ec5ab;">
-              <div>🛡️ 门派专精抗性: 物抗+${Math.round((p.resistances.res_phy || 0)*100)}% · 佛光+${Math.round((p.resistances.res_foguang || 0)*100)}% · 舍生+${Math.round((p.resistances.res_shesheng || 0)*100)}%</div>
-              <div>🐾 战宠出阵上限: 同时出战 <span style="color:#ffd700;font-weight:bold;">${p.getMaxCombatPets()}</span> 只仙宠 (随等级解锁更多)</div>
+            <!-- 右侧四极潜能雷达罗盘 (体、力、敏、法) -->
+            <div class="profile-v3-radar-box">
+              <canvas id="profile-radar-canvas" class="profile-v3-radar-canvas" width="120" height="94"></canvas>
             </div>
+          </div>
 
-            <div style="margin-top:10px;display:flex;gap:6px;">
-              <button class="dialogue-opt-btn" onclick="window.App2D.openClassSelectModal();" style="flex:1;">☯️ 切换门派绝技 [K]</button>
-              <button class="dialogue-opt-btn" onclick="window.App2D.openInventoryModal('equip');" style="flex:1;">🛡️ 查看佩戴装备</button>
-              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove();" style="flex:1;background:#3a291a;">关闭</button>
+          <!-- 2. 下半区：11项深褐金角锦缎属性条目 (复刻图3金菱形条目) -->
+          <div class="profile-v3-list">
+            <div class="profile-v3-row" onclick="window.App2D.toggleMountRiding(); window.App2D.openPlayerProfileModal();">
+              <span class="profile-v3-label">坐骑: ${this.playerChar && this.playerChar.isRiding ? '白龙神驹 (骑乘中)' : '暂无骑乘中坐骑'}</span>
+              <span class="profile-v3-arrow">✦</span>
             </div>
+            <div class="profile-v3-row" onclick="window.showGameMessage('🎖️ 至尊VIP仙府特权已激活，战斗与历练获享专属庇佑！', 'info');">
+              <span class="profile-v3-label">会员等级: 非会员</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">升级: 需${Math.max(0, nextExp - p.exp)}经验</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">升级效率: 104%(官方包+5%)</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">体力值: 正常[0]</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">五行属性: 水</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">活力值: 40</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">钱: ${gold}金 ${taels}两</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">绑银: 7400两</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row">
+              <span class="profile-v3-label">居住地: ${this.currentMapId === 'tiangong_palace' ? '九天凌霄' : (this.currentMapId === 'changan_city' ? '大唐长安' : '刘家村')}</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+            <div class="profile-v3-row" onclick="window.showGameMessage('🚩 仙门帮派广招豪杰，可在长安城大唐行馆创建或加入仙盟！', 'info');">
+              <span class="profile-v3-label">帮派: 无</span>
+              <span class="profile-v3-arrow">✦</span>
+            </div>
+          </div>
+
+          <!-- 3. 底部微标与潜能分配入口 -->
+          <div class="profile-v3-footer">
+            <span class="profile-v3-foot-pill">9game.cn</span>
+            <button class="profile-v3-pot-btn" onclick="window.App2D.openStatAllocationModal()">
+              🌟 潜能分配 (${p.potentialPoints}点)
+            </button>
           </div>
         </div>
       </div>
     `;
 
-    const v = document.getElementById('game-viewport') || document.body;
+    const v = document.body;
+    v.insertAdjacentHTML('beforeend', modalHtml);
+    if (window.Sound) window.Sound.playBeep();
+
+    // 绘制头像与四极潜能雷达
+    this.renderProfileV3Avatar(isPanda);
+    this.renderProfileV3Radar();
+  }
+
+  // 绘制图3左上角圆形头像 (工笔重彩神级特写)
+  renderProfileV3Avatar(isPanda) {
+    const cvs = document.getElementById('profile-avatar-canvas');
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    ctx.clearRect(0, 0, 60, 60);
+
+    const isGeneral = this.playerData && (this.playerData.appearance === 'heaven_general' || (this.playerChar && this.playerChar.appearance === 'heaven_general'));
+    const roleId = isPanda ? 'panda_warrior' : (isGeneral ? 'heaven_general' : 'shaoxia');
+
+    if (window.Portraits && typeof window.Portraits.drawAvatarOnCanvas === 'function') {
+      window.Portraits.drawAvatarOnCanvas(cvs, roleId);
+    } else {
+      // 优雅保底渲染
+      const grad = ctx.createRadialGradient(30, 30, 5, 30, 30, 30);
+      grad.addColorStop(0, '#5a1212');
+      grad.addColorStop(0.7, '#2a0a0a');
+      grad.addColorStop(1, '#150505');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 60, 60);
+      ctx.save();
+      if (isPanda) {
+        CharacterRenderer.drawPandaHero(ctx, 42, 0, 'right', false, false);
+      } else {
+        CharacterRenderer.drawMartialHero(ctx, 42, 0, 'right', false, false);
+      }
+      ctx.restore();
+    }
+  }
+
+  // 点击个人面板头像一键切换角色造型 (大唐少侠 / 蜀山功夫熊猫大侠 / 威灵显赫神将)
+  togglePlayerAppearance() {
+    if (!this.playerChar) return;
+    const cur = this.playerChar.appearance;
+    let nextApp = 'panda_hero';
+    let nextName = '蜀山功夫熊猫大侠 (熊猫凶猛)';
+    if (cur === 'panda_hero') {
+      nextApp = 'heaven_general';
+      nextName = '威灵显赫金甲神将';
+    } else if (cur === 'heaven_general') {
+      nextApp = 'martial_hero';
+      nextName = '大唐仗剑少侠';
+    } else {
+      nextApp = 'panda_hero';
+      nextName = '蜀山功夫熊猫大侠 (熊猫凶猛)';
+    }
+
+    this.playerChar.appearance = nextApp;
+    if (this.playerData) {
+      this.playerData.appearance = nextApp;
+    }
+
+    const isPanda = nextApp === 'panda_hero';
+    this.renderProfileV3Avatar(isPanda);
+
+    if (window.showGameMessage) {
+      window.showGameMessage(`✨ 角色外貌已切换为：【${nextName}】！`, 'success');
+    }
+  }
+
+  // 汉风西游 - 正统水墨章节过场大幕演绎
+  showChapterBanner(title, subtitle, seal = '西游正传', duration = 2800) {
+    let overlay = document.getElementById('chapter-banner-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'chapter-banner-overlay';
+      overlay.className = 'chapter-banner-overlay';
+      const viewport = document.getElementById('game-viewport') || document.querySelector('.phone-screen-frame') || document.body;
+      viewport.appendChild(overlay);
+    }
+
+    overlay.innerHTML = `
+      <div class="chapter-banner-box">
+        <div class="chapter-banner-header">✦ JOURNEY TO THE WEST ✦</div>
+        <div class="chapter-banner-title">${title}</div>
+        <div class="chapter-banner-subtitle">${subtitle}</div>
+        <div class="chapter-banner-seal">【 ${seal} 】</div>
+      </div>
+    `;
+
+    setTimeout(() => overlay.classList.add('active'), 30);
+    if (window.Sound) window.Sound.playSuccess();
+
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        if (overlay && overlay.parentNode) overlay.remove();
+      }, 550);
+    }, duration);
+  }
+
+  // 绘制图3右上角四极雷达罗盘 (体、力、敏、法)
+  renderProfileV3Radar() {
+    const cvs = document.getElementById('profile-radar-canvas');
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const w = cvs.width;
+    const h = cvs.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const cx = Math.floor(w / 2);
+    const cy = Math.floor(h / 2);
+    const r = 28;
+
+    // 1. 暗金星轨八卦同心圆背景
+    ctx.strokeStyle = 'rgba(168, 120, 60, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 虚线十字轴
+    ctx.setLineDash([2, 3]);
+    ctx.strokeStyle = 'rgba(168, 120, 60, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx, cy + r);
+    ctx.moveTo(cx - r, cy);
+    ctx.lineTo(cx + r, cy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 2. 四极端点发光赤金圆圈与文字 (上体、右力、下敏、左法)
+    const axes = [
+      { label: '体', x: cx, y: cy - r, key: 'con' },
+      { label: '力', x: cx + r, y: cy, key: 'str' },
+      { label: '敏', x: cx, y: cy + r, key: 'dex' },
+      { label: '法', x: cx - r, y: cy, key: 'int' }
+    ];
+
+    axes.forEach(axis => {
+      // 外层金圈
+      ctx.fillStyle = '#120b13';
+      ctx.beginPath();
+      ctx.arc(axis.x, axis.y, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // 文字
+      ctx.font = 'bold 8.5px "Microsoft YaHei", sans-serif';
+      ctx.fillStyle = '#fef08a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(axis.label, axis.x, axis.y + 0.5);
+    });
+
+    // 3. 计算玩家属性潜能雷达多边形
+    const p = this.playerData;
+    const con = (p.attributes && p.attributes.con) || 20;
+    const str = (p.attributes && p.attributes.str) || 20;
+    const dex = (p.attributes && p.attributes.dex) || 20;
+    const intVal = (p.attributes && p.attributes.int) || 20;
+
+    const maxVal = Math.max(con, str, dex, intVal, 30);
+    const getRadius = (val) => r * (0.35 + (val / maxVal) * 0.55);
+
+    const rCon = getRadius(con);
+    const rStr = getRadius(str);
+    const rDex = getRadius(dex);
+    const rInt = getRadius(intVal);
+
+    // 绘制发光青蓝半透明多边形网
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.32)';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.8;
+    ctx.shadowColor = '#00f2fe';
+    ctx.shadowBlur = 8;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - rCon);        // 体 (上)
+    ctx.lineTo(cx + rStr, cy);        // 力 (右)
+    ctx.lineTo(cx, cy + rDex);        // 敏 (下)
+    ctx.lineTo(cx - rInt, cy);        // 法 (左)
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // 四个顶点晶莹光点
+    ctx.fillStyle = '#ffffff';
+    [[cx, cy - rCon], [cx + rStr, cy], [cx, cy + rDex], [cx - rInt, cy]].forEach(([px, py]) => {
+      ctx.beginPath();
+      ctx.arc(px, py, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  // 自由潜能点分配专用弹窗 (点击个人面板底部潜能分配时呼出)
+  openStatAllocationModal() {
+    const p = this.playerData;
+    const attrDefs = [
+      { key: 'con', name: '体质 (体)', desc: '增加气血上限与气血恢复', value: p.attributes.con },
+      { key: 'str', name: '力量 (力)', desc: '提升强力物理攻击伤害', value: p.attributes.str },
+      { key: 'int', name: '灵气 (法)', desc: '提升法术攻击与法力上限', value: p.attributes.int },
+      { key: 'sta', name: '耐力 (耐)', desc: '提升身躯硬度物理/法术防御', value: p.attributes.sta },
+      { key: 'dex', name: '敏捷 (敏)', desc: '提升回合出手速度与身法', value: p.attributes.dex },
+    ];
+
+    const modalHtml = `
+      <div class="modal-overlay" onclick="this.remove()">
+        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:380px;width:92%;">
+          <div class="modal-header">
+            <span class="modal-title">🌟 修为潜能点分配</span>
+            <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
+          </div>
+          <div class="modal-body" style="padding:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;background:rgba(20,15,10,0.85);padding:6px 10px;border-radius:4px;border:1px solid #5c4732;">
+              <span style="font-size:12px;color:#fef08a;">可用潜能点: <span style="font-size:14px;color:#00ffcc;font-weight:bold;">${p.potentialPoints}</span></span>
+              <span style="font-size:10px;color:#aaa;">点击分配强化四极五维</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              ${attrDefs.map(attr => `
+                <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);padding:6px 8px;border-radius:4px;border:1px solid #3d2c1c;">
+                  <div>
+                    <div style="font-size:11px;font-weight:bold;color:#ffd700;">${attr.name}: <span style="color:#ffffff;">${attr.value}</span></div>
+                    <div style="font-size:9.5px;color:#887766;">${attr.desc}</div>
+                  </div>
+                  <div>
+                    ${p.potentialPoints > 0 ? `
+                      <button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 1); window.App2D.openStatAllocationModal();" style="padding:2px 8px;font-size:10px;">+1</button>
+                      ${p.potentialPoints >= 5 ? `<button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 5); window.App2D.openStatAllocationModal();" style="padding:2px 6px;font-size:10px;background:#5c1d18;margin-left:2px;">+5</button>` : ''}
+                    ` : `<span style="font-size:10px;color:#666;">已分配</span>`}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div style="margin-top:10px;text-align:right;">
+              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove(); window.App2D.openPlayerProfileModal();" style="width:100%;">返回个人信息面板</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const v = document.body;
     v.insertAdjacentHTML('beforeend', modalHtml);
     if (window.Sound) window.Sound.playBeep();
   }
@@ -1834,14 +2504,39 @@ class GameApp2D {
                 const qColor = pet.quality === 'jinxian' ? '#ffd700' : (pet.quality === 'sanxian' ? '#3498db' : '#aaa');
                 const hasSkill = pet.skills && pet.skills.length > 0;
                 const canLearn = (pet.quality === 'jinxian') || (pet.quality === 'sanxian' && pet.level >= 10);
+
+                const getPetPortrait = (p, size = 32) => {
+                  const pName = (p.name || '').toLowerCase();
+                  let rId = 'rat';
+                  if (pName.includes('龟') || pName.includes('玄武')) rId = 'turtle';
+                  else if (pName.includes('蛇')) rId = 'snake';
+                  else if (pName.includes('狐')) rId = 'fox';
+                  else if (pName.includes('狼')) rId = 'wolf';
+                  else if (pName.includes('虎')) rId = 'tiger';
+                  else if (pName.includes('熊')) rId = 'bear';
+                  else if (pName.includes('蚌')) rId = 'clam';
+                  else if (pName.includes('蟹')) rId = 'crab';
+                  else if (pName.includes('虾')) rId = 'shrimp';
+                  else if (pName.includes('猪')) rId = 'pig';
+                  else if (pName.includes('猿') || pName.includes('猴')) rId = 'ape';
+                  else if (pName.includes('龙')) rId = 'xiaobailong';
+                  return window.Portraits ? window.Portraits.getPortraitSvg(rId, size) : `<span style="font-size:20px;">${p.icon || '🐾'}</span>`;
+                };
+
                 return `
                   <div style="background:#1a1109;border:1.5px solid ${isActive ? '#2ed573' : '#4a331c'};border-radius:8px;padding:8px 10px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:20px;">${pet.icon || '🐾'}</span>
-                        <span style="font-weight:bold;color:#fef0cd;font-size:12px;">${pet.name} (Lv.${pet.level})</span>
-                        <span style="color:${qColor};font-weight:bold;font-size:10px;border:1px solid ${qColor};border-radius:4px;padding:0 4px;">【${pet.qualityName || '普通'}】</span>
-                        ${pet.className && pet.className !== '无门派' ? `<span style="color:#d4af37;font-size:10px;">[${pet.className}]</span>` : ''}
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="width:34px;height:34px;border-radius:50%;border:1.5px solid #ffd700;overflow:hidden;background:#2d1a0d;box-shadow:0 0 8px rgba(255,215,0,0.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                          ${getPetPortrait(pet, 34)}
+                        </div>
+                        <div>
+                          <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-weight:bold;color:#fef0cd;font-size:12px;">${pet.name} (Lv.${pet.level})</span>
+                            <span style="color:${qColor};font-weight:bold;font-size:10px;border:1px solid ${qColor};border-radius:4px;padding:0 4px;">【${pet.qualityName || '普通'}】</span>
+                            ${pet.className && pet.className !== '无门派' ? `<span style="color:#d4af37;font-size:10px;">[${pet.className}]</span>` : ''}
+                          </div>
+                        </div>
                       </div>
                       <label style="display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;">
                         <input type="checkbox" ${isActive ? 'checked' : ''} onchange="window.App2D.togglePetCombat('${pet.instanceId}', this.checked)">
@@ -2217,37 +2912,217 @@ class GameApp2D {
   // 剧情转场与战斗系统 (彻底修复遮蔽与卡死)
   // =========================================================================
 
-  // 1. 天宫大闹天宫战斗
-  triggerHeavenBattle() {
-    // 强制关闭所有残留对话框！
+  // 1. 因缘事件一：天蓬调戏嫦娥，威灵大将出手制伏 (此时玩家随从为空，单挑醉酒天蓬，2~3回合制胜)
+  triggerTianpengBattle() {
+    if (window.Dialogue) {
+      window.Dialogue.close();
+    }
+
+    // 确保打天蓬时随从绝对为空，只有玩家一人出战！
+    this.companions = [];
+    this.pets = [];
+    this.activeCombatPets = [];
+
+    const tianpengBoss = {
+      id: 'tianpeng_boss',
+      templateId: 'tianpeng_marshal',
+      appearance: 'tianpeng_marshal',
+      modelId: 'tianpeng_marshal',
+      name: '天蓬元帅 (醉酒)',
+      isMutated: false,
+      isBoss: true,
+      level: 42,
+      hp: 900,       // 威灵大将Lv.50普攻约360~450，恰好2~3回合击败
+      maxHp: 900,
+      mp: 600,
+      maxMp: 600,
+      atk: 210,
+      def: 60,
+      matk: 80,
+      mdef: 75,
+      spd: 30,
+      skills: ['九齿钉耙', '天罡三十六变']
+    };
+
+    this.start2DBattle([tianpengBoss], () => {
+      this.storyPhase = 'heaven_saved_change';
+      setTimeout(() => {
+        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.tianpeng_after_battle) {
+          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.tianpeng_after_battle);
+        }
+      }, 500);
+    });
+  }
+
+  // 2. 因缘事件三前哨：东胜神洲花果山与守山健将赤毛马猴切磋
+  triggerChimaoBattle() {
+    if (window.Dialogue) {
+      window.Dialogue.close();
+    }
+
+    const chimaoBoss = {
+      id: 'chimao_boss',
+      templateId: 'chimao_mahou',
+      appearance: 'chimao_mahou',
+      modelId: 'chimao_mahou',
+      name: '赤毛马猴 (花果山健将)',
+      isMutated: false,
+      isBoss: true,
+      level: 40,
+      hp: 2000,
+      maxHp: 2000,
+      mp: 500,
+      maxMp: 500,
+      atk: 180,
+      def: 90,
+      matk: 70,
+      mdef: 70,
+      spd: 32,
+      skills: ['猴拳连打', '掷石']
+    };
+
+    this.start2DBattle([chimaoBoss], () => {
+      this.storyPhase = 'heaven_huaguoshan_rescue';
+      setTimeout(() => {
+        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.chimao_shuilien_after) {
+          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.chimao_shuilien_after);
+        }
+      }, 500);
+    });
+  }
+
+  // 3. 因缘事件三：水帘洞大战先锋巨灵神，拯救无辜幼小猴群
+  triggerJulingBattle() {
     if (window.Dialogue) {
       window.Dialogue.close();
     }
 
     const heavenlyBoss = {
-      id: 'heavenly_boss',
+      id: 'juling_shen_boss',
       templateId: 'juling_shen',
-      name: '巨灵神天将',
+      appearance: 'juling_shen',
+      modelId: 'juling_shen',
+      name: '征讨先锋·巨灵神',
       isMutated: false,
       isBoss: true,
-      level: 45,
-      hp: 1800,
-      maxHp: 1800,
-      mp: 500,
-      maxMp: 500,
-      atk: 140,
-      def: 95,
+      level: 48,
+      hp: 3200,
+      maxHp: 3200,
+      mp: 800,
+      maxMp: 800,
+      atk: 220,
+      def: 130,
       matk: 80,
-      mdef: 75,
+      mdef: 80,
       spd: 35,
-      skills: ['必杀', '金刚护体']
+      skills: ['宣花开山劈', '神力狂暴']
     };
 
     this.start2DBattle([heavenlyBoss], () => {
+      this.storyPhase = 'heaven_juling_defeated';
       setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.heaven_banishment);
+        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan) {
+          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan);
+        }
       }, 500);
     });
+  }
+
+  // 4. 花果山总决战：齐天大圣神威极境，四天将大阵合围 (大圣极强打谁基本都是一下秒杀！)
+  triggerWukongHavocBattle() {
+    if (window.Dialogue) {
+      window.Dialogue.close();
+    }
+
+    // 四天将大阵同伴出战 (玩家 + 托塔李天王、哪吒三太子、九天雷公神将)
+    this.companions = [
+      {
+        id: 'companion_litianwang',
+        name: '托塔李天王',
+        roleId: 'litianwang',
+        modelId: 'litianwang',
+        level: 50,
+        hp: 8000,
+        maxHp: 8000,
+        mp: 2000,
+        maxMp: 2000,
+        atk: 280,
+        def: 160,
+        spd: 36,
+        skills: [{ id: 'linglong_ta', name: '玲珑宝塔', costMp: 50 }]
+      },
+      {
+        id: 'companion_nezha',
+        name: '哪吒三太子',
+        roleId: 'nezha',
+        modelId: 'nezha',
+        level: 50,
+        hp: 7500,
+        maxHp: 7500,
+        mp: 2500,
+        maxMp: 2500,
+        atk: 320,
+        def: 150,
+        spd: 42,
+        skills: [{ id: 'sanmei_zhenhuo', name: '三昧真火', costMp: 60 }]
+      },
+      {
+        id: 'companion_leigong',
+        name: '九天雷公神将',
+        roleId: 'leigong',
+        modelId: 'leigong',
+        level: 48,
+        hp: 6800,
+        maxHp: 6800,
+        mp: 1800,
+        maxMp: 1800,
+        atk: 300,
+        def: 140,
+        spd: 38,
+        skills: [{ id: 'leiting_wanjun', name: '五雷轰顶', costMp: 55 }]
+      }
+    ];
+
+    // 齐天大圣神威极境：实力通天彻地，打谁基本都是一下！
+    const wukongBoss = {
+      id: 'wukong_havoc_boss',
+      templateId: 'sun_wukong',
+      name: '齐天大圣·孙悟空 (神威极境)',
+      isMutated: false,
+      isBoss: true,
+      level: 99,
+      hp: 999999,
+      maxHp: 999999,
+      mp: 99999,
+      maxMp: 99999,
+      atk: 99999,      // 极强神威，打谁基本都是一下秒杀！
+      def: 9999,
+      matk: 99999,
+      mdef: 9999,
+      spd: 99,
+      skills: ['大闹天宫', '千钧神棒', '法天象地']
+    };
+
+    const proceedToYangjian = () => {
+      this.storyPhase = 'heaven_yangjian_capture';
+      this.companions = []; // 清空临时助战天将
+      setTimeout(() => {
+        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.yangjian_capture_and_banishment) {
+          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.yangjian_capture_and_banishment);
+        }
+      }, 600);
+    };
+
+    this.start2DBattle([wukongBoss], proceedToYangjian, proceedToYangjian);
+  }
+
+  // 兼容旧接口
+  triggerWukongSparBattle() {
+    this.triggerWukongHavocBattle();
+  }
+
+  triggerHeavenBattle() {
+    this.triggerJulingBattle();
   }
 
   // 2. 贬落凡尘刘家村
@@ -2262,6 +3137,7 @@ class GameApp2D {
     this.playerChar.speed = 2.08; // 80% 速度 (原2.6)
 
     this.storyPhase = 'liujiacun_start';
+    this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
 
     const viewport = document.getElementById('game-viewport');
     if (viewport) {
@@ -2288,7 +3164,41 @@ class GameApp2D {
     }
   }
 
-  // 3. 刘伯钦资助
+  // 3. 采摘野生青蘑菇 (生火做饭)
+  collectMushroom() {
+    if (window.Dialogue) window.Dialogue.close();
+    if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
+    this.questKills.mushrooms = (this.questKills.mushrooms || 0) + 1;
+    this.inventory.addItem('item_fresh_mushroom', 1);
+    if (window.Sound) window.Sound.playSuccess();
+
+    // 拾取距离玩家最近的蘑菇实体
+    let nearestMushroom = null;
+    let minDist = 9999;
+    for (const n of this.npcs) {
+      if (n.id.startsWith('prop_mushroom_')) {
+        const d = Math.hypot(n.x - this.playerChar.x, n.y - this.playerChar.y);
+        if (d < minDist) {
+          minDist = d;
+          nearestMushroom = n;
+        }
+      }
+    }
+    if (nearestMushroom) {
+      this.npcs = this.npcs.filter(n => n.id !== nearestMushroom.id);
+    }
+
+    if (this.questKills.mushrooms >= 4) {
+      this.storyPhase = 'liujiacun_mushrooms_collected';
+      window.showGameMessage('🎉 4朵新鲜野生青蘑菇已采齐！快拿去给刘伯钦生火下锅！', 'success', 4500);
+    } else {
+      window.showGameMessage(`🍄 采得野生青蘑菇！(${this.questKills.mushrooms}/4)`, 'info', 3000);
+    }
+    this.updatePlayerHud();
+    this.refreshMapNpcs();
+  }
+
+  // 4. 刘伯钦资助
   grantStarterItems() {
     this.inventory.addItem('eq_wp_wood', 1);
     this.inventory.addItem('eq_bt_straw', 1);
@@ -2299,7 +3209,7 @@ class GameApp2D {
     window.showGameMessage('【获得刘伯钦资助】已佩戴【青铜短剑】与【行路草鞋】，获得金创药*5！', 'success', 3500);
   }
 
-  // 4. 触发猛兽与恶鬼战斗
+  // 5. 触发猛兽与恶鬼战斗 (支持砍柴伐树与刘家村除害计数)
   triggerMonsterBattle(monsterChar) {
     const md = monsterChar.monsterData || {};
     const mob = {
@@ -2328,16 +3238,118 @@ class GameApp2D {
         window.Sound.playCrit();
         window.showGameMessage(`🎉【伏魔告捷】成功诛灭作祟恶鬼【${this.ghostQuest.targetName}】！速回长安城向钟馗天师复命领赏！`, 'success', 5000);
       }
-      if (this.currentMapId === 'liujiacun' && this.storyPhase === 'liujiacun_start') {
-        this.storyPhase = 'liujiacun_hunted';
-        setTimeout(() => {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.liuboqin_post_hunt);
-        }, 600);
+
+      // 五行山砍柴伐树任务推进
+      if (monsterChar.id.includes('tree') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'tree') || monsterChar.name.includes('枯树精')) {
+        if (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering') {
+          this.storyPhase = 'liujiacun_wood_gathering';
+          if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
+          this.questKills.trees = (this.questKills.trees || 0) + 1;
+          this.inventory.addItem('item_dry_wood', 1);
+          if (this.questKills.trees >= 4) {
+            this.storyPhase = 'liujiacun_wood_collected';
+            if (window.Sound) window.Sound.playCrit();
+            window.showGameMessage('🎉 4捆坚韧柴木已收集齐全！请回刘家村向刘伯钦交差！', 'success', 4500);
+          } else {
+            window.showGameMessage(`🪵 砍倒枯树精！获得坚韧柴木 (${this.questKills.trees}/4)`, 'info', 3000);
+          }
+          this.refreshMapNpcs();
+        }
+      }
+
+      // 刘家村消灭硕鼠任务推进
+      if (monsterChar.id.includes('rat') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'giant_rat') || monsterChar.name.includes('硕鼠')) {
+        if (this.storyPhase === 'liujiacun_rat_hunting') {
+          if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
+          this.questKills.rats = (this.questKills.rats || 0) + 1;
+          if (this.questKills.rats >= 4) {
+            this.storyPhase = 'liujiacun_rats_cleared';
+            if (window.Sound) window.Sound.playCrit();
+            window.showGameMessage('🎉 4只偷粮硕鼠已全部消灭！村中粮仓平安，快向刘伯钦交差！', 'success', 4500);
+          } else {
+            window.showGameMessage(`🐀 击败偷粮硕鼠 (${this.questKills.rats}/4)`, 'info', 3000);
+          }
+          this.refreshMapNpcs();
+        }
       }
     });
   }
 
-  // 5. 观音赐宝
+  // 6. 东海之滨：大战巡海夜叉李艮
+  triggerYechaBattle() {
+    if (window.Dialogue) {
+      window.Dialogue.close();
+    }
+    const yechaBoss = {
+      id: 'yecha_boss',
+      templateId: 'yecha',
+      appearance: 'yecha',
+      modelId: 'yecha',
+      name: '巡海夜叉·李艮',
+      isMutated: false,
+      isBoss: true,
+      level: 12,
+      hp: 1200,
+      maxHp: 1200,
+      mp: 400,
+      maxMp: 400,
+      atk: 95,
+      def: 55,
+      matk: 40,
+      mdef: 40,
+      spd: 28,
+      skills: ['巨浪劈', '托天叉']
+    };
+    this.start2DBattle([yechaBoss], () => {
+      this.storyPhase = 'donghai_dragon_arrived';
+      setTimeout(() => {
+        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.donghai_dragon_apology) {
+          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.donghai_dragon_apology);
+        }
+      }, 500);
+    });
+  }
+
+  // 7. 东海龙王宝库：赠送整套初级龙神战装 (武器、铠甲、头盔、靴子、项链)
+  grantLonggongArmorSet() {
+    if (window.Dialogue) {
+      window.Dialogue.close();
+    }
+    const setPieces = [
+      'longgong_weapon',
+      'longgong_armor',
+      'longgong_helmet',
+      'longgong_boots',
+      'longgong_necklace'
+    ];
+    setPieces.forEach(itemId => {
+      this.inventory.addItem(itemId, 1);
+      const itemData = window.GAME_DATA.ITEMS[itemId];
+      if (itemData && itemData.slot) {
+        this.playerData.equipItem(itemData.slot, { itemId, star: 0, sockets: [null, null, null] });
+      }
+    });
+    this.playerData.recalculateStats(true);
+    this.playerData.hp = this.playerData.maxHp;
+    this.playerData.mp = this.playerData.maxMp;
+    this.playerData.gainExp(800);
+    if (window.Sound) window.Sound.playCrit();
+    this.updatePlayerHud();
+    window.showGameMessage('💎【龙神神装全套】已装备【覆海点钢枪、龙鳞轻钢甲、碧水定海盔、踏浪穿云靴、龙珠凝霜佩】！战力与气血大幅飞跃！', 'success', 5000);
+
+    setTimeout(() => {
+      this.storyPhase = 'chentang_guanyin_revelation';
+      this.loadMap('chentangguan');
+      window.showGameMessage('☁️ 返回陈塘关！天际祥云缭绕，仙乐阵阵！', 'info', 3500);
+      setTimeout(() => {
+        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation) {
+          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation);
+        }
+      }, 600);
+    }, 1200);
+  }
+
+  // 8. 观音赐宝 (五行山前)
   grantGuanyinGift() {
     this.inventory.addItem('eq_nk_dinghun', 1);
     this.inventory.addItem('feixing_fu', 5);
@@ -2348,11 +3360,15 @@ class GameApp2D {
     window.showGameMessage('【菩萨赐宝】获得【九转定魂珠】、飞行神符*5、九转还魂丹*3！前往五行山解救大圣！', 'success', 4000);
   }
 
-  // 6. 五行山金符揭下
+  // 6. 五行山金符揭下 (防重入、即时瓦片置换、彻底杜绝死循环)
   releaseWukong() {
+    this.isSealTriggered = true;
+    this.isSealTriggering = false;
     window.Sound.playCrit();
     const mapData = window.GAME_DATA.MAPS_2D['wuxingshan'];
-    mapData.tiles[3][12] = 'grass';
+    if (mapData && mapData.tiles && mapData.tiles[3]) {
+      mapData.tiles[3][12] = 'mountain_rock';
+    }
 
     const vp = document.getElementById('game-viewport');
     if (vp) {
@@ -2368,6 +3384,8 @@ class GameApp2D {
   // 7. 齐天大圣入队
   joinWukongToParty() {
     this.storyPhase = 'wuxing_freed';
+    this.isSealTriggered = true;
+    this.isSealTriggering = false;
     this.npcs = this.npcs.filter(n => n.id !== 'npc_wukong_sealed');
 
     const wukongPet = window.PetSystem.createPet('super_wukong', false, 35);
@@ -2714,9 +3732,22 @@ class GameApp2D {
     });
   }
 
+  // 兼容别名
+  startCombat(nameOrEnemies, maybeEnemies, onVictoryCallback) {
+    let enemies = [];
+    let cb = onVictoryCallback;
+    if (Array.isArray(nameOrEnemies)) {
+      enemies = nameOrEnemies;
+      cb = maybeEnemies;
+    } else if (Array.isArray(maybeEnemies)) {
+      enemies = maybeEnemies;
+    }
+    return this.start2DBattle(enemies, cb);
+  }
+
   // 战斗桥接与全屏渲染 (彻底消除卡死，国风立绘，战术时序与动作打击)
   // 战斗桥接与全屏渲染 (经典汉风三栏布局：左敌方竖排，中操作竖排，右我方四位竖排)
-  start2DBattle(enemies, onVictoryCallback) {
+  start2DBattle(enemies, onVictoryCallback, onDefeatCallback = null) {
     if (window.Dialogue) {
       window.Dialogue.close();
     }
@@ -2758,6 +3789,7 @@ class GameApp2D {
     this.autoCombatEnabled = false;
     this.combatSpeedMultiplier = 1;
     this.battleVictoryCallback = onVictoryCallback;
+    this.battleDefeatCallback = onDefeatCallback;
 
     this.startBattleCountdown();
     this.renderBattleInterface();
@@ -2887,10 +3919,44 @@ class GameApp2D {
     const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
     const skills = curAlly?.isPlayer ? this.playerData.getSkills() : (curAlly?.skills || []);
 
+    const getBattleRoleId = (unit) => {
+      if (!unit) return 'shaoxia';
+      const name = unit.name || '';
+      if (unit.isPlayer) {
+        return (this.playerData && this.playerData.appearance === 'heaven_general') ? 'heaven_general' : 'shaoxia';
+      }
+      if (name.includes('大圣') || name.includes('悟空')) return 'sun_wukong';
+      if (name.includes('八戒') || name.includes('猪刚鬣')) return 'zhu_bajie';
+      if (name.includes('沙僧') || name.includes('悟净')) return 'sha_wujing';
+      if (name.includes('龙马') || name.includes('小白龙') || name.includes('敖烈')) return 'xiaobailong';
+      if (name.includes('白骨') || name.includes('尸魔')) return 'baigu_jing';
+      if (name.includes('黄袍') || name.includes('奎木狼')) return 'huangpao_guai';
+      if (name.includes('虎先锋')) return 'hu_xianfeng';
+      if (name.includes('黄风')) return 'huangfeng_guai';
+      if (name.includes('狼') || name.includes('郊狼')) return 'wolf';
+      if (name.includes('混混') || name.includes('恶霸') || name.includes('盗') || name.includes('贼')) return 'hunhun';
+      if (name.includes('蚌')) return 'clam';
+      if (name.includes('蟹')) return 'crab';
+      if (name.includes('虾')) return 'shrimp';
+      if (name.includes('熊')) return 'bear';
+      if (name.includes('蛇')) return 'snake';
+      if (name.includes('狐')) return 'fox';
+      if (name.includes('鼠')) return 'rat';
+      if (name.includes('猪')) return 'pig';
+      if (name.includes('天兵') || name.includes('天将') || name.includes('神将')) return 'heaven_general';
+      return 'shaoxia';
+    };
+
+    const targetRoleId = getBattleRoleId(curTarget);
+    const targetPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(targetRoleId, 22) : '🎯';
+    const allyRoleId = getBattleRoleId(curAlly);
+    const allyPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(allyRoleId, 22) : '⚡';
+    const playerPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(getBattleRoleId({ isPlayer: true }), 22) : '👤';
+
     layer.innerHTML = `
       <div class="battle-container" id="battle-main-container" style="width:100%;height:100%;background:#0a0c09;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;box-shadow:inset 0 0 35px #000;">
 
-        <!-- 1. 顶部双龙金匾与战术信息横幅 (复刻图3标准) -->
+        <!-- 1. 顶部双龙金匾与战术信息横幅 (复刻图3标准并接入精致头像) -->
         <div class="battle-dragon-header-bar">
           <div class="dragon-plaque-container">
             <span class="dragon-crest-icon">🐉</span>
@@ -2899,31 +3965,47 @@ class GameApp2D {
           </div>
 
           <div class="battle-banner-pills-row">
-            <div class="battle-banner-pill" title="当前攻击目标">
+            <div class="battle-banner-pill" title="当前攻击目标" style="display:inline-flex;align-items:center;gap:5px;">
+              <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;border:1px solid #ff4757;overflow:hidden;vertical-align:middle;flex-shrink:0;">
+                ${targetPortraitSvg}
+              </span>
               <span>🎯 目标:</span>
-              <span style="color:#ff6b81;">${curTarget ? curTarget.name : '未指定'}</span>
+              <span style="color:#ff6b81;font-weight:bold;">${curTarget ? `[Lv.${curTarget.level || 1}] ${curTarget.name}` : '未指定'}</span>
             </div>
 
-            <div class="battle-banner-pill acting-pill" title="当前指令角色与出招倒计时">
-              <span>⚡ ${curAlly ? curAlly.name : '侠士'}-出招</span>
+            <div class="battle-banner-pill acting-pill" title="当前指令角色与出招倒计时" style="display:inline-flex;align-items:center;gap:5px;">
+              <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;border:1px solid #ffd700;overflow:hidden;vertical-align:middle;flex-shrink:0;">
+                ${allyPortraitSvg}
+              </span>
+              <span>⚡ ${curAlly ? `[Lv.${curAlly.level || 1}] ${curAlly.name}` : '侠士'}-出招</span>
               <span id="battle-acting-countdown-text" style="color:#ffd700;font-weight:900;">(${this.battleCountdown || 30})</span>
             </div>
 
-            <div class="battle-banner-pill" title="指挥玩家本尊">
-              <span>👤 ${this.playerData ? this.playerData.name : '侠士'}</span>
+            <div class="battle-banner-pill" title="指挥玩家本尊" style="display:inline-flex;align-items:center;gap:5px;">
+              <span style="display:inline-flex;width:20px;height:20px;border-radius:50%;border:1px solid #2ed573;overflow:hidden;vertical-align:middle;flex-shrink:0;">
+                ${playerPortraitSvg}
+              </span>
+              <span>${this.playerData ? `[Lv.${this.playerData.level || 1}] ${this.playerData.name}` : '侠士'}</span>
             </div>
           </div>
         </div>
 
-        <!-- 战术时序速度轴 -->
-        <div class="battle-timeline-bar" style="margin: 3px 10px 1px 10px; padding: 2px 8px; font-size: 10px; border-radius: 4px;">
-          <span class="timeline-title" style="font-size:10px;">📜 行动序:</span>
-          ${turnQueue.map(item => `
-            <div class="timeline-badge ${item.side === 'ally' ? 'timeline-ally' : 'timeline-enemy'}" style="padding: 1px 6px; font-size: 10px;">
-              <span class="timeline-num">#${item.turnOrder}</span>
-              <span class="timeline-name">${item.name}</span>
-            </div>
-          `).join('')}
+        <!-- 战术时序速度轴 (附带各单位神级微缩头像) -->
+        <div class="battle-timeline-bar" style="margin: 3px 10px 1px 10px; padding: 2px 8px; font-size: 10px; border-radius: 4px; display:flex; align-items:center; gap:6px; overflow-x:auto;">
+          <span class="timeline-title" style="font-size:10px;flex-shrink:0;">📜 行动序:</span>
+          ${turnQueue.map(item => {
+            const rId = getBattleRoleId(item);
+            const pSvg = window.Portraits ? window.Portraits.getPortraitSvg(rId, 16) : '';
+            return `
+              <div class="timeline-badge ${item.side === 'ally' ? 'timeline-ally' : 'timeline-enemy'}" style="padding: 1px 6px; font-size: 10px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;overflow:hidden;border:1px solid ${item.side === 'ally' ? '#ffd700' : '#ff4757'};">
+                  ${pSvg}
+                </span>
+                <span class="timeline-num">#${item.turnOrder}</span>
+                <span class="timeline-name">[Lv.${item.level || 1}] ${item.name}</span>
+              </div>
+            `;
+          }).join('')}
         </div>
 
         <!-- 动效浮层 (飘字、刀光、雷霆) -->
@@ -3124,7 +4206,7 @@ class GameApp2D {
     }
   }
 
-  // 绘制战场Canvas全景：草地绿茵、左侧真实站立怪物模型、右侧站立角色/仙宠模型、通天金黄光柱
+  // 绘制战场Canvas全景：草地绿茵、动态自适应居中站位、极速冲锋滑步与大号令旗血条
   renderBattleCanvasFrame() {
     const canvas = document.getElementById('battle-scene-canvas');
     if (!canvas || !this.currentBattle) return;
@@ -3161,18 +4243,33 @@ class GameApp2D {
 
     const animTimer = Date.now() / 150;
 
-    // 2. 左侧：敌方阵容 (竖排排列，真实全身模型站立于战场大地，非头像卡片)
+    // 2. 左侧：敌方阵容 (动态自适应居中排列：1人居中50%，2人居中38%与64%)
     const enemies = this.currentBattle.enemies;
+    const aliveEnemies = enemies.filter(e => e.hp > 0);
     const enemyX = Math.floor(width * 0.18);
-    enemies.forEach((e, idx) => {
-      if (e.hp <= 0) return;
-      let ey;
-      if (enemies.length === 1) ey = Math.floor(height * 0.52);
-      else if (enemies.length === 2) ey = Math.floor(height * (idx === 0 ? 0.35 : 0.68));
-      else ey = Math.floor(height * (0.22 + idx * 0.28));
 
-      e._battlePos = { x: enemyX, y: ey };
-      const isTargeted = (this.selectedTargetIndex === idx);
+    aliveEnemies.forEach((e, idx) => {
+      let ey;
+      if (aliveEnemies.length === 1) {
+        ey = Math.floor(height * 0.50); // 1人正中央
+      } else if (aliveEnemies.length === 2) {
+        ey = Math.floor(height * (idx === 0 ? 0.38 : 0.64)); // 2人居中
+      } else if (aliveEnemies.length === 3) {
+        ey = Math.floor(height * (0.28 + idx * 0.22));
+      } else {
+        ey = Math.floor(height * (0.18 + idx * 0.20));
+      }
+
+      e._baseBattlePos = { x: enemyX, y: ey };
+      const dX = e._dashOffset ? e._dashOffset.x : 0;
+      const dY = e._dashOffset ? e._dashOffset.y : 0;
+      const sX = e._shakeOffset ? e._shakeOffset.x : 0;
+      const sY = e._shakeOffset ? e._shakeOffset.y : 0;
+      const renderX = enemyX + dX + sX;
+      const renderY = ey + dY + sY;
+      e._battlePos = { x: renderX, y: renderY };
+
+      const isTargeted = (this.selectedTargetIndex === e.enemyIndex || (this.selectedTargetIndex === idx));
 
       // 若被锁定为攻击目标，脚底绘制赤金锁定法阵光环
       if (isTargeted) {
@@ -3183,165 +4280,189 @@ class GameApp2D {
         ctx.shadowColor = '#ff4757';
         ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.ellipse(enemyX, ey + 12, 22 + pulse, 9 + pulse * 0.4, 0, 0, Math.PI * 2);
+        ctx.ellipse(renderX, renderY + 14, 25 + pulse, 10 + pulse * 0.4, 0, 0, Math.PI * 2);
         ctx.stroke();
 
         ctx.strokeStyle = '#ffd700';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.ellipse(enemyX, ey + 12, 15, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(renderX, renderY + 14, 16, 7, 0, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
 
-      // 敌方全身模型派发
-      let mId = e.modelId || e.appearance || e.id || '';
-      if (e.name.includes('狼') || mId.includes('wolf') || mId.includes('huangpao')) mId = 'wild_wolf';
-      else if (e.name.includes('虎') || mId.includes('tiger') || mId.includes('huxianfeng') || mId.includes('huangfeng')) mId = 'hu_xianfeng';
-      else if (e.name.includes('蛇') || mId.includes('snake')) mId = 'pet_snake';
-      else if (e.name.includes('骨') || e.name.includes('骷髅') || mId.includes('baigu')) mId = 'baigu_jing';
-      else if (e.name.includes('八戒') || e.name.includes('猪') || mId.includes('bajie')) mId = 'zhu_bajie';
-      else if (e.name.includes('鼠') || mId.includes('rat')) mId = 'giant_rat';
-      else if (e.name.includes('龟') || mId.includes('gui') || mId.includes('turtle')) mId = 'turtle';
-      else if (e.name.includes('沙') || mId.includes('wujing') || mId.includes('shaseng')) mId = 'sha_wujing';
-      else if (e.name.includes('龙') || mId.includes('bailong')) mId = 'bailongma';
-      else if (e.name.includes('猴') || e.name.includes('悟空') || mId.includes('wukong')) mId = 'sun_wukong';
-      else if (e.name.includes('铁扇') || mId.includes('tieshan')) mId = 'tieshan';
-      else if (e.name.includes('镇元') || mId.includes('zhenyuanzi')) mId = 'tang_seng';
-      else if (e.name.includes('天神') || e.name.includes('天将') || mId.includes('heaven')) mId = 'heaven_general';
+      // 敌方全身模型派发：优先继承野外实体的原生 appearance / modelId / templateId，绝不粗暴篡改！
+      let mId = e.appearance || e.modelId || e.templateId || '';
+
+      // 仅在未配置外观或外观模糊时，才做精确推断，且严格区分齐天大圣与普通猴精、天蓬大将与凡间猪八戒、巨灵神与天兵
+      if (!mId || mId === 'default' || mId === 'undefined') {
+        const n = e.name || '';
+        if (n.includes('混混') || n.includes('恶霸') || n.includes('地痞')) mId = 'hooligan';
+        else if (n.includes('蚌')) mId = 'clam';
+        else if (n.includes('蟹')) mId = 'crab';
+        else if (n.includes('虾')) mId = 'shrimp';
+        else if (n.includes('狼') || n.includes('huangpao')) mId = 'wild_wolf';
+        else if (n.includes('虎') || n.includes('huxianfeng')) mId = 'hu_xianfeng';
+        else if (n.includes('蛇')) mId = 'pet_snake';
+        else if (n.includes('骨') || n.includes('骷髅')) mId = 'baigu_jing';
+        else if (n.includes('天蓬') && !n.includes('八戒') && !n.includes('猪')) mId = 'tianpeng_marshal';
+        else if (n.includes('巨灵神')) mId = 'juling_shen';
+        else if (n.includes('赤毛') || n.includes('马猴')) mId = 'chimao_mahou';
+        else if (n.includes('小石猴') || n.includes('小猴') || n.includes('通臂')) mId = 'stone_monkey';
+        else if (n.includes('悟空') || n.includes('齐天大圣') || n.includes('美猴王')) mId = 'sun_wukong';
+        else if (n.includes('八戒') || n.includes('猪刚鬣')) mId = 'zhu_bajie';
+        else if (n.includes('夜叉')) mId = 'yecha';
+        else if (n.includes('树精') || n.includes('枯树')) mId = 'tree';
+        else if (n.includes('狐') || n.includes('灵狐') || n.includes('野狐')) mId = 'fox';
+        else if (n.includes('鼠')) mId = 'giant_rat';
+        else if (n.includes('龟')) mId = 'turtle';
+        else if (n.includes('沙') || n.includes('卷帘')) mId = 'sha_wujing';
+        else if (n.includes('小白龙') || n.includes('敖烈')) mId = 'xiaobailong';
+        else if (n.includes('龙') || n.includes('龙王')) mId = 'longwang';
+        else if (n.includes('熊')) mId = 'bear';
+        else if (n.includes('牛魔王')) mId = 'bull_demon';
+        else if (n.includes('铁扇')) mId = 'tieshan';
+        else if (n.includes('天神') || n.includes('天将') || n.includes('天兵')) mId = 'heaven_general';
+        else mId = (window.Character ? window.Character.inferMonsterType(n, e.id) : 'hooligan');
+      }
 
       if (window.CharacterRenderer) {
-        window.CharacterRenderer.drawModel(ctx, enemyX, ey, mId, {
+        window.CharacterRenderer.drawModel(ctx, renderX, renderY, mId, {
           direction: 'right',
-          scale: 1.32,
+          scale: 1.35,
           animTimer: animTimer + idx,
           isActing: false
         });
       }
 
-      // 头顶醒目姓名 (粗白字 + 纯黑描边，复刻图3标准)
+      // 头顶醒目姓名 (粗白字 + 纯黑描边，附带等级显示)
+      const enemyDisplayName = `[Lv.${e.level || 1}] ${e.name}`;
       ctx.save();
-      ctx.font = 'bold 12.5px "Microsoft YaHei", sans-serif';
+      ctx.font = 'bold 13px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 3.5;
       ctx.lineJoin = 'round';
-      ctx.strokeText(e.name, enemyX, ey - 28);
+      ctx.strokeText(enemyDisplayName, renderX, renderY - 30);
       ctx.fillStyle = isTargeted ? '#ff4757' : (e.isBoss ? '#ffd700' : '#ffffff');
-      ctx.fillText(e.name, enemyX, ey - 28);
+      ctx.fillText(enemyDisplayName, renderX, renderY - 30);
 
       // 头顶锁定小红箭头指示
       if (isTargeted) {
-        const arrowY = ey - 44 + Math.sin(Date.now() / 150) * 3;
+        const arrowY = renderY - 48 + Math.sin(Date.now() / 150) * 3.5;
         ctx.fillStyle = '#ff4757';
         ctx.beginPath();
-        ctx.moveTo(enemyX, arrowY);
-        ctx.lineTo(enemyX - 5.5, arrowY - 8);
-        ctx.lineTo(enemyX + 5.5, arrowY - 8);
+        ctx.moveTo(renderX, arrowY);
+        ctx.lineTo(renderX - 6, arrowY - 9);
+        ctx.lineTo(renderX + 6, arrowY - 9);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.2;
         ctx.stroke();
       }
 
-      // 脚底生命条与时序编号
-      const barW = 48;
-      const barH = 5;
-      const barX = enemyX - barW / 2;
-      const barY = ey + 20;
+      // 脚底大号立体水晶生命条 (加宽到 68px, 高度 9px, 彻底清晰明了)
+      const barW = 68;
+      const barH = 9;
+      const barX = renderX - barW / 2;
+      const barY = renderY + 22;
       const hpPct = Math.max(0, Math.min(1, e.hp / e.maxHp));
 
-      ctx.fillStyle = 'rgba(12, 9, 6, 0.85)';
-      ctx.fillRect(barX, barY, barW, barH);
-      ctx.strokeStyle = '#3d2503';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX, barY, barW, barH);
+      // 底槽
+      ctx.fillStyle = 'rgba(10, 8, 6, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, barH, 2);
+      ctx.fill();
+      ctx.strokeStyle = '#5a3c22';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
 
-      ctx.fillStyle = '#ff4757';
-      ctx.fillRect(barX + 0.5, barY + 0.5, (barW - 1) * hpPct, barH - 1);
+      // 鲜红生命充填 (渐变色)
+      if (hpPct > 0) {
+        const hpGrad = ctx.createLinearGradient(barX, barY, barX, barY + barH);
+        hpGrad.addColorStop(0, '#f87171');
+        hpGrad.addColorStop(0.5, '#ef4444');
+        hpGrad.addColorStop(1, '#991b1b');
+        ctx.fillStyle = hpGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX + 0.5, barY + 0.5, (barW - 1) * hpPct, barH - 1, 1.5);
+        ctx.fill();
+        // 上层微光高光
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillRect(barX + 1, barY + 1, (barW - 2) * hpPct, 2);
+      }
 
+      // 醒目大号速度时序令旗 (直径 22px 发光令旗勋章，bold 12px 大字清晰展示出招顺位)
       if (e.turnOrder) {
-        ctx.fillStyle = 'rgba(231, 76, 60, 0.95)';
-        ctx.fillRect(barX - 18, barY - 1, 16, 7);
-        ctx.font = 'bold 8.5px sans-serif';
+        const badgeX = barX - 16;
+        const badgeY = barY + 4;
+        ctx.save();
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.arc(badgeX, badgeY, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+
+        ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('#' + e.turnOrder, barX - 10, barY + 2.5);
+        ctx.shadowBlur = 0;
+        ctx.fillText('#' + e.turnOrder, badgeX, badgeY + 0.5);
+        ctx.restore();
       }
       ctx.restore();
     });
 
-    // 3. 右侧：我方阵容 (竖排四位：玩家、仙宠1、仙宠2、仙宠3)
+    // 3. 右侧：我方阵容 (动态自适应居中：1人居中50%，2人居中38%与64%，彻底消除任何锁槽位)
+    const aliveAllies = this.currentBattle.allies.filter(a => a.hp > 0);
     const allyX = Math.floor(width * 0.82);
-    const pLevel = this.playerData ? this.playerData.level : 1;
-    const petAllies = this.currentBattle.allies.filter(a => !a.isPlayer);
-    const slots = [
-      { id: 'player', ally: this.currentBattle.allies.find(a => a.isPlayer) || this.currentBattle.allies[0], name: this.playerData.name, reqLvl: 1, y: Math.floor(height * 0.20) },
-      { id: 'pet1', ally: petAllies[0], name: '仙宠1', reqLvl: 20, y: Math.floor(height * 0.42) },
-      { id: 'pet2', ally: petAllies[1], name: '仙宠2', reqLvl: 30, y: Math.floor(height * 0.64) },
-      { id: 'pet3', ally: petAllies[2], name: '仙宠3', reqLvl: 40, y: Math.floor(height * 0.84) }
-    ];
 
-    slots.forEach(slot => {
-      const ay = slot.y;
-      const isPlayerSlot = (slot.id === 'player');
-      const ally = slot.ally;
-
-      if (!isPlayerSlot && pLevel < slot.reqLvl) {
-        // 未解锁槽位
-        ctx.save();
-        ctx.fillStyle = 'rgba(15, 10, 8, 0.45)';
-        ctx.beginPath();
-        ctx.ellipse(allyX, ay + 6, 20, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#4a3824';
-        ctx.stroke();
-
-        ctx.font = '10px "Microsoft YaHei", sans-serif';
-        ctx.fillStyle = '#776655';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`🔒 ${slot.reqLvl}级解锁`, allyX, ay + 4);
-        ctx.restore();
-        return;
+    aliveAllies.forEach((ally, idx) => {
+      let ay;
+      if (aliveAllies.length === 1) {
+        ay = Math.floor(height * 0.50); // 1个人直接站右侧正中央！
+      } else if (aliveAllies.length === 2) {
+        ay = Math.floor(height * (idx === 0 ? 0.38 : 0.64)); // 2个人站2、3位置中央！
+      } else if (aliveAllies.length === 3) {
+        ay = Math.floor(height * (0.28 + idx * 0.22));
+      } else {
+        ay = Math.floor(height * (0.18 + idx * 0.20));
       }
 
-      if (!ally) {
-        // 空闲槽位
-        ctx.save();
-        ctx.fillStyle = 'rgba(15, 10, 8, 0.38)';
-        ctx.beginPath();
-        ctx.ellipse(allyX, ay + 6, 20, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(197, 155, 39, 0.4)';
-        ctx.stroke();
+      ally._baseBattlePos = { x: allyX, y: ay };
+      const dX = ally._dashOffset ? ally._dashOffset.x : 0;
+      const dY = ally._dashOffset ? ally._dashOffset.y : 0;
+      const sX = ally._shakeOffset ? ally._shakeOffset.x : 0;
+      const sY = ally._shakeOffset ? ally._shakeOffset.y : 0;
+      const renderX = allyX + dX + sX;
+      const renderY = ay + dY + sY;
+      ally._battlePos = { x: renderX, y: renderY };
 
-        ctx.font = '10px "Microsoft YaHei", sans-serif';
-        ctx.fillStyle = '#8e734c';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`🐾 空闲`, allyX, ay + 4);
-        ctx.restore();
-        return;
-      }
-
-      if (ally.hp <= 0) return;
-
-      ally._battlePos = { x: allyX, y: ay };
+      const isPlayerSlot = ally.isPlayer;
       const isActing = (this.selectedAllyId === ally.id);
 
-      // 若为当前出招者：先在底层绘制通天神圣金黄光柱！(完全复刻图3震撼效果)
+      // 若为当前出招者：先在底层绘制通天神圣金黄光柱！(复刻图3震撼效果)
       if (isActing && window.CharacterRenderer) {
-        window.CharacterRenderer.drawActingLightPillar(ctx, allyX, ay, 58, 105);
+        window.CharacterRenderer.drawActingLightPillar(ctx, renderX, renderY, 62, 110);
       }
 
-      // 确定角色模型 (无敌黄飞鸿武学宗师、铁扇公主、大圣、元帅或神将)
+      // 确定角色模型 (国风大侠、熊猫道长、白龙马神将、大圣等)
       let mId = ally.modelId || ally.appearance || '';
       if (isPlayerSlot) {
-        mId = 'martial_hero';
+        if (this.playerChar && this.playerChar.appearance) {
+          mId = this.playerChar.appearance;
+        } else if (ally.name.includes('熊猫') || (this.playerData && this.playerData.name.includes('熊猫'))) {
+          mId = 'panda_hero';
+        } else {
+          mId = 'martial_hero';
+        }
       } else {
         if (ally.name.includes('悟空') || ally.name.includes('猴') || ally.roleId === 'sun_wukong') mId = 'sun_wukong';
         else if (ally.name.includes('八戒') || ally.name.includes('猪') || ally.roleId === 'zhu_bajie') mId = 'zhu_bajie';
@@ -3353,62 +4474,296 @@ class GameApp2D {
       }
 
       if (window.CharacterRenderer) {
-        window.CharacterRenderer.drawModel(ctx, allyX, ay, mId, {
+        window.CharacterRenderer.drawModel(ctx, renderX, renderY, mId, {
           direction: 'left',
-          scale: 1.32,
+          scale: 1.35,
           animTimer: animTimer + 2,
           isActing: isActing
         });
       }
 
-      // 头顶清晰姓名 (加粗白色 + 黑色描边)
+      // 头顶清晰姓名 (加粗白色 + 黑色描边，附带等级显示)
+      const allyDisplayName = `[Lv.${ally.level || 1}] ${ally.name}`;
       ctx.save();
-      ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
+      ctx.font = 'bold 12.5px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 3.5;
       ctx.lineJoin = 'round';
-      ctx.strokeText(ally.name, allyX, ay - 26);
+      ctx.strokeText(allyDisplayName, renderX, renderY - 28);
       ctx.fillStyle = isActing ? '#fffa65' : (isPlayerSlot ? '#ffeaa7' : '#f5cd79');
-      ctx.fillText(ally.name, allyX, ay - 26);
+      ctx.fillText(allyDisplayName, renderX, renderY - 28);
 
-      // 脚底生命/精力槽与时序
-      const barW = 48;
-      const barH = 5;
-      const barX = allyX - barW / 2;
-      const barY = ay + 18;
+      // 脚底大号立体水晶生命/精力槽 (宽度68px, 高度9px)
+      const barW = 68;
+      const barH = 9;
+      const barX = renderX - barW / 2;
+      const barY = renderY + 20;
       const hpPct = Math.max(0, Math.min(1, ally.hp / ally.maxHp));
 
-      ctx.fillStyle = 'rgba(12, 9, 6, 0.85)';
-      ctx.fillRect(barX, barY, barW, barH);
-      ctx.strokeStyle = '#3d2503';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX, barY, barW, barH);
+      // 生命底槽
+      ctx.fillStyle = 'rgba(10, 8, 6, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, barH, 2);
+      ctx.fill();
+      ctx.strokeStyle = '#5a3c22';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
 
-      ctx.fillStyle = '#2ecc71';
-      ctx.fillRect(barX + 0.5, barY + 0.5, (barW - 1) * hpPct, barH - 1);
-
-      if (ally.maxMp) {
-        const mpPct = Math.max(0, Math.min(1, ally.mp / ally.maxMp));
-        ctx.fillStyle = 'rgba(12, 9, 6, 0.85)';
-        ctx.fillRect(barX, barY + 6, barW, 3);
-        ctx.fillStyle = '#3498db';
-        ctx.fillRect(barX + 0.5, barY + 6.5, (barW - 1) * mpPct, 2);
+      // 翠绿生命充填 (高质感水晶条)
+      if (hpPct > 0) {
+        const hpGrad = ctx.createLinearGradient(barX, barY, barX, barY + barH);
+        hpGrad.addColorStop(0, '#4ade80');
+        hpGrad.addColorStop(0.5, '#22c55e');
+        hpGrad.addColorStop(1, '#15803d');
+        ctx.fillStyle = hpGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX + 0.5, barY + 0.5, (barW - 1) * hpPct, barH - 1, 1.5);
+        ctx.fill();
+        // 上层微光高光
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillRect(barX + 1, barY + 1, (barW - 2) * hpPct, 2);
       }
 
+      // 精力条 (高度 4.5px)
+      if (ally.maxMp) {
+        const mpPct = Math.max(0, Math.min(1, ally.mp / ally.maxMp));
+        const mpY = barY + 10.5;
+        ctx.fillStyle = 'rgba(10, 8, 6, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(barX, mpY, barW, 4.5, 1);
+        ctx.fill();
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        if (mpPct > 0) {
+          const mpGrad = ctx.createLinearGradient(barX, mpY, barX, mpY + 4.5);
+          mpGrad.addColorStop(0, '#38bdf8');
+          mpGrad.addColorStop(1, '#0284c7');
+          ctx.fillStyle = mpGrad;
+          ctx.fillRect(barX + 0.5, mpY + 0.5, (barW - 1) * mpPct, 3.5);
+        }
+      }
+
+      // 醒目大号速度时序令旗 (直径 22px 发光令旗勋章，bold 12px 大字)
       if (ally.turnOrder) {
-        ctx.fillStyle = 'rgba(39, 174, 96, 0.95)';
-        ctx.fillRect(barX + barW + 2, barY - 1, 16, 7);
-        ctx.font = 'bold 8.5px sans-serif';
-        ctx.fillStyle = '#ffffff';
+        const badgeX = barX + barW + 16;
+        const badgeY = barY + 4;
+        ctx.save();
+        ctx.fillStyle = '#15803d';
+        ctx.beginPath();
+        ctx.arc(badgeX, badgeY, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+
+        ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#ffd700';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('#' + ally.turnOrder, barX + barW + 10, barY + 2.5);
+        ctx.shadowBlur = 0;
+        ctx.fillText('#' + ally.turnOrder, badgeX, badgeY + 0.5);
+        ctx.restore();
       }
 
       ctx.restore();
     });
+
+    // 4. 绘制上层法术技能与刀光特效队列 (烈火炎柱、天雷霹雳、玄冰突刺、金刚护盾等)
+    this.renderBattleCanvasEffects(ctx);
+  }
+
+  // 渲染正在生效的战斗法术特效
+  renderBattleCanvasEffects(ctx) {
+    if (!this.activeBattleEffects || this.activeBattleEffects.length === 0) return;
+    const now = Date.now();
+
+    this.activeBattleEffects = this.activeBattleEffects.filter(fx => {
+      const elapsed = now - fx.startTime;
+      if (elapsed > fx.duration) return false;
+      const progress = elapsed / fx.duration;
+
+      ctx.save();
+      const x = fx.x;
+      const y = fx.y;
+
+      // 特效1：普通攻击·银白撕裂剑光 (半月刀光与金色碎星)
+      if (fx.type === 'slash') {
+        const slashAngle = -Math.PI / 4 + progress * Math.PI / 2;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - progress})`;
+        ctx.lineWidth = 4.5 * (1 - progress);
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(x, y, 32 * (0.6 + progress * 0.5), slashAngle - 0.7, slashAngle + 0.7);
+        ctx.stroke();
+
+        // 金色火星迸溅
+        for (let i = 0; i < 4; i++) {
+          const spAngle = (i * Math.PI) / 2 + progress * 2;
+          const spDist = 18 + progress * 24;
+          ctx.fillStyle = '#fde047';
+          ctx.fillRect(x + Math.cos(spAngle) * spDist, y + Math.sin(spAngle) * spDist, 3, 3);
+        }
+      }
+      // 特效2：烈火咒 / 三昧真火 (冲天爆裂火焰光柱与火凰赤芒)
+      else if (fx.type === 'fire') {
+        const pillarW = 48 * (1 - progress * 0.3);
+        const pillarH = 110 * (0.4 + progress * 0.6);
+        const fGrad = ctx.createLinearGradient(x, y + 10, x, y - pillarH);
+        fGrad.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
+        fGrad.addColorStop(0.3, 'rgba(249, 115, 22, 0.9)');
+        fGrad.addColorStop(0.7, 'rgba(220, 38, 38, 0.75)');
+        fGrad.addColorStop(1, 'rgba(153, 27, 27, 0)');
+
+        ctx.fillStyle = fGrad;
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.ellipse(x, y - pillarH / 2, pillarW / 2, pillarH / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 环绕火球飞升
+        for (let j = 0; j < 5; j++) {
+          const fAng = j * (Math.PI * 2 / 5) + progress * 4;
+          const fxX = x + Math.cos(fAng) * (pillarW * 0.7);
+          const fxY = y - progress * pillarH * 0.9;
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(fxX, fxY, 4 * (1 - progress), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // 特效3：天雷斩 / 五雷轰顶 (苍穹降下蓝紫霹雳电弧)
+      else if (fx.type === 'thunder') {
+        ctx.strokeStyle = `rgba(224, 231, 255, ${1 - progress})`;
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = '#818cf8';
+        ctx.shadowBlur = 18;
+
+        // 3道霹雳折线从天而降
+        for (let b = -1; b <= 1; b++) {
+          const bx = x + b * 16;
+          ctx.beginPath();
+          ctx.moveTo(bx, 0);
+          ctx.lineTo(bx + (Math.random() - 0.5) * 20, y * 0.35);
+          ctx.lineTo(bx + (Math.random() - 0.5) * 25, y * 0.7);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+
+        // 目标地面雷电光圈
+        ctx.fillStyle = 'rgba(129, 140, 248, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 10, 30 * (1 - progress), 10 * (1 - progress), 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // 特效4：玄冰刺 / 覆海翻江 (地面突刺深蓝冰棱并碎裂)
+      else if (fx.type === 'ice') {
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.88)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 14;
+
+        // 3根尖锐晶莹冰锥
+        [-16, 0, 16].forEach((ox, i) => {
+          const h = (35 + (i === 1 ? 20 : 0)) * (0.3 + progress * 0.7);
+          ctx.beginPath();
+          ctx.moveTo(x + ox - 8, y + 10);
+          ctx.lineTo(x + ox, y + 10 - h);
+          ctx.lineTo(x + ox + 8, y + 10);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        });
+      }
+      // 特效5：金刚护体 / 舍生取义 (金色八卦太极金钟罩)
+      else if (fx.type === 'shield' || fx.type === 'gold') {
+        const ringR = 34 * (0.8 + progress * 0.25);
+        ctx.strokeStyle = `rgba(250, 204, 21, ${1 - progress * 0.6})`;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(x, y - 10, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.2)';
+        ctx.fill();
+      }
+      // 特效6：甘露回春 / 神佑仙法 (翠绿太极灵光与飞羽)
+      else if (fx.type === 'heal') {
+        ctx.strokeStyle = `rgba(74, 222, 128, ${1 - progress})`;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#4ade80';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.ellipse(x, y + 10 - progress * 40, 24 * (1 - progress * 0.3), 12 * (1 - progress * 0.3), 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      return true;
+    });
+  }
+
+  // 触发战斗法术差异化特效
+  spawnBattleSkillEffect(type, x, y, duration = 380) {
+    this.activeBattleEffects = this.activeBattleEffects || [];
+    this.activeBattleEffects.push({
+      type: type,
+      x: x,
+      y: y,
+      startTime: Date.now(),
+      duration: duration
+    });
+  }
+
+  // 播放攻击者极速冲锋滑步击打与平滑归位动画 (A冲B 或 B冲A)
+  async playDashAttackAnimation(attacker, target, isAllyAttacker, skillType = 'slash') {
+    if (!attacker || !target) return;
+    const startX = attacker._baseBattlePos ? attacker._baseBattlePos.x : (attacker._battlePos?.x || 0);
+    const startY = attacker._baseBattlePos ? attacker._baseBattlePos.y : (attacker._battlePos?.y || 0);
+    const targetX = target._baseBattlePos ? target._baseBattlePos.x : (target._battlePos?.x || 0);
+    const targetY = target._baseBattlePos ? target._baseBattlePos.y : (target._battlePos?.y || 0);
+
+    // 计算冲锋突击终点 (在目标身前 46px 处急停挥砍)
+    const hitPointX = isAllyAttacker ? (targetX + 46) : (targetX - 46);
+    const hitPointY = targetY;
+    const totalDistX = hitPointX - startX;
+    const totalDistY = hitPointY - startY;
+
+    // 1. 极速滑步漂移冲锋阶段 (80ms~100ms)
+    const dashFrames = 5;
+    for (let f = 1; f <= dashFrames; f++) {
+      const ease = f / dashFrames;
+      attacker._dashOffset = { x: totalDistX * ease, y: totalDistY * ease };
+      await new Promise(r => setTimeout(r, 16));
+    }
+
+    // 2. 命中目标交锋打击与法术爆发阶段 (120ms~150ms)
+    // 触发目标受击抖动
+    target._shakeOffset = { x: (isAllyAttacker ? -7 : 7), y: (Math.random() - 0.5) * 4 };
+    this.spawnBattleSkillEffect(skillType, targetX, targetY, 420);
+
+    await new Promise(r => setTimeout(r, 60));
+    target._shakeOffset = { x: (isAllyAttacker ? 4 : -4), y: 0 };
+    await new Promise(r => setTimeout(r, 60));
+    target._shakeOffset = { x: 0, y: 0 };
+
+    // 3. 极速漂移倒退滑行归位阶段 (80ms~100ms)
+    for (let f = dashFrames - 1; f >= 0; f--) {
+      const ease = f / dashFrames;
+      attacker._dashOffset = { x: totalDistX * ease, y: totalDistY * ease };
+      await new Promise(r => setTimeout(r, 16));
+    }
+    attacker._dashOffset = { x: 0, y: 0 };
   }
 
   // 触发战斗动作动效与伤害飘字
@@ -3527,24 +4882,49 @@ class GameApp2D {
 
       const stage = document.getElementById('battle-stage-area');
 
-      // 视觉打击感反馈
-      if (step.type === 'damage') {
+      // 视觉打击感与极速冲锋滑步漂移交锋反馈 (完美解决站桩无动效问题)
+      if (step.type === 'damage' || step.type === 'dodge') {
         const isAllyAttacker = !step.attacker.startsWith('enemy_');
-        const targetEntity = isAllyAttacker
-          ? this.currentBattle.enemies[step.targetIndex]
-          : this.currentBattle.allies.find(a => a.id === step.target);
+        const attackerEntity = isAllyAttacker
+          ? (this.currentBattle.allies.find(a => a.id === step.attacker) || this.currentBattle.allies[0])
+          : (this.currentBattle.enemies.find(e => ('enemy_' + e.enemyIndex) === step.attacker) || this.currentBattle.enemies[0]);
 
+        const targetEntity = isAllyAttacker
+          ? (this.currentBattle.enemies[step.targetIndex] || this.currentBattle.enemies[0])
+          : (this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0]);
+
+        // 识别技能差异化法术特效类型
+        let skillType = 'slash'; // 默认普攻白色剑光
+        const logText = (step.text || '') + (this.currentBattle.logs.slice(-1)[0] || '');
+        if (logText.includes('火') || logText.includes('炎') || logText.includes('凤')) skillType = 'fire';
+        else if (logText.includes('雷') || logText.includes('电') || logText.includes('霹雳')) skillType = 'thunder';
+        else if (logText.includes('冰') || logText.includes('水') || logText.includes('海') || logText.includes('霜')) skillType = 'ice';
+        else if (logText.includes('佛光') || logText.includes('舍生') || logText.includes('金刚') || logText.includes('破甲')) skillType = 'shield';
+        else if (logText.includes('吸血') || logText.includes('魔')) skillType = 'slash';
+
+        // 极速冲锋突进到对方身前击打，并平滑倒退归位
+        if (attackerEntity && targetEntity) {
+          await this.playDashAttackAnimation(attackerEntity, targetEntity, isAllyAttacker, skillType);
+        }
+
+        // 受击飘字与震屏
         if (targetEntity && targetEntity._battlePos) {
-          this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, step.isCrit ? 'crit' : 'damage');
+          this.spawnBattleFloatingTextAtCoords(
+            targetEntity._battlePos.x,
+            targetEntity._battlePos.y,
+            step.text,
+            step.type === 'dodge' ? 'damage' : (step.isCrit ? 'crit' : 'damage')
+          );
         }
 
         if (stage) {
           stage.classList.add('arena-shake');
-          setTimeout(() => stage.classList.remove('arena-shake'), 320);
+          setTimeout(() => stage.classList.remove('arena-shake'), 280);
         }
       } else if (step.type === 'heal' || step.type === 'mana') {
         const targetEntity = this.currentBattle.allies.find(a => a.id === step.target);
         if (targetEntity && targetEntity._battlePos) {
+          this.spawnBattleSkillEffect('heal', targetEntity._battlePos.x, targetEntity._battlePos.y, 400);
           this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
         }
       } else if (step.text) {
@@ -3554,7 +4934,7 @@ class GameApp2D {
         }
       }
 
-      await new Promise(r => setTimeout(r, speedDelay));
+      await new Promise(r => setTimeout(r, Math.max(120, Math.floor(speedDelay * 0.7))));
     });
 
     this.isAnimatingCombat = false;
@@ -3572,8 +4952,10 @@ class GameApp2D {
       this.currentBattle = null;
 
       if (this.battleVictoryCallback) {
-        this.battleVictoryCallback();
+        const vCb = this.battleVictoryCallback;
         this.battleVictoryCallback = null;
+        this.battleDefeatCallback = null;
+        vCb();
       }
     } else if (this.currentBattle.status === 'defeat') {
       this.stopBattleLoop();
@@ -3584,7 +4966,13 @@ class GameApp2D {
       if (layer) layer.style.display = 'none';
       this.isPaused = false;
       this.playerData.hp = this.playerData.maxHp;
+      const dCb = this.battleDefeatCallback;
       this.currentBattle = null;
+      this.battleDefeatCallback = null;
+      this.battleVictoryCallback = null;
+      if (dCb) {
+        dCb();
+      }
     } else if (this.currentBattle.status === 'escaped') {
       this.stopBattleLoop();
       this.stopBattleCountdown();
@@ -4022,8 +5410,26 @@ class GameApp2D {
           <div class="modal-body" style="padding:12px;font-size:11px;color:#fef0cd;line-height:1.6;">
             <!-- 头部仙宠选择与金柳露存量 -->
             <div style="background:#20140b;border:1px solid #c59b27;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:24px;">${pet.icon || '🐾'}</span>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:42px;height:42px;border-radius:50%;border:1.8px solid #ffd700;overflow:hidden;background:#2d1a0d;box-shadow:0 0 10px rgba(255,215,0,0.4);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                  ${(() => {
+                    const pName = (pet.name || '').toLowerCase();
+                    let rId = 'rat';
+                    if (pName.includes('龟') || pName.includes('玄武')) rId = 'turtle';
+                    else if (pName.includes('蛇')) rId = 'snake';
+                    else if (pName.includes('狐')) rId = 'fox';
+                    else if (pName.includes('狼')) rId = 'wolf';
+                    else if (pName.includes('虎')) rId = 'tiger';
+                    else if (pName.includes('熊')) rId = 'bear';
+                    else if (pName.includes('蚌')) rId = 'clam';
+                    else if (pName.includes('蟹')) rId = 'crab';
+                    else if (pName.includes('虾')) rId = 'shrimp';
+                    else if (pName.includes('猪')) rId = 'pig';
+                    else if (pName.includes('猿') || pName.includes('猴')) rId = 'ape';
+                    else if (pName.includes('龙')) rId = 'xiaobailong';
+                    return window.Portraits ? window.Portraits.getPortraitSvg(rId, 42) : `<span style="font-size:24px;">${pet.icon || '🐾'}</span>`;
+                  })()}
+                </div>
                 <div>
                   <div style="font-weight:bold;font-size:13px;color:#ffd700;">${pet.name} (Lv.${pet.level})</div>
                   <div style="font-size:10px;color:#aaa;">品质: 【${pet.qualityName}】 | 门派: ${pet.className || '无'}</div>
@@ -4947,6 +6353,311 @@ class GameApp2D {
       window.showGameMessage(`✨ 地脉神行引路！已带你抵达当前主线所在地：【${targetInfo.name}】！`, 'success');
     } else {
       window.showGameMessage('当前地图暂无主线标记，请沿八卦引路法阵前往临近地图！', 'info');
+    }
+  }
+
+  // 切换场景生灵名册模态框 (Tab 键或右上角快捷按钮呼出)
+  toggleSceneRosterModal(forceState) {
+    if (typeof document === 'undefined') return;
+    const existing = document.getElementById('scene-roster-modal');
+    if (existing) {
+      if (forceState === true) return;
+      existing.remove();
+      if (window.Sound && window.Sound.playBeep) window.Sound.playBeep();
+      return;
+    }
+    if (forceState === false) return;
+
+    this.renderSceneRosterModal();
+    if (window.Sound && window.Sound.playBeep) window.Sound.playBeep();
+  }
+
+  // 渲染场景生灵名册 (NPC 排在上面，野怪排在下面，同种野怪严格去重且显示等级，点击展开详细属性并可寻路)
+  renderSceneRosterModal(selectedId = null) {
+    if (typeof document === 'undefined') return;
+    let modal = document.getElementById('scene-roster-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'scene-roster-modal';
+      modal.className = 'roster-modal-overlay';
+      modal.onclick = (e) => {
+        if (e.target === modal) this.toggleSceneRosterModal(false);
+      };
+      const viewport = document.getElementById('game-viewport') || document.body;
+      viewport.appendChild(modal);
+    }
+
+    const mapData = window.GAME_DATA?.MAPS_2D?.[this.currentMapId] || { name: '当前圣境', region: '三界' };
+    const npcs = this.npcs || [];
+    const rawMonsters = this.monsters || [];
+
+    // 野怪严格去重：同种野怪只展示一个，提取纯净名称与首个实例
+    const uniqueMonsters = [];
+    const seenMobKeys = new Set();
+    for (const m of rawMonsters) {
+      const pureName = (m.name || '野怪').replace(/^[0-9一二三四五六七八九十]+号?/, '').trim();
+      const mobKey = `${m.appearance || 'mob'}_${pureName}`;
+      if (!seenMobKeys.has(mobKey)) {
+        seenMobKeys.add(mobKey);
+        uniqueMonsters.push({
+          key: mobKey,
+          pureName: pureName,
+          instance: m
+        });
+      }
+    }
+
+    // 确定当前选中的生灵
+    let selectedType = 'npc';
+    let selectedObj = null;
+
+    if (selectedId) {
+      const foundNpc = npcs.find(n => n.id === selectedId);
+      if (foundNpc) {
+        selectedType = 'npc';
+        selectedObj = foundNpc;
+      } else {
+        const foundMob = uniqueMonsters.find(um => um.key === selectedId || um.instance.id === selectedId);
+        if (foundMob) {
+          selectedType = 'monster';
+          selectedObj = foundMob;
+        }
+      }
+    }
+
+    if (!selectedObj) {
+      if (npcs.length > 0) {
+        selectedType = 'npc';
+        selectedObj = npcs[0];
+      } else if (uniqueMonsters.length > 0) {
+        selectedType = 'monster';
+        selectedObj = uniqueMonsters[0];
+      }
+    }
+
+    // 构建生灵名册 HTML
+    modal.innerHTML = `
+      <div class="roster-modal-box" onclick="event.stopPropagation()">
+        <!-- 顶栏标题 -->
+        <div class="roster-header">
+          <div class="roster-header-title">
+            <span>📜</span>
+            <span>【${mapData.name}】当前场景生灵名册</span>
+            <span style="font-size:11px;color:#a8e6cf;font-weight:normal;">(按 Tab 键关闭)</span>
+          </div>
+          <button class="roster-close-btn" onclick="window.App2D.toggleSceneRosterModal(false)" title="关闭名册 (Esc/Tab)">✕</button>
+        </div>
+
+        <!-- 主体：左侧名录 + 右侧生灵详案 -->
+        <div class="roster-body">
+          <!-- 左侧生灵两级列表 -->
+          <div class="roster-list-panel">
+            <!-- 1. NPC 栏目 -->
+            <div class="roster-section-title">
+              <span>🏛️ 场景仙民 / NPC (${npcs.length}位)</span>
+            </div>
+            <div class="roster-items-group">
+              ${npcs.length === 0 ? `<div class="roster-empty-tip">当前场景无往来仙民</div>` : npcs.map(n => {
+                const isSelected = (selectedType === 'npc' && selectedObj && selectedObj.id === n.id);
+                const roleId = window.Dialogue ? window.Dialogue.inferRoleId(n.name, n.title) : 'shaoxia';
+                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 28) : '👤';
+                return `
+                  <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${n.id}')">
+                    <div class="roster-item-avatar">${portraitSvg}</div>
+                    <div class="roster-item-meta">
+                      <div class="roster-item-name">
+                        <span>${n.name}</span>
+                        ${n.questStatus === 'available' ? '<span class="roster-quest-badge">！</span>' : ''}
+                      </div>
+                      <div class="roster-item-sub">${n.title || '三界隐逸仙民'}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- 2. 野怪栏目 (每种严格只展示一个) -->
+            <div class="roster-section-title" style="margin-top:8px;">
+              <span>🐾 出没异兽 / 野怪 (${uniqueMonsters.length}种)</span>
+            </div>
+            <div class="roster-items-group">
+              ${uniqueMonsters.length === 0 ? `<div class="roster-empty-tip">当前场景太平安谧，无恶煞出没</div>` : uniqueMonsters.map(um => {
+                const m = um.instance;
+                const isSelected = (selectedType === 'monster' && selectedObj && selectedObj.key === um.key);
+                const mobType = m.appearance || (window.Character ? window.Character.inferMonsterType(um.pureName, m.id) : 'wild_wolf');
+                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 28) : '🐺';
+                return `
+                  <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${um.key}')">
+                    <div class="roster-item-avatar">${portraitSvg}</div>
+                    <div class="roster-item-meta">
+                      <div class="roster-item-name">
+                        <span class="roster-level-badge">Lv.${m.level || 5}</span>
+                        <span>${um.pureName}</span>
+                      </div>
+                      <div class="roster-item-sub">气血: ${m.hp}/${m.maxHp} · 攻击: ${m.atk}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- 右侧生灵精研档案详情 -->
+          <div class="roster-detail-panel">
+            ${selectedObj ? this._renderRosterDetailCard(selectedType, selectedObj) : `<div class="roster-empty-tip">请选择左侧生灵查阅档案</div>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 内部辅助：渲染名册右侧详案卡片
+  _renderRosterDetailCard(type, obj) {
+    if (type === 'npc') {
+      const npc = obj;
+      const roleId = window.Dialogue ? window.Dialogue.inferRoleId(npc.name, npc.title) : 'shaoxia';
+      const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 64) : '👤';
+      const roleSeal = window.Dialogue ? window.Dialogue.getRoleBadge(roleId, npc.name) : '<div class="dialogue-role-seal seal-mortal">人</div>';
+      const coordX = Math.round(npc.x / 32);
+      const coordY = Math.round(npc.y / 32);
+
+      return `
+        <div class="roster-detail-card">
+          <div class="roster-detail-top">
+            <div class="roster-detail-avatar-box">
+              ${bigPortraitSvg}
+              ${roleSeal}
+            </div>
+            <div class="roster-detail-titles">
+              <div class="roster-detail-name">${npc.name}</div>
+              <div class="roster-detail-title-tag">${npc.title || '驻留仙民'}</div>
+              <div class="roster-detail-coords">📍 场景坐标: [${coordX}, ${coordY}]</div>
+            </div>
+          </div>
+
+          <div class="roster-detail-divider"></div>
+
+          <div class="roster-detail-section">
+            <div class="roster-detail-label">📖 仙家生平与传记:</div>
+            <div class="roster-detail-bio">
+              ${npc.dialogueKey ? `司掌西游命数羁绊之仙道人物。与之交谈可领悟天道因缘、领取三界宏愿或探知西行机密。` : `驻留于此的世外散仙凡灵，常对来往侠士予以修行指引。`}
+            </div>
+          </div>
+
+          <div class="roster-detail-section">
+            <div class="roster-detail-label">🎯 交互机缘:</div>
+            <div class="roster-detail-text">
+              ${npc.questStatus === 'available' ? '🌟 当前有重要主线/奇遇任务在此人身上，请速前往对话！' : '🌿 处于闲暇神游状态，少侠可随时前往与之论道切磋。'}
+            </div>
+          </div>
+
+          <div class="roster-detail-action-bar">
+            <button class="roster-nav-btn" onclick="window.App2D.navigateRosterToNpc('${npc.id}')">
+              🚶 智能寻路前往拜会
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      const um = obj;
+      const mob = um.instance;
+      const mobType = mob.appearance || (window.Character ? window.Character.inferMonsterType(um.pureName, mob.id) : 'wild_wolf');
+      const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 64) : '🐺';
+      const hpPct = Math.round((mob.hp / mob.maxHp) * 100);
+
+      return `
+        <div class="roster-detail-card">
+          <div class="roster-detail-top">
+            <div class="roster-detail-avatar-box">
+              ${bigPortraitSvg}
+              <div class="dialogue-role-seal seal-demon">妖</div>
+            </div>
+            <div class="roster-detail-titles">
+              <div class="roster-detail-name">
+                <span>${um.pureName}</span>
+                <span class="roster-level-badge" style="font-size:12px;margin-left:6px;">Lv.${mob.level || 5}</span>
+              </div>
+              <div class="roster-detail-title-tag" style="background:#5c2424;color:#ff9f43;">天地精怪 · 凶性四溢</div>
+              <div class="roster-detail-coords" style="color:#ff7675;">⚔️ 巡逻警戒半径: ${mob.patrolRadius || 30}步</div>
+            </div>
+          </div>
+
+          <div class="roster-detail-divider"></div>
+
+          <!-- 气血与战力属性 -->
+          <div class="roster-detail-section">
+            <div class="roster-detail-label">🩸 气血灵韵:</div>
+            <div class="roster-hp-bar-outer">
+              <div class="roster-hp-bar-fill" style="width:${hpPct}%;"></div>
+              <span class="roster-hp-bar-text">${mob.hp} / ${mob.maxHp} (${hpPct}%)</span>
+            </div>
+          </div>
+
+          <div class="roster-detail-section">
+            <div class="roster-detail-label">⚡ 战法修行三维:</div>
+            <div class="roster-stats-grid">
+              <div class="roster-stat-cell">⚔️ 攻击: <span style="color:#ff6b6b;font-weight:bold;">${mob.atk}</span></div>
+              <div class="roster-stat-cell">🛡️ 防御: <span style="color:#48dbfb;font-weight:bold;">${mob.def}</span></div>
+              <div class="roster-stat-cell">🌪️ 身法速度: <span style="color:#1dd1a1;font-weight:bold;">${mob.spd}</span></div>
+            </div>
+          </div>
+
+          <div class="roster-detail-section">
+            <div class="roster-detail-label">🔥 掌握神通绝技:</div>
+            <div class="roster-skills-list">
+              ${(mob.skills || ['普通攻击']).map(sk => `<span class="roster-skill-tag">🥋 ${sk}</span>`).join('')}
+            </div>
+          </div>
+
+          <div class="roster-detail-section">
+            <div class="roster-detail-label">📜 异兽生息录:</div>
+            <div class="roster-detail-bio">
+              ${mob.dialogue?.[0] || `游荡于本方场景之天地凶煞野怪。斩灭可淬炼道行真元，亦可于回合战斗中施展【收服】降伏为护法仙宠。`}
+            </div>
+          </div>
+
+          <div class="roster-detail-action-bar">
+            <div class="roster-mob-caution">
+              ⚠️ 野外游荡怪物具有攻击戒备心，走至身旁将触发回合对决！
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // 名册一键智能寻路到指定 NPC
+  navigateRosterToNpc(npcId) {
+    this.toggleSceneRosterModal(false);
+    const npc = this.npcs.find(n => n.id === npcId);
+    if (!npc) return;
+
+    const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
+    if (!mapData) return;
+
+    const playerDist = Math.hypot(npc.x - this.playerChar.x, npc.y - this.playerChar.y);
+    if (playerDist < (npc.interactRadius || 42)) {
+      this.triggerNpcDialogue(npc);
+      return;
+    }
+
+    const path = this.pathfinding.findPath(
+      mapData, this.tilemap,
+      this.playerChar.x, this.playerChar.y,
+      npc.x, npc.y
+    );
+    if (path && path.length > 0) {
+      this.autoMovePath = path;
+      this.autoMoveTargetCallback = () => this.triggerNpcDialogue(npc);
+      this.spawnClickRipple(npc.x, npc.y);
+      if (window.Sound && window.Sound.playBeep) window.Sound.playBeep();
+      if (window.showGameMessage) {
+        window.showGameMessage(`正在前往【${npc.name}】...`, 'info', 2000);
+      }
+    } else {
+      if (window.showGameMessage) {
+        window.showGameMessage(`已锁定【${npc.name}】方位，请径直前往！`, 'info', 2500);
+      }
     }
   }
 }

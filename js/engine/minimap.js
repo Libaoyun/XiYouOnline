@@ -14,13 +14,37 @@ class MiniMapEngine {
   getCurrentQuestTarget(mapId, storyPhase, mapData) {
     if (!mapData) return null;
 
-    // 1. 天宫大闹天宫阶段 -> 目标：齐天大圣孙悟空
-    if (mapId === 'tiangong_palace' && storyPhase === 'heaven_prologue') {
+    // 1. 天宫序章三大因缘事件主线追踪
+    if (mapId === 'tiangong_palace' && storyPhase && storyPhase.startsWith('heaven_')) {
+      if (storyPhase === 'heaven_saved_change') {
+        return {
+          x: 22 * 32,
+          y: 12 * 32,
+          name: '卷帘大将',
+          desc: '前往凌霄殿前求情力保卷帘大将'
+        };
+      }
+      if (storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_huaguoshan') {
+        return {
+          x: 27 * 32,
+          y: 12 * 32,
+          name: '征讨先锋巨灵神',
+          desc: '挺身大战巨灵神，舍身保全花果山幼猴'
+        };
+      }
+      if (storyPhase === 'heaven_final_wukong') {
+        return {
+          x: 19 * 32,
+          y: 8 * 32,
+          name: '齐天大圣孙悟空',
+          desc: '南天门总决战，与齐天大圣豪迈切磋'
+        };
+      }
       return {
-        x: 11 * 32,
-        y: 4 * 32,
-        name: '齐天大圣孙悟空',
-        desc: '前往凌霄殿前相遇大圣'
+        x: 15 * 32,
+        y: 12 * 32,
+        name: '天蓬元帅',
+        desc: '巡视仙宴，解救嫦娥仙子制止醉酒天蓬'
       };
     }
 
@@ -54,22 +78,22 @@ class MiniMapEngine {
       };
     }
 
-    // 5. 五行山 -> 目标：山顶六字大明咒压帖
-    if (mapId === 'wuxingshan' && storyPhase !== 'wuxing_freed') {
+    // 5. 五行山 -> 目标：山顶六字大明咒压帖 (仅在到达五行山解救大圣阶段显示)
+    if (mapId === 'wuxingshan' && storyPhase === 'wuxingshan_ready') {
       return {
-        x: 12 * 32,
-        y: 3 * 32,
+        x: 18 * 32,
+        y: 12 * 32,
         name: '六字大明咒金帖',
-        desc: '攀登绝壁揭下压帖救大圣'
+        desc: '揭下山顶压帖破封救齐天大圣'
       };
     }
 
-    // 6. 蛇盘山·鹰愁涧 -> 目标：寒潭小白龙
-    if (mapId === 'yingchoujian') {
+    // 6. 蛇盘山·鹰愁涧 -> 目标：西海龙三太子小白龙敖烈 (仅在破封救大圣后的鹰愁收服阶段显示，位于平坦大道上)
+    if (mapId === 'yingchoujian' && storyPhase === 'wuxing_freed') {
       return {
-        x: 12 * 32,
-        y: 8 * 32,
-        name: '寒潭小白龙',
+        x: 20 * 32,
+        y: 12 * 32,
+        name: '西海龙三太子小白龙',
         desc: '迎战恶龙收服白龙马'
       };
     }
@@ -77,8 +101,8 @@ class MiniMapEngine {
     // 7. 乌斯藏·高老庄 -> 目标：高太公与云栈洞猪八戒
     if (mapId === 'gaolaozhuang') {
       return {
-        x: 11 * 32,
-        y: 8 * 32,
+        x: 18 * 32,
+        y: 12 * 32,
         name: '高太公 / 猪八戒',
         desc: '解救翠兰收服天蓬元帅'
       };
@@ -275,10 +299,13 @@ class MiniMapEngine {
       });
     }
 
-    // 4. 绘制 NPC 位置
+    // 4. 绘制 NPC 位置 (仅绘制当前剧情阶段可见的NPC)
     if (mapData.npcs) {
       ctx.fillStyle = '#ffffff';
       mapData.npcs.forEach(n => {
+        if (window.App2D && typeof window.App2D.isNpcVisibleInStoryPhase === 'function') {
+          if (!window.App2D.isNpcVisibleInStoryPhase(n.id, storyPhase, mapData.id)) return;
+        }
         const nx = innerX + (n.x / 32) * scaleX;
         const ny = innerY + (n.y / 32) * scaleY;
         ctx.beginPath();

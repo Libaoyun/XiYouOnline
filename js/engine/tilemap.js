@@ -306,88 +306,244 @@ class TilemapEngine {
         break;
       }
 
-      // === 5.1 海滨·金黄细腻沙滩 (微风沙浪纹理、散落海星与白玉扇贝，潮汐交界浪花沫) ===
+      // === 5.1 海滨·金黄细腻沙滩 (微风沙浪纹理、散落扇贝，图1同款潮汐拍岸碎浪白沫) ===
       case 'beach_sand': {
-        // 暖金细腻沙质渐变
+        // 1. 暖米金细腻柔和沙质 (1:1 像素级复刻实机截图温暖纯净海滨金沙滩)
         const sandGrad = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
-        sandGrad.addColorStop(0, '#e5cca0');
-        sandGrad.addColorStop(0.5, '#d6b885');
-        sandGrad.addColorStop(1, '#c5a36e');
+        sandGrad.addColorStop(0, '#f2dfba');
+        sandGrad.addColorStop(0.5, '#e5cca0');
+        sandGrad.addColorStop(1, '#d8bc8b');
         ctx.fillStyle = sandGrad;
         ctx.fillRect(screenX, screenY, s, s);
 
-        // 微风吹拂的横向沙纹 (起伏微曲线)
-        const sandWave = Math.sin((c || 0) * 0.8 + (r || 0) * 0.5);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+        // 细腻沙粒微漫反射 (实机极度细腻质感，绝非纯色方块)
+        const sandNoise = ((c * 17 + r * 29) % 7);
+        if (sandNoise === 0) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+          ctx.fillRect(screenX + 8, screenY + 12, 1.2, 1.2);
+          ctx.fillRect(screenX + 22, screenY + 24, 1.2, 1.2);
+        } else if (sandNoise === 2) {
+          ctx.fillStyle = 'rgba(160, 120, 70, 0.16)';
+          ctx.fillRect(screenX + 15, screenY + 7, 1.4, 1.4);
+          ctx.fillRect(screenX + 5, screenY + 20, 1.4, 1.4);
+        }
+
+        // 柔和随风海滩微波纹
+        const sandWave = Math.sin((c || 0) * 0.6 + (r || 0) * 0.5);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(screenX + 2, screenY + 9 + sandWave * 2);
-        ctx.quadraticCurveTo(screenX + 16, screenY + 13 - sandWave * 2, screenX + s - 2, screenY + 9 + sandWave * 2);
-        ctx.moveTo(screenX + 5, screenY + 21 - sandWave * 2);
-        ctx.quadraticCurveTo(screenX + 18, screenY + 24 + sandWave * 2, screenX + s - 4, screenY + 21 - sandWave * 2);
+        ctx.moveTo(screenX + 3, screenY + 14 + sandWave * 2);
+        ctx.quadraticCurveTo(screenX + 16, screenY + 17 - sandWave * 2, screenX + s - 3, screenY + 13 + sandWave * 2);
         ctx.stroke();
 
-        // 细腻深色湿沙暗纹
-        ctx.strokeStyle = 'rgba(140, 105, 55, 0.22)';
-        ctx.beginPath();
-        ctx.moveTo(screenX + 4, screenY + 15);
-        ctx.lineTo(screenX + s - 6, screenY + 15);
-        ctx.stroke();
-
-        // 随机散落海滨物产：珊瑚红海星 / 白玉海贝 / 金黄卵石
-        const beachSeed = ((c || 0) * 29 + (r || 0) * 43) % 9;
-        if (beachSeed === 0) {
-          // 珊瑚粉红五角海星
-          const starX = screenX + 16;
-          const starY = screenY + 16;
-          ctx.fillStyle = '#f87171';
+        // 随机零星小海星或小贝壳
+        const decorSeed = ((c || 0) * 23 + (r || 0) * 41) % 19;
+        if (decorSeed === 0) {
+          // 纯白扇贝
+          ctx.fillStyle = '#ffffff';
           ctx.beginPath();
-          for (let sp = 0; sp < 5; sp++) {
-            const ang = (sp * Math.PI * 2) / 5 - Math.PI / 2;
-            const px = starX + Math.cos(ang) * 4.5;
-            const py = starY + Math.sin(ang) * 4.5;
-            if (sp === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-            const inAng = ang + Math.PI / 5;
-            ctx.lineTo(starX + Math.cos(inAng) * 2, starY + Math.sin(inAng) * 2);
-          }
-          ctx.closePath();
-          ctx.fill();
-        } else if (beachSeed === 1) {
-          // 白玉小扇贝 (弧形贝壳带纵纹)
-          const bx = screenX + 18;
-          const by = screenY + 12;
-          ctx.fillStyle = '#f8fafc';
-          ctx.beginPath();
-          ctx.arc(bx, by, 3.5, Math.PI, 0);
+          ctx.arc(screenX + 16, screenY + 16, 2.8, Math.PI, 0);
           ctx.closePath();
           ctx.fill();
           ctx.strokeStyle = '#cbd5e1';
-          ctx.lineWidth = 0.8;
+          ctx.lineWidth = 0.6;
           ctx.stroke();
-        } else if (beachSeed === 2) {
-          // 浅黄色小海贝
-          const bx = screenX + 10;
-          const by = screenY + 22;
-          ctx.fillStyle = '#fef08a';
-          ctx.beginPath();
-          ctx.ellipse(bx, by, 3, 2, 0.4, 0, Math.PI * 2);
-          ctx.fill();
         }
 
-        // 如果右侧紧邻海水 (water/dark_water)：绘制随时间涨落拍岸的白色潮汐浪花泡沫线！
+        // ★★★ 实机精髓：右侧或东南紧邻大海时的【斜向推涌雪白蕾丝海浪拍岸】！ ★★★
         if (mapData && c < mapData.width - 1 && (mapData.tiles[r][c + 1] === 'water' || mapData.tiles[r][c + 1] === 'dark_water')) {
-          const tide = Math.sin(this.waterAnimTime * 2 + (r || 0) * 0.6) * 3;
-          const foamAlpha = 0.65 + Math.sin(this.waterAnimTime * 2.5) * 0.25;
-          ctx.fillStyle = `rgba(255, 255, 255, ${foamAlpha})`;
+          const tide = Math.sin(this.waterAnimTime * 2.2 + (r || 0) * 0.6) * 5.5;
+          // 浅水浅青半透明水痕 (透出沙滩金色)
+          ctx.fillStyle = 'rgba(45, 212, 191, 0.42)';
           ctx.beginPath();
-          ctx.ellipse(screenX + s - 2 + tide, screenY + s / 2, 3.5, s / 2, 0, 0, Math.PI * 2);
+          ctx.ellipse(screenX + s - 1 + tide * 0.5, screenY + s / 2, 9, s / 2, 0, 0, Math.PI * 2);
           ctx.fill();
-          // 细碎水珠
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-          ctx.fillRect(screenX + s - 5 + tide, screenY + 6, 1.5, 1.5);
-          ctx.fillRect(screenX + s - 6 + tide, screenY + 20, 1.5, 1.5);
+
+          // 核心浪花前锋：多层雪白推涌波浪圈 (实机同款蕾丝碎浪)
+          const foamAlpha = 0.78 + Math.sin(this.waterAnimTime * 2.8 + r) * 0.2;
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + foamAlpha + ')';
+          ctx.beginPath();
+          ctx.arc(screenX + s - 5 + tide, screenY + 6, 4.5, 0, Math.PI * 2);
+          ctx.arc(screenX + s - 2 + tide, screenY + 16, 6.2, 0, Math.PI * 2);
+          ctx.arc(screenX + s - 6 + tide, screenY + 26, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 晶莹微碎飞沫
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(screenX + s - 9 + tide, screenY + 3, 1.8, 1.8);
+          ctx.fillRect(screenX + s - 11 + tide, screenY + 18, 2, 2);
+          ctx.fillRect(screenX + s - 10 + tide, screenY + 28, 1.6, 1.6);
         }
+        break;
+      }
+
+      // === 5.2 海滨·风化空心断木残骸 (1:1 像素级复刻实机截图正上方横卧中空断木枯干) ===
+      case 'shipwreck': {
+        // 先铺暖金沙底
+        const sandGrad = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
+        sandGrad.addColorStop(0, '#f2dfba');
+        sandGrad.addColorStop(1, '#d8bc8b');
+        ctx.fillStyle = sandGrad;
+        ctx.fillRect(screenX, screenY, s, s);
+
+        // 1. 实机空心断木在沙滩上投下的深褐色斜向长阴影
+        ctx.fillStyle = 'rgba(45, 30, 15, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(screenX + s / 2 + 3, screenY + s / 2 + 7, 16, 5.5, -0.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. 粗壮风化枯木主干 (灰褐色至炭黑渐变，两端参差劈裂，中空深邃)
+        const woodGrad = ctx.createLinearGradient(screenX + 2, screenY + 6, screenX + s - 2, screenY + s - 4);
+        woodGrad.addColorStop(0, '#644835');
+        woodGrad.addColorStop(0.3, '#7d5c43');
+        woodGrad.addColorStop(0.65, '#523a2a');
+        woodGrad.addColorStop(1, '#2c1e14');
+        ctx.fillStyle = woodGrad;
+
+        // 横卧微斜树干
+        ctx.beginPath();
+        ctx.moveTo(screenX + 2, screenY + 13);
+        ctx.lineTo(screenX + s - 3, screenY + 8);
+        ctx.lineTo(screenX + s - 1, screenY + 19);
+        ctx.lineTo(screenX + 4, screenY + 24);
+        ctx.closePath();
+        ctx.fill();
+
+        // 3. 左端中空树洞断茬阴影 (实机最标志性的空心木质)
+        ctx.fillStyle = '#1c130c';
+        ctx.beginPath();
+        ctx.ellipse(screenX + 3.5, screenY + 18, 3, 4.5, -0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#8d684d';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 右端参差劈裂木刺
+        ctx.fillStyle = '#8d684d';
+        ctx.beginPath();
+        ctx.moveTo(screenX + s - 3, screenY + 8);
+        ctx.lineTo(screenX + s, screenY + 12);
+        ctx.lineTo(screenX + s - 2, screenY + 15);
+        ctx.lineTo(screenX + s + 1, screenY + 17);
+        ctx.lineTo(screenX + s - 1, screenY + 19);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. 风化苍老纵向树皮干裂开裂木纹
+        ctx.strokeStyle = '#1a110a';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(screenX + 6, screenY + 16);
+        ctx.lineTo(screenX + 17, screenY + 13);
+        ctx.moveTo(screenX + 13, screenY + 15);
+        ctx.lineTo(screenX + 25, screenY + 12);
+        ctx.moveTo(screenX + 8, screenY + 20);
+        ctx.lineTo(screenX + 21, screenY + 18);
+        ctx.stroke();
+
+        // 木干高光受光面白灰木纹
+        ctx.strokeStyle = 'rgba(255, 245, 235, 0.35)';
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(screenX + 5, screenY + 14);
+        ctx.lineTo(screenX + 25, screenY + 9);
+        ctx.stroke();
+
+        // 局部木结木瘤
+        ctx.fillStyle = '#2c1e14';
+        ctx.beginPath();
+        ctx.arc(screenX + 18, screenY + 16, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 半掩入树身下方的温软金沙堆
+        ctx.fillStyle = '#e5cca0';
+        ctx.beginPath();
+        ctx.ellipse(screenX + 9, screenY + 23, 6.5, 2.5, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+
+      // === 5.3 水晶宫传送阵与海底缩略图标 (1:1 像素级复刻实机截图右下角：金框海底珊瑚全景图与青蓝传送法阵) ===
+      case 'crystal_portal': {
+        // 沙底与浅水
+        ctx.fillStyle = '#e5cca0';
+        ctx.fillRect(screenX, screenY, s, s);
+        ctx.fillStyle = 'rgba(45, 212, 191, 0.45)';
+        ctx.fillRect(screenX + 2, screenY + 2, s - 4, s - 4);
+
+        // 1. 底层旋转发光的青蓝水系符文传送法阵 (实机下方法阵光效)
+        const pAngle = this.waterAnimTime * 1.8;
+        ctx.save();
+        ctx.translate(screenX + s / 2, screenY + s / 2);
+        ctx.rotate(pAngle);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.6;
+        ctx.shadowColor = '#00f2fe';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, 13.5, 0, Math.PI * 1.6);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+
+        // 2. ★★★ 实机核心：华丽纯金双层边框与框内深海奇观画卷！★★★
+        ctx.save();
+        const boxX = screenX + 3.5;
+        const boxY = screenY + 3.5;
+        const boxS = s - 7;
+
+        // 纯金外框与高光
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(boxX - 2, boxY - 2, boxS + 4, boxS + 4);
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(boxX - 2, boxY - 2, boxS + 4, boxS + 4);
+        // 金框内圈细金丝
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(boxX - 0.5, boxY - 0.5, boxS + 1, boxS + 1);
+
+        // 框内深海绚烂画卷 (深海渐变背景)
+        const seaGrad = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxS);
+        seaGrad.addColorStop(0, '#0284c7');
+        seaGrad.addColorStop(0.4, '#0369a1');
+        seaGrad.addColorStop(0.8, '#1e1b4b');
+        seaGrad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = seaGrad;
+        ctx.fillRect(boxX, boxY, boxS, boxS);
+
+        // 框内茂密绚烂珊瑚群 (实机截图同款：黄绿海葵与紫红珊瑚丛)
+        // 紫红珊瑚 (左侧)
+        ctx.fillStyle = '#e11d48';
+        ctx.beginPath();
+        ctx.arc(boxX + 5.5, boxY + boxS - 4, 4.5, Math.PI, 0);
+        ctx.fill();
+
+        // 鲜嫩金黄海葵珊瑚 (右侧核心)
+        ctx.fillStyle = '#eab308';
+        ctx.beginPath();
+        ctx.arc(boxX + 16, boxY + boxS - 6, 6, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(boxX + 16, boxY + boxS - 6, 3.5, Math.PI, 0);
+        ctx.fill();
+
+        // 翠绿摇曳水草丛
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(boxX + 10, boxY + boxS - 11, 2.2, 9);
+        ctx.fillRect(boxX + 19, boxY + boxS - 9, 2.2, 7);
+        ctx.fillRect(boxX + 2, boxY + boxS - 8, 1.8, 6);
+
+        // 升腾的晶莹白水泡
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(boxX + 7, boxY + 7, 1.4, 0, Math.PI * 2);
+        ctx.arc(boxX + 17, boxY + 5, 1.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
         break;
       }
 
@@ -409,42 +565,47 @@ class TilemapEngine {
         ctx.fillStyle = '#052c1a';
         ctx.fillRect(screenX + 6, screenY + 7, 10, 2.5);
         ctx.fillRect(screenX + 6, screenY + 21, 10, 2.5);
-
-        // 飘逸苍翠竹叶
-        ctx.fillStyle = '#20c997';
-        ctx.beginPath();
-        ctx.ellipse(screenX + 19, screenY + 8, 9, 3, Math.PI / 4, 0, Math.PI * 2);
-        ctx.ellipse(screenX + 4, screenY + 18, 8, 2.8, -Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
         break;
       }
 
-      // === 7. 凡间·山涧清溪与瑶池水域 (动感反光涟漪) ===
+      // === 7. 凡间·山涧清溪与浩瀚东海碧水 (图1同款晶莹剔透碧绿海浪与阳光折射) ===
       case 'water':
       case 'dark_water': {
         const isDark = tileType === 'dark_water';
-        const wave = Math.sin(this.waterAnimTime * 2.5 + screenX * 0.08 + screenY * 0.08);
+        const wave = Math.sin(this.waterAnimTime * 2.4 + screenX * 0.08 + screenY * 0.08);
+        const wave2 = Math.cos(this.waterAnimTime * 1.8 + screenX * 0.06 - screenY * 0.06);
 
-        const g = ctx.createLinearGradient(screenX, screenY, screenX, screenY + s);
+        // 1. 晶莹透亮的碧蓝到湛蓝渐变 (1:1 像素级复刻实机东海碧水：清澈通透，阳光粼粼)
+        const g = ctx.createLinearGradient(screenX, screenY, screenX + s * 0.8, screenY + s);
         if (isDark) {
-          g.addColorStop(0, '#0c1a24');
-          g.addColorStop(1, '#050c12');
+          g.addColorStop(0, '#0369a1');
+          g.addColorStop(0.5, '#0284c7');
+          g.addColorStop(1, '#075985');
         } else {
-          g.addColorStop(0, '#12486b');
-          g.addColorStop(1, '#0c354f');
+          g.addColorStop(0, '#2dd4bf'); // 浅滩晶莹碧绿
+          g.addColorStop(0.4, '#0ea5e9'); // 晴空蔚蓝
+          g.addColorStop(1, '#0284c7'); // 湛蓝海深
         }
         ctx.fillStyle = g;
         ctx.fillRect(screenX, screenY, s, s);
 
-        // 动态水波折射反光条
-        ctx.strokeStyle = isDark ? `rgba(100, 180, 240, ${0.25 + wave * 0.15})` : `rgba(165, 243, 252, ${0.45 + wave * 0.25})`;
-        ctx.lineWidth = 1.5;
+        // 2. 阳光折射水纹与流动涟漪波光 (实机粼粼波光)
+        ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.42 + wave * 0.25) + ')';
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
-        ctx.moveTo(screenX + 3, screenY + 10 + wave * 3);
-        ctx.quadraticCurveTo(screenX + 16, screenY + 6 - wave * 3, screenX + 29, screenY + 10 + wave * 3);
-        ctx.moveTo(screenX + 5, screenY + 22 - wave * 3);
-        ctx.quadraticCurveTo(screenX + 18, screenY + 26 + wave * 3, screenX + 30, screenY + 22 - wave * 3);
+        ctx.moveTo(screenX + 2, screenY + 10 + wave * 3);
+        ctx.quadraticCurveTo(screenX + 16, screenY + 6 - wave * 3, screenX + s - 2, screenY + 10 + wave * 3);
+        ctx.moveTo(screenX + 4, screenY + 22 - wave2 * 3);
+        ctx.quadraticCurveTo(screenX + 18, screenY + 26 + wave2 * 3, screenX + s - 3, screenY + 22 - wave2 * 3);
         ctx.stroke();
+
+        // 3. 翻滚的细腻小水珠与细碎泡沫
+        if (((c || 0) * 17 + (r || 0) * 23) % 3 === 0) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.beginPath();
+          ctx.arc(screenX + 14 + wave * 2, screenY + 15, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
         break;
       }
 
@@ -1135,6 +1296,87 @@ class TilemapEngine {
         break;
       }
 
+      // === 乌斯藏·高老庄高府青石雕砖地坪 ===
+      case 'manor_floor': {
+        const isAlt = (c + r) % 2 === 0;
+        const g = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
+        if (isAlt) {
+          g.addColorStop(0, '#334155');
+          g.addColorStop(0.5, '#475569');
+          g.addColorStop(1, '#1e293b');
+        } else {
+          g.addColorStop(0, '#3b4c63');
+          g.addColorStop(0.5, '#475569');
+          g.addColorStop(1, '#334155');
+        }
+        ctx.fillStyle = g;
+        ctx.fillRect(screenX, screenY, s, s);
+
+        // 青石微光勾边与典雅拼缝
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.fillRect(screenX, screenY, s, 1);
+        ctx.fillRect(screenX, screenY, 1, s);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+        ctx.fillRect(screenX, screenY + s - 1, s, 1);
+        ctx.fillRect(screenX + s - 1, screenY, 1, s);
+
+        // 中心雅致石纹回印 (每隔2格点缀)
+        if (c % 2 === 0 && r % 2 === 0) {
+          ctx.strokeStyle = 'rgba(203, 213, 225, 0.15)';
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(screenX + 5, screenY + 5, s - 10, s - 10);
+        }
+        break;
+      }
+
+      // === 水帘洞天·钟乳奇石溶洞灵地 ===
+      case 'cave_floor': {
+        const isAlt = (c + r) % 2 === 0;
+        ctx.fillStyle = isAlt ? '#262626' : '#1f1f1f';
+        ctx.fillRect(screenX, screenY, s, s);
+
+        // 湿润水汽反光微光
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.06)';
+        ctx.fillRect(screenX + 2, screenY + 2, s - 4, s - 4);
+
+        // 钟乳石滴水水滴涟漪
+        if ((c * 13 + r * 29) % 7 === 0) {
+          const dripGlow = Math.sin(this.waterAnimTime * 2 + c) * 1.5;
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.ellipse(screenX + s / 2, screenY + s / 2, 4 + dripGlow, 2 + dripGlow * 0.5, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // 荧光苔藓灵草点缀
+        if ((c * 7 + r * 17) % 5 === 0) {
+          ctx.fillStyle = 'rgba(52, 211, 153, 0.35)';
+          ctx.fillRect(screenX + (c * 11) % 20 + 4, screenY + (r * 19) % 20 + 4, 2.5, 2.5);
+        }
+        break;
+      }
+
+      // === 五行山·两界界碑 (两界山界石) ===
+      case 'two_realms_stele': {
+        // 先铺草地底衬
+        ctx.fillStyle = '#2d5a27';
+        ctx.fillRect(screenX, screenY, s, s);
+        // 界碑石身 (青冈石古碑)
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath();
+        ctx.roundRect(screenX + 7, screenY + 4, 18, 24, [4, 4, 1, 1]);
+        ctx.fill();
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // 碑身刻字“两界”红字
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(screenX + 15, screenY + 9, 2, 6);
+        ctx.fillRect(screenX + 15, screenY + 17, 2, 6);
+        break;
+      }
+
       default: {
         ctx.fillStyle = '#222222';
         ctx.fillRect(screenX, screenY, s, s);
@@ -1166,7 +1408,8 @@ class TilemapEngine {
       'purple_bamboo',
       'tang_palace',
       'tang_store',
-      'stone_temple'
+      'stone_temple',
+      'two_realms_stele'
     ];
     return !solidTiles.includes(tileType);
   }

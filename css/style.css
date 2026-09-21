@@ -264,6 +264,20 @@ body {
   transform: translateY(-1px);
 }
 
+.nav-btn-restart {
+  background: linear-gradient(180deg, #661e14 0%, #360f0a 100%);
+  border: 1px solid #a33827;
+  color: #ffd2cc;
+  box-shadow: 0 1px 4px rgba(163, 56, 39, 0.35);
+}
+
+.nav-btn-restart:hover {
+  background: linear-gradient(180deg, #87281b 0%, #4a150e 100%);
+  border-color: #ff6b52;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 107, 82, 0.6);
+}
+
 .hud-silver-text {
   font-size: 11px;
   font-weight: bold;
@@ -1054,6 +1068,8 @@ body.modern-mode .game-viewport {
   border-radius: 3px;
   cursor: pointer;
 }
+
+.combat-column-box {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1949,7 +1965,7 @@ body.modern-mode .phone-screen-frame {
 
 body.modern-mode .game-viewport {
   width: 100%;
-  height: 480px;
+  height: 580px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2592,6 +2608,7 @@ body.modern-mode .modern-bottom-bar {
   padding: 12px 16px;
   box-sizing: border-box;
   animation: dialogueFadeIn 0.25s ease-out;
+  cursor: pointer;
 }
 
 @keyframes dialogueFadeIn {
@@ -2601,33 +2618,152 @@ body.modern-mode .modern-bottom-bar {
 
 .dialogue-box {
   width: 100%;
-  max-width: 780px;
-  background: linear-gradient(180deg, rgba(28, 20, 14, 0.96) 0%, rgba(14, 10, 7, 0.98) 100%);
-  border: 2px solid #c59b27;
-  border-radius: 10px;
-  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.85), 0 0 15px rgba(212, 175, 55, 0.3);
-  padding: 12px 16px;
+  max-width: 820px;
+  background: linear-gradient(180deg, rgba(26, 18, 12, 0.98) 0%, rgba(14, 9, 6, 0.99) 100%);
+  border: 2px solid #d4af37;
+  border-radius: 12px;
+  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.9), 0 0 20px rgba(212, 175, 55, 0.25);
+  padding: 12px 18px;
   display: flex;
   align-items: flex-start;
   gap: 16px;
   box-sizing: border-box;
   cursor: pointer;
   user-select: none;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: visible;
+}
+
+.dialogue-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .dialogue-avatar-frame {
-  width: 68px;
-  height: 68px;
+  width: 80px;
+  height: 80px;
   flex-shrink: 0;
   border-radius: 50%;
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-  background: radial-gradient(circle, #2d2013 0%, #0e0905 100%);
+  border: 2.5px solid #ffd700;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.45), inset 0 0 10px rgba(0, 0, 0, 0.85);
+  background: radial-gradient(circle, #2d1f14 0%, #0d0906 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
+  transition: transform 0.25s ease;
+}
+
+.dialogue-avatar-frame img,
+.dialogue-avatar-frame svg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.dialogue-avatar-frame:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 22px rgba(255, 215, 0, 0.65), inset 0 0 12px rgba(255, 215, 0, 0.4);
+}
+
+/* 角色阵营印章 */
+.dialogue-role-seal {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-family: "STKaiti", "KaiTi", "SimSun", serif;
+  font-size: 13px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+  z-index: 5;
+  user-select: none;
+}
+
+.seal-immortal {
+  background: linear-gradient(135deg, #c0392b 0%, #8e1b1b 100%);
+  color: #ffd700;
+  border-color: #ffd700;
+}
+
+.seal-demon {
+  background: linear-gradient(135deg, #6c2d82 0%, #391448 100%);
+  color: #e0b0ff;
+  border-color: #bb86fc;
+}
+
+.seal-merchant {
+  background: linear-gradient(135deg, #b8860b 0%, #7d5b00 100%);
+  color: #fff9e6;
+  border-color: #ffe066;
+}
+
+.seal-ghost {
+  background: linear-gradient(135deg, #1b4d3e 0%, #0c2b21 100%);
+  color: #69f0ae;
+  border-color: #00e676;
+}
+
+.seal-mortal {
+  background: linear-gradient(135deg, #8c4627 0%, #542713 100%);
+  color: #ffeedd;
+  border-color: #ffb88c;
+}
+
+/* 情绪微粒悬浮光泡 */
+.dialogue-emotion-bubble {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  z-index: 6;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  animation: emotionBounce 0.9s infinite alternate cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dialogue-emotion-bubble.exclamation {
+  background: linear-gradient(135deg, #ff4757 0%, #b31217 100%);
+  color: #ffffff;
+  border: 1.5px solid #ffccd2;
+  box-shadow: 0 0 12px #ff4757;
+}
+
+.dialogue-emotion-bubble.question {
+  background: linear-gradient(135deg, #1e90ff 0%, #0950a0 100%);
+  color: #ffffff;
+  border: 1.5px solid #a6d8ff;
+  box-shadow: 0 0 12px #1e90ff;
+}
+
+.dialogue-emotion-bubble.divine {
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+  color: #5a2e00;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 14px #ffd700;
+}
+
+@keyframes emotionBounce {
+  0% { transform: translateY(0) scale(0.95); }
+  100% { transform: translateY(-4px) scale(1.1); }
 }
 
 .dialogue-body {
@@ -2639,27 +2775,36 @@ body.modern-mode .modern-bottom-bar {
 }
 
 .dialogue-speaker-name {
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: bold;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.35);
-  padding-bottom: 4px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+  padding-bottom: 5px;
+}
+
+.dialogue-name-text {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  font-size: 16px;
 }
 
 .dialogue-speaker-title {
   font-size: 12px;
   font-weight: normal;
+  color: #e6c88b;
+  letter-spacing: 0.5px;
 }
 
 .dialogue-text-content {
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: #fff8e7;
-  letter-spacing: 0.5px;
-  min-height: 44px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #fff9ea;
+  letter-spacing: 0.6px;
+  min-height: 48px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .cursor-blink {
@@ -2677,34 +2822,34 @@ body.modern-mode .modern-bottom-bar {
 .dialogue-options-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .dialogue-opt-btn {
-  background: linear-gradient(180deg, #44321c 0%, #241a0e 100%);
+  background: linear-gradient(180deg, #4d371e 0%, #291c0e 100%);
   border: 1.5px solid #d4af37;
-  color: #fff3cc;
-  padding: 6px 14px;
-  font-size: 12.5px;
+  color: #fff4d1;
+  padding: 7px 16px;
+  font-size: 13px;
   font-weight: bold;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .dialogue-opt-btn:hover {
-  background: linear-gradient(180deg, #614627 0%, #362614 100%);
+  background: linear-gradient(180deg, #6c4e2b 0%, #3d2a15 100%);
   border-color: #ffd700;
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.5);
 }
 
 .dialogue-tip {
   align-self: flex-end;
-  font-size: 11px;
+  font-size: 11.5px;
   color: #c59b27;
   animation: tipFloat 1.2s infinite alternate ease-in-out;
 }
@@ -2712,6 +2857,86 @@ body.modern-mode .modern-bottom-bar {
 @keyframes tipFloat {
   0% { transform: translateY(0); opacity: 0.7; }
   100% { transform: translateY(3px); opacity: 1; }
+}
+
+/* =========================================================================
+   汉风西游 - 史诗剧情水墨章节过场大幕 (Chapter Banner)
+   ========================================================================= */
+.chapter-banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 6, 4, 0.88);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 980;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.chapter-banner-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chapter-banner-box {
+  width: 82%;
+  max-width: 580px;
+  background: linear-gradient(180deg, #2b1d12 0%, #150e08 100%);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 45px rgba(255, 215, 0, 0.35), inset 0 0 30px rgba(0, 0, 0, 0.9);
+  border-radius: 12px;
+  padding: 24px 30px;
+  text-align: center;
+  position: relative;
+  transform: scale(0.92);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.chapter-banner-overlay.active .chapter-banner-box {
+  transform: scale(1);
+}
+
+.chapter-banner-header {
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: #d4af37;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.chapter-banner-title {
+  font-family: "STKaiti", "KaiTi", "SimSun", serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.chapter-banner-subtitle {
+  font-size: 13.5px;
+  color: #fff0d0;
+  line-height: 1.6;
+  letter-spacing: 1px;
+}
+
+.chapter-banner-seal {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 3px 12px;
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  font-size: 11px;
+  letter-spacing: 2px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
 }
 
 /* =========================================================================
@@ -3237,7 +3462,553 @@ body.modern-mode .modern-bottom-bar {
     justify-content: center;
     width: 100%;
     flex-wrap: wrap;
-    gap: 6px;
   }
 }
+
+/* =========================================================================
+   图3专属 1:1 像素级复刻：正统《汉风西游》个人信息与状态面板
+   深紫褐暗纹锦缎、纯金边饰、四极潜能雷达罗盘、金菱形条目
+   ========================================================================= */
+.profile-v3-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.profile-v3-window {
+  width: 380px;
+  max-width: 95vw;
+  background: radial-gradient(circle at 50% 10%, #301f2e 0%, #1c131d 55%, #120b13 100%);
+  border: 2px solid #99733e;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(153, 115, 62, 0.25);
+  border-radius: 4px;
+  position: relative;
+  color: #eeddc5;
+  font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* 顶部金色中式门扣小牌坊装饰 */
+.profile-v3-top-crest {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 9px;
+  background: #d4af37;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+  border: 1px solid #78521a;
+  border-top: none;
+}
+
+/* 顶部关闭按钮 (右上角轻巧微型) */
+.profile-v3-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #a89278;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.15s;
+}
+.profile-v3-close:hover {
+  color: #ffd700;
+}
+
+/* 顶部卡片上半区：左右双栏 (左名片、右雷达) */
+.profile-v3-header {
+  display: flex;
+  padding: 14px 10px 10px 10px;
+  border-bottom: 1px solid #5a3c22;
+  background: linear-gradient(180deg, rgba(50, 30, 45, 0.6) 0%, rgba(20, 14, 22, 0.8) 100%);
+  position: relative;
+}
+
+/* 左侧名片区 */
+.profile-v3-identity {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  border-right: 1px solid #4a301c;
+  padding-right: 6px;
+}
+
+/* 金环圆框头像 */
+.profile-v3-avatar-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #d4af37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.8);
+  background: radial-gradient(circle, #5a1515 0%, #200808 80%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.profile-v3-avatar-canvas {
+  width: 60px;
+  height: 60px;
+}
+
+/* 身份文字信息群 */
+.profile-v3-id-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-v3-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.profile-v3-subid {
+  font-size: 11px;
+  color: #b09f8e;
+  letter-spacing: 0.2px;
+}
+
+/* 徽章三件套：LV胶囊 + 【仙】印 + 五行水纹 */
+.profile-v3-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.profile-v3-lv-pill {
+  background: #0d0f11;
+  border: 1px solid #8d7343;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.profile-v3-lv-txt { color: #f59e0b; font-weight: 900; font-style: italic; }
+.profile-v3-lv-num { color: #ffffff; font-weight: bold; }
+
+.profile-v3-xian-seal {
+  width: 22px;
+  height: 18px;
+  background: linear-gradient(135deg, #1e3a8a, #0284c7);
+  border: 1px solid #38bdf8;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: bold;
+  box-shadow: 0 0 5px rgba(56, 189, 248, 0.4);
+}
+
+.profile-v3-wuxing-icon {
+  width: 20px;
+  height: 20px;
+  background: #0369a1;
+  border: 1.2px solid #38bdf8;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #bae6fd;
+  font-size: 10px;
+}
+
+/* 【仙童】小牌匾 */
+.profile-v3-plaque {
+  margin-top: 2px;
+  width: 100px;
+  height: 19px;
+  background: linear-gradient(90deg, #5b1414, #8b1e1e, #5b1414);
+  border: 1px solid #d4af37;
+  border-radius: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.profile-v3-plaque-dash {
+  color: #d4af37;
+  font-size: 10px;
+}
+.profile-v3-plaque-text {
+  color: #fef08a;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+/* 右侧四极潜能雷达罗盘 */
+.profile-v3-radar-box {
+  width: 125px;
+  height: 98px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.profile-v3-radar-canvas {
+  width: 120px;
+  height: 94px;
+}
+
+/* 下半区：11项古典锦缎属性条目 */
+.profile-v3-list {
+  display: flex;
+  flex-direction: column;
+  background: #170f18;
+}
+
+.profile-v3-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6.5px 12px;
+  border-bottom: 1px solid #2e1d2c;
+  background: linear-gradient(90deg, rgba(38, 24, 37, 0.95) 0%, rgba(28, 18, 27, 0.95) 100%);
+  font-size: 12.5px;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.profile-v3-row:hover {
+  background: linear-gradient(90deg, rgba(58, 36, 56, 0.95) 0%, rgba(42, 26, 40, 0.95) 100%);
+}
+
+.profile-v3-label {
+  color: #e2d3c2;
+  letter-spacing: 0.3px;
+}
+
+.profile-v3-arrow {
+  color: #e5c378;
+  font-size: 11px;
+  font-weight: bold;
+  filter: drop-shadow(0 0 2px rgba(229, 195, 120, 0.6));
+}
+
+/* 底部收尾微标与操作提示 */
+.profile-v3-footer {
+  padding: 6px 12px 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f0a10;
+  border-top: 1px solid #3d263a;
+}
+.profile-v3-foot-pill {
+  background: #1e1520;
+  border: 1px solid #5a3c22;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 10px;
+  color: #948170;
+}
+.profile-v3-pot-btn {
+  background: linear-gradient(180deg, #b45309, #78350f);
+  border: 1px solid #f59e0b;
+  border-radius: 3px;
+  padding: 3px 10px;
+  color: #fef08a;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.profile-v3-pot-btn:hover {
+  background: linear-gradient(180deg, #d97706, #92400e);
+}
+
+/* ==========================================================================
+   场景平滑切图过渡黑幕动效 (走动 0.75s / 剧情 1.0s)
+   ========================================================================== */
+.scene-transition-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(16, 12, 8, 0.98) 0%, rgba(0, 0, 0, 1) 100%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 920;
+  transition: opacity 0.35s ease-in-out;
+}
+
+/* ==========================================================================
+   Tab 键当前场景生灵名册面板 (NPC排上面、野怪排下面、点击看详情与寻路)
+   ========================================================================== */
+.roster-modal-box {
+  width: 92%;
+  max-width: 680px;
+  max-height: 88vh;
+  background: linear-gradient(180deg, rgba(28, 20, 14, 0.98) 0%, rgba(14, 9, 6, 0.99) 100%);
+  border: 2px solid #d4af37;
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(212, 175, 55, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #f5eedc;
+  animation: dialogueFadeIn 0.25s ease-out;
+}
+
+.roster-header {
+  padding: 10px 14px;
+  background: linear-gradient(90deg, #3d2212 0%, #24140a 100%);
+  border-bottom: 1.5px solid #8c6a2b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.roster-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-title-icon {
+  font-size: 18px;
+}
+
+.roster-title-main {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffd700;
+  letter-spacing: 1px;
+}
+
+.roster-title-map {
+  font-size: 12px;
+  color: #2ed573;
+  background: rgba(46, 213, 115, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.roster-close-btn {
+  background: transparent;
+  border: 1px solid #775533;
+  color: #e5c07b;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.roster-close-btn:hover {
+  background: #c0392b;
+  color: #fff;
+  border-color: #ff6b81;
+}
+
+.roster-body-split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.roster-left-list {
+  flex: 1.3;
+  padding: 10px;
+  overflow-y: auto;
+  border-right: 1px solid #4a3320;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.roster-right-detail {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  background: rgba(10, 7, 5, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roster-section-header {
+  font-size: 12px;
+  font-weight: bold;
+  color: #f1c40f;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.roster-badge-count {
+  font-size: 10px;
+  color: #aaa;
+  font-weight: normal;
+}
+
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.roster-card-item {
+  background: rgba(42, 28, 18, 0.8);
+  border: 1px solid #6b4c2b;
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.roster-card-item:hover {
+  background: rgba(80, 52, 30, 0.95);
+  border-color: #ffd700;
+  transform: translateY(-1px);
+}
+
+.roster-card-item.active {
+  background: linear-gradient(90deg, rgba(120, 60, 20, 0.9) 0%, rgba(70, 35, 12, 0.9) 100%);
+  border-color: #fffa65;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+}
+
+.roster-avatar-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #d4af37;
+  overflow: hidden;
+  background: #1a0e08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.roster-info-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.roster-item-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #f5eedc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roster-item-title {
+  font-size: 9px;
+  color: #ff9f43;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roster-item-level {
+  font-size: 9px;
+  color: #2ed573;
+  font-weight: bold;
+}
+
+.roster-detail-card {
+  background: rgba(30, 20, 13, 0.9);
+  border: 1px solid #8c6a2b;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roster-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #4a3320;
+  padding-bottom: 8px;
+}
+
+.roster-detail-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #ffd700;
+  overflow: hidden;
+  background: #1e1108;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roster-prop-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #dcdde1;
+  padding: 2px 0;
+}
+
+.roster-prop-val {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.roster-nav-btn {
+  margin-top: 6px;
+  background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%);
+  border: 1px solid #2ecc71;
+  border-radius: 4px;
+  color: #ffffff;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.roster-nav-btn:hover {
+  background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+
 

@@ -13,6 +13,7 @@ class Player {
     this.ingots = initData.ingots !== undefined ? initData.ingots : 50; // 仙玉
     this.bankSilver = initData.bankSilver || 0; // 钱庄存款
     this.homeResidence = initData.homeResidence || null; // 定居地（如 'changan_city'）
+    this.appearance = initData.appearance || 'heaven_general';
 
     // 五维自由潜能加点
     this.potentialPoints = initData.potentialPoints || 0;

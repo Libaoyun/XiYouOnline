@@ -257,6 +257,14 @@ window.GAME_DATA.ITEMS = {
     price: 2500,
     desc: '太上老君盛丹的上古通灵至宝！战斗中招降【金仙】级圣兽必备极品法宝，成功率高达 60%！'
   },
+  talent_pill: {
+    id: 'talent_pill',
+    name: '天赋丹',
+    type: 'consumable',
+    icon: '🔮',
+    price: 3500,
+    desc: '上古九转仙气淬炼的天赋宝丹！喂食【金仙】品阶仙宠使用，单次永久增加 50 点元神变身天赋点 (上限 5000 点)！'
+  },
   changan_huji: {
     id: 'changan_huji',
     name: '大唐长安户籍簿',

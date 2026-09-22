@@ -27,7 +27,18 @@ global.document = {
         el.children.push(child);
         if (child && child.id) domMap[child.id] = child;
       },
-      classList: { add: () => {}, remove: () => {} },
+      classList: {
+        _classes: new Set(),
+        add: (c) => el.classList._classes.add(c),
+        remove: (c) => el.classList._classes.delete(c),
+        contains: (c) => el.classList._classes.has(c),
+        toggle: (c) => {
+          if (el.classList._classes.has(c)) el.classList._classes.delete(c);
+          else el.classList._classes.add(c);
+        }
+      },
+      addEventListener: (evt, cb) => { el['on' + evt] = cb; },
+      removeEventListener: () => {},
       remove: () => {
         if (el.id && domMap[el.id]) delete domMap[el.id];
       }
@@ -61,6 +72,7 @@ window.location = { search: '', href: 'http://localhost/', pathname: '/', origin
 
 // 依次加载游戏数据与核心逻辑
 const filesToLoad = [
+  'js/core/skills.js',
   'js/data/classes.js',
   'js/data/pets.js',
   'js/data/items.js',
@@ -396,7 +408,12 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     // 触发奖励熟练度
     battle.rewardSkillProficiency(allyActor, dummySkill);
     assert(dummySkill.proficiency > 95, `技能熟练度成功增加 (当前: ${dummySkill.proficiency})`);
-    assert(dummySkill.level === 2, `熟练度满 100 自动跃迁升级至 Lv.2 (当前: Lv.${dummySkill.level})`);
+    assert(dummySkill.level === 1, '战斗中严格遵循神坛老祖授法铁律，绝不私自越级升级');
+
+    // 达 1/5 门槛 (1000 熟练度) 后由菩提老祖点化晋升
+    dummySkill.mastery = 1000;
+    const upRes = window.SkillMasteryEngine.upgradeSkill(dummySkill, true);
+    assert(upRes.success === true && dummySkill.level === 2, `熟练度达到 1/5 门槛(1000点)由老祖点化晋升至 Lv.2 (当前: Lv.${dummySkill.level})`);
 
     // 金刚护体多目标测试：Lv.1 护1人，Lv.2 护2人，Lv.3 护全体
     const alliesList = [
@@ -1456,10 +1473,8 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     app.collectMushroom();
     assert(app.questKills.mushrooms === 1, '采摘 1 朵青蘑菇，计数累加为 1');
     app.collectMushroom();
-    app.collectMushroom();
-    app.collectMushroom();
-    assert(app.questKills.mushrooms === 4, '采摘 4 朵青蘑菇，计数累加为 4');
-    assert(app.storyPhase === 'liujiacun_mushrooms_collected', '采齐 4 朵蘑菇后，主线自动推进至【liujiacun_mushrooms_collected】');
+    assert(app.questKills.mushrooms === 2, '采摘 2 朵青蘑菇，计数累加为 2');
+    assert(app.storyPhase === 'liujiacun_mushrooms_collected', '采齐 2 朵蘑菇后，主线自动推进至【liujiacun_mushrooms_collected】');
 
     // 4. 东海之滨与龙宫大殿主线验证
     const dhc = allMaps['donghai_coast'];
@@ -1907,8 +1922,776 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     assert(dmgWkToAlly >= allySoldier.maxHp, `大圣战大圣神威碾压，出手刚好秒杀天兵 (伤害: ${dmgWkToAlly}, 天兵血量: ${allySoldier.maxHp})`);
   }
 
+  // =========================================================================
+  // 测试 26：房屋栅栏入口拓宽(>=3格)、野生蘑菇独立模型与防0.5s重刷、Tab场景万象名册全新排版
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 26] 栅栏入口拓宽(>=3格)、蘑菇专属模型与防重刷、Tab名册全新排版');
+
+    // 1. 房屋栅栏入口宽度校验（严防1格窄缝导致角色卡死，所有栅栏入口必须 >= 3 格）
+    const liujiaMap = window.GAME_DATA.MAPS_2D['liujiacun'];
+    assert(liujiaMap && Array.isArray(liujiaMap.tiles), '刘家村地图正常加载');
+
+    // 检查刘家村第 12 行与第 17 行栅栏的通路宽度
+    [12, 17].forEach(rowIdx => {
+      const row = liujiaMap.tiles[rowIdx];
+      let currentGap = 0;
+      let gapWidths = [];
+      for (let col = 0; col < row.length; col++) {
+        const tile = row[col];
+        if (tile === 'wooden_barricade') {
+          if (currentGap > 0) {
+            gapWidths.push(currentGap);
+            currentGap = 0;
+          }
+        } else {
+          // 非栅栏（通道或草地）
+          currentGap++;
+        }
+      }
+      if (currentGap > 0) gapWidths.push(currentGap);
+      
+      // 过滤掉边缘留白，只关注栅栏中间的院落大门口
+      const doorGaps = gapWidths.filter(w => w >= 3);
+      assert(doorGaps.length >= 2, `刘家村第 ${rowIdx} 行院落入口宽度全部达标 >= 3 格 (检测到有效通道宽度: ${doorGaps.join(', ')})`);
+      const narrowGaps = gapWidths.filter(w => w === 1 || w === 2);
+      assert(narrowGaps.length === 0, `刘家村第 ${rowIdx} 行绝无 1~2 格窄门通道 (窄门数: ${narrowGaps.length})`);
+    });
+
+    // 检查高老庄木棚栅栏入口宽度
+    const gaoMap = window.GAME_DATA.MAPS_2D['gaolaozhuang'];
+    assert(gaoMap && Array.isArray(gaoMap.tiles), '高老庄地图正常加载');
+    const gaoRow22 = gaoMap.tiles[22];
+    let gaoGap = 0;
+    for (let c = 16; c <= 22; c++) {
+      if (gaoRow22[c] !== 'wooden_barricade') gaoGap++;
+    }
+    assert(gaoGap >= 3, `高老庄内院/木棚栅栏通道宽度充足 (实际宽度: ${gaoGap} 格 >= 3格)`);
+
+    // 2. 野生蘑菇独立模型与采摘永续消隐校验（坚决不用人型、采摘后过0.5s绝不再重刷）
+    const charRenderer = window.CharacterRenderer;
+    assert(typeof charRenderer.drawMushroom === 'function', 'CharacterRenderer 挂载 drawMushroom 灵芝仙草独立绘制方法');
+
+    // 模拟 ctx 验证 drawModel('mushroom') 绝对不回退到天将人型
+    let calledMushroom = false;
+    let calledHeavenGeneral = false;
+    const origDrawMushroom = charRenderer.drawMushroom;
+    const origDrawHG = charRenderer.drawHeavenGeneral;
+    charRenderer.drawMushroom = () => { calledMushroom = true; };
+    charRenderer.drawHeavenGeneral = () => { calledHeavenGeneral = true; };
+
+    const mockCtx = {
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
+      scale: () => {},
+      beginPath: () => {},
+      arc: () => {},
+      ellipse: () => {},
+      fill: () => {},
+      stroke: () => {},
+      rect: () => {},
+      closePath: () => {},
+      createRadialGradient: () => ({ addColorStop: () => {} }),
+      createLinearGradient: () => ({ addColorStop: () => {} })
+    };
+
+    charRenderer.drawModel(mockCtx, 100, 100, 'mushroom');
+    assert(calledMushroom === true, 'drawModel("mushroom") 精准分发至蘑菇专属绘制');
+    assert(calledHeavenGeneral === false, '蘑菇模型绝不回退至金甲天将人型');
+    charRenderer.drawMushroom = origDrawMushroom;
+    charRenderer.drawHeavenGeneral = origDrawHG;
+
+    // 采摘逻辑防 0.5s 重刷与永续消隐
+    const app = window.App2D;
+    assert(app.collectedProps instanceof Set, 'App2D 正确维护 collectedProps 已采集物品集合');
+
+    app.currentMapId = 'liujiacun';
+    app.storyPhase = 'liujiacun_find_mushrooms';
+    app.player = app.player || { x: 10 * 32, y: 10 * 32 };
+    const testShroom = {
+      id: 'prop_mushroom_1',
+      name: '野生青蘑菇',
+      type: 'prop',
+      appearance: 'mushroom',
+      x: 10 * 32,
+      y: 10 * 32
+    };
+    app.npcs = [testShroom];
+    assert(app.isNpcVisibleInStoryPhase(testShroom.id) === true, '采摘阶段未采集的蘑菇在场景中可见');
+
+    // 执行采摘
+    if (!app.questKills) app.questKills = { mushrooms: 0, trees: 0, rats: 0 };
+    app.questKills.mushrooms = 0;
+    app.collectMushroom();
+    assert(app.questKills.mushrooms === 1, '采集后蘑菇计数增加为 1');
+    assert(app.collectedProps.has(testShroom.id) === true, '已采摘蘑菇记录进入 collectedProps 永续集合');
+    assert(app.isNpcVisibleInStoryPhase(testShroom.id) === false, '已采摘蘑菇在后续故事阶段绝对不可见');
+
+    // 模拟 0.5s 后的场景刷新/重载，验证绝不再出现
+    const visibleAfterHalfSec = app.isNpcVisibleInStoryPhase(testShroom.id);
+    assert(visibleAfterHalfSec === false, '采摘后过 0.5s 蘑菇绝对不会重新刷新或幽灵复现');
+
+    // 测试存档持久化：保存后再读档，已采摘状态依然有效
+    let savedState = null;
+    window.SaveManager = {
+      saveGameFullState: (st) => { savedState = JSON.parse(JSON.stringify(st)); },
+      loadGameFullState: () => savedState,
+      hasAutoSave: () => !!savedState
+    };
+    app.saveAutoProgress();
+    assert(savedState && savedState.collectedProps && savedState.collectedProps.includes(testShroom.id), '存档状态正确持久化保存 collectedProps 道具消隐列表');
+
+    // 模拟重置内存状态，然后读档恢复
+    app.collectedProps = new Set();
+    assert(app.collectedProps.has(testShroom.id) === false, '内存重置后初始不包含该道具');
+    app.loadAutoSavedProgress();
+    assert(app.collectedProps.has(testShroom.id) === true, '读档后成功恢复 collectedProps 永续集合，绝不再重刷');
+
+    // 3. 按 Tab 键查看场景任务与名册面板全新排版样式校验
+    app.toggleSceneRosterModal(true);
+    const rosterEl = document.getElementById('scene-roster-modal');
+    assert(rosterEl !== null, '成功呼出场景生灵名册模态框');
+    const rosterHtml = rosterEl.innerHTML;
+    assert(rosterHtml.includes('roster-modal-box'), 'Tab 场景名册采用专属 .roster-modal-box 容器');
+    assert(rosterHtml.includes('roster-dragon-header'), '名册顶栏采用国风双龙金匾 .roster-dragon-header');
+    assert(rosterHtml.includes('roster-main-body'), '名册主体采用左右分栏 .roster-main-body');
+    assert(rosterHtml.includes('roster-list-panel'), '名册左侧采用固定宽度滚动列表 .roster-list-panel');
+    assert(rosterHtml.includes('roster-detail-panel'), '名册右侧采用生灵精研详案 .roster-detail-panel');
+
+    // 校验 CSS 文件中关键样式的覆盖完整性
+    const fs = require('fs');
+    const cssContent = fs.readFileSync('css/style.css', 'utf8');
+    assert(cssContent.includes('.roster-modal-box'), 'CSS 包含 .roster-modal-box 样式定义');
+    assert(cssContent.includes('.roster-dragon-header'), 'CSS 包含 .roster-dragon-header 样式定义');
+    assert(cssContent.includes('.roster-main-body'), 'CSS 包含 .roster-main-body 样式定义');
+    assert(cssContent.includes('.roster-list-panel'), 'CSS 包含 .roster-list-panel 样式定义');
+    assert(cssContent.includes('.roster-detail-panel'), 'CSS 包含 .roster-detail-panel 样式定义');
+    assert(cssContent.includes('.roster-item-card.active'), 'CSS 包含生灵卡片高亮选中态样式');
+    app.toggleSceneRosterModal(false);
+  }
+
+  // =========================================================================
+  // 测试 27：技能5级25000熟练度法则、1/5提前突破、长安神坛与菩提老祖交互、舍生与妖魔技能数值
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 27] 技能5级25000法则、1/5提前突破、长安神坛与菩提老祖、舍生与妖魔技能数值');
+
+    const app = window.App2D;
+    const engine = window.SkillMasteryEngine;
+    assert(engine !== undefined, 'SkillMasteryEngine 核心熟练度引擎挂载成功');
+    assert(engine.MAX_LEVEL === 5, '所有技能最高划分为 5 级 (Lv.1 ~ Lv.5)');
+    assert(engine.SPAN_PER_LEVEL === 5000, '每一级熟练度跨度严格为 5000');
+    assert(engine.MAX_MASTERY === 25000, '满级满熟练度严格封顶为 25000');
+
+    // 1. 熟练度锁级规则与防死刷判定
+    assert(engine.isLevelLocked(1, 4999) === false, 'Lv.1 熟练度 4999 时未锁级');
+    assert(engine.isLevelLocked(1, 5000) === true, 'Lv.1 熟练度达到 5000 触发锁级保护');
+    assert(engine.isLevelLocked(2, 10000) === true, 'Lv.2 熟练度达到 10000 触发锁级保护');
+    assert(engine.isLevelLocked(3, 15000) === true, 'Lv.3 熟练度达到 15000 触发锁级保护');
+    assert(engine.isLevelLocked(4, 20000) === true, 'Lv.4 熟练度达到 20000 触发锁级保护');
+    assert(engine.isLevelLocked(5, 25000) === true, 'Lv.5 熟练度达到 25000 极境封顶');
+
+    // 模拟战斗使用技能加熟练度，达到上限后锁级不再增加 1 点
+    const testSkill = { id: 'sk_test', name: '破天斩', level: 1, mastery: 4990 };
+    const resGain1 = engine.gainMastery(testSkill, 10);
+    assert(resGain1.success === true && testSkill.mastery === 5000, '熟练度累加至 5000 达到本级上限');
+    assert(resGain1.locked === true, '熟练度达到 5000 立即被系统锁定');
+
+    const resGain2 = engine.gainMastery(testSkill, 10);
+    assert(resGain2.success === false && testSkill.mastery === 5000, '处于锁级状态下即便再次施法，熟练度也绝对不加 1 点 (仍为 5000)');
+
+    // 2. 1/5 熟练度提前突破升级法则
+    assert(engine.canUpgrade(1, 999) === false, 'Lv.1 熟练度 999 未达 1/5 门槛，不允许升级');
+    assert(engine.canUpgrade(1, 1000) === true, 'Lv.1 熟练度达到 1000 (满额5000的1/5)，允许提前升级');
+    assert(engine.canUpgrade(2, 5999) === false, 'Lv.2 熟练度 5999 未达 6000 门槛，不允许升级');
+    assert(engine.canUpgrade(2, 6000) === true, 'Lv.2 熟练度达到 6000 (满足第2级跨度的1/5)，允许提前升级');
+
+    // 3. 菩提老祖唯一交互升级法则 (私授无效，必须老祖亲传)
+    const skillToUpgrade = { id: 'sk_test_up', name: '舍生取义', level: 1, mastery: 1000 };
+    const privateUpgrade = engine.upgradeSkill(skillToUpgrade, false);
+    assert(privateUpgrade.success === false && skillToUpgrade.level === 1, '未在神坛与菩提老祖交互时，私自升级被绝对阻止');
+
+    const masterUpgrade = engine.upgradeSkill(skillToUpgrade, true);
+    assert(masterUpgrade.success === true && skillToUpgrade.level === 2, '在菩提老祖神坛点化下，成功突破晋升至 Lv.2');
+
+    // 4. 【舍生取义】专项数值精确断言 (用户最新确立的权威标准)
+    // A. 1级0熟练度：伤害500，反噬0，耗蓝220
+    const shesheng0 = engine.calculateShesheng(null, null, 1, 0);
+    assert(shesheng0.damage === 500, `舍生取义 Lv.1 0熟练度伤害精确为 500 (实际: ${shesheng0.damage})`);
+    assert(shesheng0.selfDamage === 0, `舍生取义 Lv.1 0熟练度自损精确为 0 (实际: ${shesheng0.selfDamage})`);
+    assert(shesheng0.costMp === 220, `舍生取义 Lv.1 0熟练度耗蓝精确为 220 (实际: ${shesheng0.costMp})`);
+
+    // B. 10熟练度以内：无副作用
+    const shesheng10 = engine.calculateShesheng(null, null, 1, 10);
+    assert(shesheng10.selfDamage === 0, `舍生取义 Lv.1 10熟练度以内无副作用自损为 0 (实际: ${shesheng10.selfDamage})`);
+
+    // C. 10熟练度之后：伤害501，反噬1，耗蓝220
+    const shesheng11 = engine.calculateShesheng(null, null, 1, 11);
+    assert(shesheng11.damage === 501, `舍生取义 Lv.1 11熟练度伤害为 501 (实际: ${shesheng11.damage})`);
+    assert(shesheng11.selfDamage === 1, `舍生取义 Lv.1 11熟练度反噬为 1 (实际: ${shesheng11.selfDamage})`);
+    assert(shesheng11.costMp === 220, `舍生取义 Lv.1 11熟练度耗蓝为 220 (实际: ${shesheng11.costMp})`);
+
+    // D. 1000熟练度：伤害650，反噬40，耗蓝250
+    const shesheng1000 = engine.calculateShesheng(null, null, 1, 1000);
+    assert(shesheng1000.damage === 650, `舍生取义 Lv.1 1000熟练度伤害为 650 (实际: ${shesheng1000.damage})`);
+    assert(shesheng1000.selfDamage === 40, `舍生取义 Lv.1 1000熟练度反噬为 40 (实际: ${shesheng1000.selfDamage})`);
+    assert(shesheng1000.costMp === 250, `舍生取义 Lv.1 1000熟练度耗蓝为 250 (实际: ${shesheng1000.costMp})`);
+
+    // E. 1000熟练度直接升级二级：伤害1600，反噬400，耗蓝350
+    const sheshengLv2 = engine.calculateShesheng(null, null, 2, 1000);
+    assert(sheshengLv2.damage === 1600, `舍生取义 1000熟练度升2级伤害跃升为 1600 (实际: ${sheshengLv2.damage})`);
+    assert(sheshengLv2.selfDamage === 400, `舍生取义 1000熟练度升2级反噬跃升为 400 (实际: ${sheshengLv2.selfDamage})`);
+    assert(sheshengLv2.costMp === 350, `舍生取义 1000熟练度升2级耗蓝跃升为 350 (实际: ${sheshengLv2.costMp})`);
+
+    // F. 满级满熟练度：伤害约16000，使用一次自伤8000血
+    const sheshengMax = engine.calculateShesheng(null, null, 5, 25000);
+    assert(sheshengMax.damage === 16000, `舍生取义 Lv.5 满25000熟练度伤害精确为 16000 (实际: ${sheshengMax.damage})`);
+    assert(sheshengMax.selfDamage === 8000, `舍生取义 Lv.5 满25000熟练度单次自伤精确为 8000 血 (实际: ${sheshengMax.selfDamage})`);
+
+    // G. 气血低于10%判定与致死保护断言
+    const lowHpUser = { hp: 9, maxHp: 100 };
+    const lowHpCheck = engine.canCastShesheng(lowHpUser);
+    assert(lowHpCheck.canCast === false, '舍生取义在生命值低于10%时无法施展');
+    const exactHpUser = { hp: 10, maxHp: 100 };
+    const exactHpCheck = engine.canCastShesheng(exactHpUser);
+    assert(exactHpCheck.canCast === true, '舍生取义在生命值刚好达到10%时允许施展');
+
+    // 5. 妖魔高耗蓝与群体必中技能数值断言
+    // A. 雷霆万钧：1级耗蓝300，0熟练度伤害420
+    const leiting = engine.calculateLeiting(null, null, 1, 0);
+    assert(leiting.costMp === 300, `雷霆万钧 Lv.1 单体魔雷耗蓝为 300 (实际: ${leiting.costMp})`);
+    assert(leiting.damage === 420, `雷霆万钧 Lv.1 0熟练度伤害为 420 (实际: ${leiting.damage})`);
+
+    // B. 雷霆万钧满级满熟练度：伤害12608
+    const leitingMax = engine.calculateLeiting(null, null, 5, 25000);
+    assert(leitingMax.damage === 12608, `雷霆万钧 Lv.5 满25000熟练度伤害精准达到 12608 (实际: ${leitingMax.damage})`);
+
+    // C. 封印咒与定身咒命中率断言 (62%->95%, 33%->75%)
+    const fengyinL1 = engine.calculateControlSpell('fengyin', 1, 0);
+    assert(fengyinL1.hitRate === 0.62, `封印咒初始命中率为 62% (实际: ${fengyinL1.hitRate})`);
+    const fengyinMax = engine.calculateControlSpell('fengyin', 5, 25000);
+    assert(fengyinMax.hitRate === 0.95, `封印咒满级满熟练度命中率精准达到 95% (实际: ${fengyinMax.hitRate})`);
+
+    const dingshenL1 = engine.calculateControlSpell('dingshen', 1, 0);
+    assert(dingshenL1.hitRate === 0.33, `定身咒每个目标初始命中率为 33% (实际: ${dingshenL1.hitRate})`);
+    const dingshenMax = engine.calculateControlSpell('dingshen', 5, 25000);
+    assert(dingshenMax.hitRate === 0.75, `定身咒满级满熟练度单体命中率精准达到 75% (实际: ${dingshenMax.hitRate})`);
+
+    // D. 三昧真火与飞沙走石：群体必中，随等级扩展目标数
+    const fireL1 = engine.calculateGroupSpell('三昧真火', null, 4, 1, 0);
+    assert(fireL1.isSureHit === true, '三昧真火为绝对必中群法');
+    assert(fireL1.maxTargets === 1, '三昧真火 Lv.1 目标数为 1');
+
+    const windL5 = engine.calculateGroupSpell('飞沙走石', null, 4, 5, 20000);
+    assert(windL5.isSureHit === true, '飞沙走石为绝对必中群法');
+    assert(windL5.maxTargets === 4, '飞沙走石 Lv.5 满阶目标数覆盖全队 4 人');
+
+    // 6. 长安城左上角【神坛】场景与【菩提老祖】部署断言
+    const allMaps = window.GAME_DATA.MAPS_2D;
+    const caMap = allMaps['changan_city'];
+    const shendanPortal = caMap.portals.find(p => p.targetMap === 'changan_shendan');
+    assert(shendanPortal !== undefined, '长安城左上角成功部署直通【长安神坛】传送门');
+    assert(shendanPortal.x <= 128 && shendanPortal.y <= 128, `神坛传送门精准位于长安城左上角 (${shendanPortal.x}, ${shendanPortal.y})`);
+
+    const sdMap = allMaps['changan_shendan'];
+    assert(sdMap !== undefined && sdMap.width === 38 && sdMap.height === 28, '神坛地图【changan_shendan】为 38x28 广阔仙境大地图');
+    const putiNpc = sdMap.npcs.find(n => n.id === 'npc_puti_laozu');
+    assert(putiNpc !== undefined, '神坛场景部署核心宗师【菩提老祖】');
+    assert(putiNpc.appearance === 'puti_zushi', '菩提老祖外观为【puti_zushi】太极大袍仙相');
+
+    // 7. 神坛对话与仙宠 10 级觉醒授法机制断言
+    const dlgs = window.GAME_DATA.STORY_DIALOGUES;
+    assert(dlgs.puti_shendan_talk !== undefined, '神坛菩提老祖专属对话剧本【puti_shendan_talk】完备');
+    assert(typeof app.openSkillMasteryModal === 'function', 'App2D 挂载 openSkillMasteryModal 技能参悟模态框方法');
+    assert(typeof app.learnClassSkillsFromMaster === 'function', 'App2D 挂载 learnClassSkillsFromMaster 老祖传道方法');
+    assert(typeof app.awakenPetSkillAtMaster === 'function', 'App2D 挂载 awakenPetSkillAtMaster 仙宠10级授法方法');
+
+    // 测试仙宠未满 10 级无法学法，满 10 级成功领悟
+    app.playerData.pets = [{ id: 'pet_test', name: '幼白虎', level: 8, skills: [] }];
+    app.playerData.activePet = app.playerData.pets[0];
+    app.awakenPetSkillAtMaster();
+    assert(app.playerData.activePet.skills.length === 0, '仙宠未满 10 级无法由菩提老祖授法');
+
+    app.playerData.activePet.level = 10;
+    app.awakenPetSkillAtMaster();
+    assert(app.playerData.activePet.skills.some(s => s.name === '天雷引'), '仙宠达到 10 级后在神坛成功领悟专属灵法【天雷引】');
+
+    // 8. 全职业 3 技能配置 (男女专属 + 2 通用) 断言
+    const maleJingangSkills = window.GAME_DATA.getSkillsForClassAndGender('jingang', 'male');
+    assert(maleJingangSkills.length === 3, '男金刚具备 3 个技能');
+    assert(maleJingangSkills.some(s => s.name === '佛光普照'), '男金刚具备专属技能【佛光普照】');
+    assert(maleJingangSkills.some(s => s.name === '舍生取义'), '男金刚具备通用技能【舍生取义】');
+    assert(maleJingangSkills.some(s => s.name === '金刚护体'), '男金刚具备通用技能【金刚护体】');
+
+    const femaleYaomoSkills = window.GAME_DATA.getSkillsForClassAndGender('yaomo', 'female');
+    assert(femaleYaomoSkills.length === 3, '女妖魔具备 3 个技能');
+    assert(femaleYaomoSkills.some(s => s.name === '万毒攻心'), '女妖魔具备专属技能【万毒攻心】');
+    assert(femaleYaomoSkills.some(s => s.name === '三昧真火'), '女妖魔具备通用技能【三昧真火】');
+    assert(femaleYaomoSkills.some(s => s.name === '飞沙走石'), '女妖魔具备通用技能【飞沙走石】');
+
+    const maleXianrenSkills = window.GAME_DATA.getSkillsForClassAndGender('xianren', 'male');
+    assert(maleXianrenSkills.some(s => s.name === '乱魂咒'), '男仙人具备专属技能【乱魂咒】');
+    assert(maleXianrenSkills.some(s => s.name === '定身咒'), '男仙人具备通用技能【定身咒】');
+    assert(maleXianrenSkills.some(s => s.name === '隐身咒'), '男仙人具备通用技能【隐身咒】');
+
+    // 9. 三大职业天生自带初始抗性体系 (Innate Class Resistances) 断言
+    const jgRes = engine.getInnateResistances('jingang');
+    assert(jgRes.res_physical === 0.20, '金刚职业天生自带 20% 物理抗性');
+    assert(jgRes.res_shesheng === 0.10, '金刚职业天生自带 10% 舍生抗性');
+    assert(jgRes.res_xuanji === 0.05, '金刚职业天生自带 5% 玄击抗性 (全游戏唯一天生抗玄击来源)');
+
+    const ymRes = engine.getInnateResistances('yaomo');
+    assert(ymRes.res_physical === 0.10, '妖魔职业天生自带 10% 物理抗性');
+    assert(ymRes.res_leiting === 0.10, '妖魔职业天生自带 10% 雷霆抗性');
+    assert(ymRes.res_feisha === 0.10, '妖魔职业天生自带 10% 飞沙抗性');
+    assert(ymRes.res_sanmei === 0.10, '妖魔职业天生自带 10% 三昧真火抗性');
+    assert(ymRes.res_wandu === 0.10, '妖魔职业天生自带 10% 万毒攻心抗性');
+
+    const sxRes = engine.getInnateResistances('shenxian');
+    assert(sxRes.res_physical === 0.10, '神仙职业天生自带 10% 物理抗性');
+    assert(sxRes.res_fengyin === 0.10, '神仙职业天生自带 10% 封印抗性');
+    assert(sxRes.res_luanhun === 0.10, '神仙职业天生自带 10% 乱魂抗性');
+    assert(sxRes.res_dingshen === 0.10, '神仙职业天生自带 10% 定身抗性');
+
+    // 10. 佛光普照与如来神掌【玄击】公式、伤害基数与抗玄击减免断言
+    // 假设敌方为妖魔 (无抗玄击)，当前生命 2000，当前法力 1000
+    const dummyEnemy = { hp: 2000, maxHp: 2000, mp: 1000, maxMp: 1000, resistances: {} };
+    const foguangRes = engine.calculateMpDrainAttack(false, null, dummyEnemy, 1, 0);
+    // Lv.1 0熟练度：baseDmg=150 (主打百分比伤害，基数辅助), hpRatio=0.20, mpRatio=0.10
+    assert(foguangRes.baseDmg === 150, '佛光普照 Lv.1 0熟练度伤害基数为 150');
+    assert(foguangRes.hpRatio === 0.20, '佛光普照 Lv.1 扣除 20% 当前生命值');
+    assert(foguangRes.mpRatio === 0.10, '佛光普照 Lv.1 扣除 10% 当前法力值');
+    assert(foguangRes.damage === 150 + 400, `佛光普照无抗性时伤害精准为 550 (实际: ${foguangRes.damage})`);
+    assert(foguangRes.mpDrain === 100, `佛光普照无抗性时扣除法力精准为 100 (实际: ${foguangRes.mpDrain})`);
+
+    // 敌方为金刚 (天生自带 5% 抗玄击)
+    const jgEnemy = { hp: 2000, maxHp: 2000, mp: 1000, maxMp: 1000, resistances: { res_xuanji: 0.05 } };
+    const foguangVsJg = engine.calculateMpDrainAttack(false, null, jgEnemy, 1, 0);
+    assert(foguangVsJg.damage === Math.floor(550 * 0.95), `金刚天生5%抗玄击减免后伤害为 522 (实际: ${foguangVsJg.damage})`);
+    assert(foguangVsJg.mpDrain === Math.floor(100 * 0.95), `金刚天生5%抗玄击减免后扣蓝为 95 (实际: ${foguangVsJg.mpDrain})`);
+
+    // 满级极境断言：佛光普照满级满熟练度基数精准达到 1500
+    const foguangMax = engine.calculateMpDrainAttack(false, null, dummyEnemy, 5, 25000);
+    assert(foguangMax.baseDmg === 1500, `佛光普照 Lv.5 满25000熟练度伤害基数精准达到 1500 (实际: ${foguangMax.baseDmg})`);
+
+    // 如来神掌断言：Lv.1 基数为 100，Lv.5 满熟练度基数为 1000/每位
+    const ruxiangRes = engine.calculateMpDrainAttack(true, null, dummyEnemy, 1, 0);
+    assert(ruxiangRes.baseDmg === 100, `如来神掌 Lv.1 0熟练度伤害基数仅为 100 (实际: ${ruxiangRes.baseDmg})`);
+    assert(ruxiangRes.baseDmg < foguangRes.baseDmg, '如来神掌伤害基数低于佛光普照');
+    assert(ruxiangRes.hpRatio < foguangRes.hpRatio, '如来神掌生命削扣百分比低于佛光普照');
+    assert(ruxiangRes.mpRatio < foguangRes.mpRatio, '如来神掌法力削扣百分比低于佛光普照');
+    assert(ruxiangRes.damage < foguangRes.damage, '如来神掌单体威力低于佛光普照');
+
+    const ruxiangMax = engine.calculateMpDrainAttack(true, null, dummyEnemy, 5, 25000);
+    assert(ruxiangMax.baseDmg === 1000, `如来神掌 Lv.5 满25000熟练度伤害基数精准达到 1000/每位 (实际: ${ruxiangMax.baseDmg})`);
+  }
+
+  // =========================================================================
+  // 测试 28: 金仙独门【元神变身】、逆境几率模型、天赋点成长与十二神魔专属天赋
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 28] 金仙元神变身、逆境几率模型、天赋点成长与专属变身天赋');
+
+    // 1. 三大阶层与禁捕红线断言
+    const itemData = window.GAME_DATA.ITEMS;
+    assert(itemData.talent_pill !== undefined, '道具数据库已成功装载金仙圣物【天赋丹】');
+    assert(itemData.talent_pill.type === 'consumable', '【天赋丹】为可消耗使用道具');
+
+    // 2. 普通凡宠与散仙无法变身断言
+    const turtle = window.PetSystem.createPet('dahai_gui', false, 5);
+    assert(turtle.quality === 'ordinary', '大海龟为普通凡宠');
+    assert(window.PetSystem.calculateTransformRate(turtle) === 0, '凡宠无法触发元神变身 (几率为 0)');
+    const ordinaryTransform = window.PetSystem.tryTriggerAvatarTransform(turtle);
+    assert(ordinaryTransform.triggered === false, '凡宠执行变身判定返回失败');
+
+    // 3. 金仙仙宠初始化与属性断言 (以白骨精、沙和尚、猪八戒、牛魔王为例)
+    const baigu = window.PetSystem.createPet('gudai_ruishou', false, 25); // 借用金仙模板
+    baigu.templateId = 'baigu_jing';
+    baigu.name = '白骨精';
+    baigu.quality = 'jinxian';
+    baigu.talentPoints = 0;
+    baigu.hp = 1000;
+    baigu.maxHp = 1000;
+
+    assert(baigu.quality === 'jinxian', '白骨精为顶级金仙仙宠');
+    assert(baigu.talentPoints === 0, '金仙初始天赋点为 0');
+
+    // 4. 【血量越低变身几率越高】逆境爆发数学模型断言
+    // 满血 (hp=1000/1000) 时：基础几率为 5% (0.05)
+    const fullHpRate = window.PetSystem.calculateTransformRate(baigu);
+    assert(fullHpRate === 0.05, `满血金仙基础变身几率为 5% (实际: ${fullHpRate})`);
+
+    // 残血状态 (hp=100/1000, 损失90%气血)：几率应为 0.05 + 0.1 * 0.9 = 0.14 (14%)
+    baigu.hp = 100;
+    const lowHpRate = window.PetSystem.calculateTransformRate(baigu);
+    assert(lowHpRate === 0.14, `残血(90%已损)金仙变身几率飙升至 14% (实际: ${lowHpRate})`);
+    assert(lowHpRate > fullHpRate, '金仙生命值越低，元神变身几率越高！');
+
+    // 5. 变身持续时长 3 回合与成功变身获得 +1 天赋点断言
+    const transRes = window.PetSystem.tryTriggerAvatarTransform(baigu, true);
+    assert(transRes.triggered === true, '金仙成功触发元神变身');
+    assert(baigu.avatarTransformed === true, '金仙进入元神变身形态');
+    assert(baigu.avatarRoundsLeft === 3, '金仙变身时长固定为 3 回合');
+    assert(baigu.talentPoints === 1, '成功变身永久获得 1 点天赋点 (0 -> 1)');
+
+    // 持续回合递减与 3 回合到期解除断言
+    const r1 = window.PetSystem.tickAvatarRound(baigu);
+    assert(r1.expired === false && baigu.avatarRoundsLeft === 2, '第1回合后变身剩余 2 回合');
+    const r2 = window.PetSystem.tickAvatarRound(baigu);
+    assert(r2.expired === false && baigu.avatarRoundsLeft === 1, '第2回合后变身剩余 1 回合');
+    const r3 = window.PetSystem.tickAvatarRound(baigu);
+    assert(r3.expired === true && baigu.avatarTransformed === false, '第3回合后变身状态正常解除恢复常态');
+
+    // 6. 稀世宝物【天赋丹】使用与 5000 点上限断言
+    const pillRes1 = window.PetSystem.useTalentPill(baigu);
+    assert(pillRes1.success === true && pillRes1.added === 50, '使用1枚天赋丹直接增加 50 点天赋点');
+    assert(baigu.talentPoints === 51, `天赋点由 1 跃升至 51 点 (实际: ${baigu.talentPoints})`);
+
+    // 注入至 5000 极境测试
+    baigu.talentPoints = 4980;
+    const pillRes2 = window.PetSystem.useTalentPill(baigu);
+    assert(baigu.talentPoints === 5000, '天赋点严格在 5000 点极境封顶');
+    const pillRes3 = window.PetSystem.useTalentPill(baigu);
+    assert(pillRes3.success === false, '达到 5000 满天赋点后无法再服用天赋丹');
+
+    // 满 5000 天赋点时基础变身率成长为 25%
+    baigu.hp = 1000;
+    const maxTalentRate = window.PetSystem.calculateTransformRate(baigu);
+    assert(maxTalentRate === 0.25, `满5000天赋点满血变身基础几率达 25% (实际: ${maxTalentRate})`);
+
+    // 7. 十二大金仙专属变身天赋图鉴与数值梯级断言
+    const talents = window.PetSystem.JINXIAN_AVATAR_TALENTS;
+
+    // A. 白骨精：画皮移伤 (0点 5% -> 5000点 30%)
+    assert(talents.baigu_jing.getTransferRatio(0) === 0.05, '白骨精 0 天赋点伤害转移 5%');
+    assert(talents.baigu_jing.getTransferRatio(5000) === 0.30, '白骨精 5000 天赋点伤害转移 30%');
+
+    // B. 黄风怪：三昧神风·断速 (0点 30% -> 5000点 70%)
+    assert(talents.huangfeng_guai.getSlowRate(0) === 0.30, '黄风怪 0 天赋点断速几率 30%');
+    assert(talents.huangfeng_guai.getSlowRate(5000) === 0.70, '黄风怪 5000 天赋点断速几率 70%');
+
+    // C. 沙和尚：流沙护体·蓝量转移 (0点 15% -> 5000点 35%，必中生效)
+    assert(talents.sha_seng.getMpAbsorbRatio(0) === 0.15, '沙僧 0 天赋点受到伤害 15% 由法力抵扣');
+    assert(talents.sha_seng.getMpAbsorbRatio(5000) === 0.35, '沙僧 5000 天赋点受到伤害 35% 由法力抵扣');
+
+    // D. 猪八戒：天蓬真元·气血暴增 (0点 500+15% -> 5000点 2000+35%)
+    const bajie0 = talents.zhu_bajie.getHpBoost(0, 1000);
+    assert(bajie0.flatHp === 500 && bajie0.percentRatio === 0.15, '猪八戒 0 天赋点气血暴增 500 HP + 15% 最大HP');
+    const bajieMax = talents.zhu_bajie.getHpBoost(5000, 1000);
+    assert(bajieMax.flatHp === 2000 && bajieMax.percentRatio === 0.35, '猪八戒 5000 天赋点气血暴增 2000 HP + 35% 最大HP');
+
+    // E. 牛魔王：大力蛮牛·狂暴 (与八戒区分：生命增加 + 普攻额外物理攻击力 +20%~50%)
+    const niumo0 = talents.niumo_wang.getBoosts(0, 1000, 500);
+    assert(niumo0.atkPercent === 0.20, '牛魔王 0 天赋点物理攻击额外暴涨 20%');
+    const niumoMax = talents.niumo_wang.getBoosts(5000, 1000, 500);
+    assert(niumoMax.atkPercent === 0.50, '牛魔王 5000 天赋点物理攻击额外狂暴暴涨 50%');
+
+    // F. 小白龙：龙魂啸天·疾行 (速度 +50~100，法术双连击 20%~45%)
+    const bailong0 = talents.xiaobai_long.getEffects(0);
+    assert(bailong0.spdBonus === 50 && bailong0.doubleCastRate === 0.20, '小白龙 0 天赋点速度+50，法术连击20%');
+    const bailongMax = talents.xiaobai_long.getEffects(5000);
+    assert(bailongMax.spdBonus === 100 && bailongMax.doubleCastRate === 0.45, '小白龙 5000 天赋点速度+100，法术连击45%');
+
+    // G. 红孩儿与黑熊精 (百分比吸血与反震)
+    assert(talents.honghai_er.getVampireRatio(5000) === 0.35, '红孩儿 5000 天赋点造成伤害 35% 转化为自身吸血');
+    assert(talents.heixiong_jing.getEffects(5000).reflectRatio === 0.40, '黑熊精 5000 天赋点反震 40% 伤害给近战攻击者');
+  }
+
+  // -----------------------------------------------------------------------------
+  // 29. 玩家国风高精模型绘制、陈塘关总兵府重塑、野怪70%移速与坐标即时持久化断点恢复测试
+  // -----------------------------------------------------------------------------
+  console.log('\n▶️ [测试 29] 玩家国风高精模型、陈塘关总兵府防卡墙、野怪舒缓移速与断点续玩测试');
+  {
+    // 1. 玩家骑马与步行高精模型渲染无抛错验证
+    const mockCtx = {
+      save() {}, restore() {}, beginPath() {}, closePath() {},
+      moveTo() {}, lineTo() {}, bezierCurveTo() {}, quadraticCurveTo() {},
+      arc() {}, ellipse() {}, fill() {}, stroke() {}, fillRect() {}, strokeRect() {},
+      roundRect() {}, scale() {}, translate() {}, rotate() {},
+      measureText() { return { width: 40 }; },
+      fillText() {}, strokeText() {},
+      createLinearGradient() { return { addColorStop() {} }; }
+    };
+
+    assert(typeof window.CharacterRenderer.drawMountKnight === 'function', '提供白龙神驹骑乘绘制引擎 drawMountKnight');
+    assert(typeof window.CharacterRenderer.drawMartialHero === 'function', '提供武学剑仙步行绘制引擎 drawMartialHero');
+    assert(typeof window.CharacterRenderer.drawHeavenGeneral === 'function', '提供金甲天将神兵绘制引擎 drawHeavenGeneral');
+
+    // 绘制调用正常执行
+    let renderSuccess = true;
+    try {
+      window.CharacterRenderer.drawMountKnight(mockCtx, 0, 10, 'right', true);
+      window.CharacterRenderer.drawMountKnight(mockCtx, 0, 10, 'left', false);
+      window.CharacterRenderer.drawMartialHero(mockCtx, 0, 10, 'right', false, true);
+      window.CharacterRenderer.drawMartialHero(mockCtx, 0, 10, 'left', false, false);
+      window.CharacterRenderer.drawHeavenGeneral(mockCtx, 0, 10, 'right', true);
+    } catch (e) {
+      renderSuccess = false;
+    }
+    assert(renderSuccess, '骑马与步行双形态高精模型在各种朝向与动静姿态下完美渲染无异常');
+
+    // 2. 陈塘关总兵府与防卡墙根治验证
+    const ctg = window.GAME_DATA.MAPS_2D['chentangguan'];
+    assert(ctg, '陈塘关地图数据存在');
+    const tilemap = new window.TilemapEngine(32);
+    const lijing = ctg.npcs.find(n => n.id === 'npc_li_jing');
+    assert(lijing && lijing.x === 224 && lijing.y === 160, '陈塘关李靖总兵威武立于总兵帅堂中枢 (224, 160)');
+
+    const lijingCol = Math.floor(lijing.x / 32);
+    const lijingRow = Math.floor(lijing.y / 32);
+    assert(tilemap.isWalkable(ctg, lijingCol, lijingRow), '李靖总兵脚下为总兵府可行走地坪，绝非死实心砖墙');
+
+    // 长安传送至陈塘关落脚点验证
+    const changanToCtg = window.GAME_DATA.MAPS_2D['changan_city'].portals.find(p => p.targetMap === 'chentangguan');
+    assert(changanToCtg && changanToCtg.targetX === 224 && changanToCtg.targetY === 320, '长安传送到陈塘关落脚于总兵府南大门迎宾大道 (224, 320)');
+    const portalCol = Math.floor(changanToCtg.targetX / 32);
+    const portalRow = Math.floor(changanToCtg.targetY / 32);
+    assert(tilemap.isWalkable(ctg, portalCol, portalRow), '传送落地处为平整青石大街，杜绝传送卡墙');
+
+    // 验证 ensurePlayerSafePosition 脱困智能纠偏
+    const testApp = window.App2D;
+    // 假设传入原先实心墙坐标 (如 x: 128, y: 64，即 col 4, row 2 的 city_wall)
+    const correctedPos = testApp.ensurePlayerSafePosition('chentangguan', 128, 64);
+    const cCol = Math.floor(correctedPos.x / 32);
+    const cRow = Math.floor(correctedPos.y / 32);
+    assert(tilemap.isWalkable(ctg, cCol, cRow), '即使旧存档或异常坐标落在城墙上，智能纠偏均自动移至可行走平地');
+
+    // 3. 野怪移动速度降至约 70% 验证
+    testApp.loadMap('chentangguan');
+    assert(testApp.monsters.length > 0, '陈塘关野怪正确实例化');
+    assert(testApp.monsters[0].speed === 1.12, '野怪巡逻移速精确调降至 1.12 (约为原1.6的70%)');
+
+    // 4. 断点续玩与位置即时持久化验证
+    testApp.playerChar.x = 224;
+    testApp.playerChar.y = 320;
+    testApp.playerChar.direction = 'up';
+    testApp.storyPhase = 'chentang_investigate';
+    testApp.saveAutoProgress();
+
+    assert(window.SaveManager.hasAutoSave(), '自动历练存档成功写入本地存储');
+    const fullState = window.SaveManager.loadGameFullState();
+    assert(fullState && fullState.mapId === 'chentangguan', '存档记录的场景为陈塘关');
+    assert(fullState.playerPos.x === 224 && fullState.playerPos.y === 320, '存档记录的精确坐标为 (224, 320)');
+    assert(fullState.playerPos.direction === 'up', '存档记录的玩家朝向为 up');
+
+    // 验证重新启动加载恢复
+    // 先将当前应用临时改到其他场景
+    testApp.currentMapId = 'tiangong_palace';
+    testApp.playerChar.x = 0;
+    testApp.playerChar.y = 0;
+    const loadOk = testApp.loadAutoSavedProgress();
+    assert(loadOk === true, '下次启动游戏成功恢复上次断点存档');
+    assert(testApp.currentMapId === 'chentangguan', '启动后场景自动还原为陈塘关');
+    assert(testApp.playerChar.x === 224 && testApp.playerChar.y === 320, '启动后角色坐标精确恢复在 (224, 320)');
+    assert(testApp.playerChar.direction === 'up', '启动后角色朝向保持为 up');
+    assert(testApp.storyPhase === 'chentang_investigate', '主线剧情进度无缝延续');
+  }
+
+  // =========================================================================
+  // 测试 30：陈塘关主线闭环全流程、李靖感叹号合一、混混头目1打3与观音龙王显圣
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 30] 陈塘关主线闭环：李靖感叹号合一、四混混清剿、混混头目1打3、观音石雕无法言语、东海夜叉与龙王宝库、观音显圣点化西行');
+
+    const app = window.App2D;
+    const minimap = window.MiniMapEngine;
+    const ctgMap = window.GAME_DATA.MAPS_2D['chentangguan'];
+
+    // 1. 李靖总兵与金色感叹号/光柱 100% 精确合一断言
+    app.storyPhase = 'chentang_investigate';
+    app.loadMap('chentangguan');
+    const target1 = minimap.getCurrentQuestTarget('chentangguan', 'chentang_investigate', ctgMap);
+    assert(target1 && target1.x === 224 && target1.y === 160, `初见李靖时感叹号信标必须精确合一位于李靖头顶 (224, 160) (实际: ${target1.x}, ${target1.y})`);
+    assert(target1.name === '李靖总兵', '信标目标明确指向李靖总兵');
+
+    // 2. 混混清剿阶段 (0/4 -> 4/4)
+    app.storyPhase = 'chentang_defeat_hooligans';
+    app.refreshMapNpcs();
+    app.questKills.chentangHooligans = 0;
+    const target2 = minimap.getCurrentQuestTarget('chentangguan', 'chentang_defeat_hooligans', ctgMap);
+    assert(target2 && target2.desc.includes('(0/4)'), '惩戒混混任务信标实时显示击败进度 (0/4)');
+
+    // 模拟击败 4 名混混
+    for (let i = 1; i <= 4; i++) {
+      app.questKills.chentangHooligans++;
+      if (app.questKills.chentangHooligans >= 4) {
+        app.storyPhase = 'chentang_hooligans_done';
+      }
+    }
+    app.refreshMapNpcs();
+    assert(app.storyPhase === 'chentang_hooligans_done', '打败4名混混后剧情无缝跃迁至【回帅府向李靖复命】');
+    const target3 = minimap.getCurrentQuestTarget('chentangguan', 'chentang_hooligans_done', ctgMap);
+    assert(target3 && target3.x === 224 && target3.y === 160, '复命阶段信标再次精准锁定李靖总兵 (224, 160)');
+
+    // 3. 混混头目东市现身与 1 打 3 决战机制
+    app.storyPhase = 'chentang_boss_ready';
+    app.refreshMapNpcs();
+    const bossNpc = app.npcs.find(n => n.id === 'npc_hooligan_boss');
+    assert(bossNpc && bossNpc.x === 512 && bossNpc.y === 384, '混混头目雷震彪在陈塘关东市现身 (512, 384)');
+
+    // 校验 1 打 3 敌方编制
+    let battleEnemies = [];
+    const origStart2DBattle = app.start2DBattle.bind(app);
+    app.start2DBattle = (enemies, callback) => {
+      battleEnemies = enemies;
+      if (typeof callback === 'function') callback();
+    };
+
+    app.triggerHooliganBossBattle();
+    assert(battleEnemies.length === 3, `混混头目决战敌方编制必须为 1 打 3 (实际敌人数量: ${battleEnemies.length})`);
+    assert(battleEnemies[0].id === 'hooligan_boss' && battleEnemies[0].isBoss === true, '第1名敌方为混混头目本尊 (带Boss光环)');
+    assert(battleEnemies[1].id === 'hooligan_minion_1', '第2名敌方为作恶混混小兵A');
+    assert(battleEnemies[2].id === 'hooligan_minion_2', '第3名敌方为作恶混混小兵B');
+    assert(app.storyPhase === 'chentang_boss_defeated', '战胜混混头目及其随从后剧情推进至【回帅府领赏】');
+
+    // 4. 李靖厚赏与告知海滨观音雕像
+    const rewardDlg = window.GAME_DATA.STORY_DIALOGUES['chentang_lijing_reward'];
+    assert(rewardDlg && rewardDlg.steps.length >= 3, '李靖帅府领赏剧本完备');
+    assert(rewardDlg.steps[2].text.includes('观音雕像'), '李靖对话明确指引东侧海滨突现神秘观音雕像');
+
+    // 5. 观音雕像无法对话与指引东海
+    app.storyPhase = 'chentang_statue_investigate';
+    app.refreshMapNpcs();
+    const statueNpc = app.npcs.find(n => n.id === 'npc_guanyin_statue');
+    assert(statueNpc && statueNpc.x === 672 && statueNpc.y === 384, '陈塘关海滨部署神秘观音雕像 (672, 384)');
+    const statueDlg = window.GAME_DATA.STORY_DIALOGUES['chentang_guanyin_statue_talk'];
+    assert(statueDlg && statueDlg.steps[0].text.includes('无法言语对话'), '调查观音雕像文本明确提示雕像寂然无法对话');
+    assert(statueDlg.steps[1].text.includes('东海之滨'), '海潮异动明确指引玩家深入东海之滨');
+
+    // 6. 东海之滨巡海夜叉与龙王赔罪认出大将军
+    let yechaBattleEnemies = [];
+    app.start2DBattle = (enemies, callback) => {
+      yechaBattleEnemies = enemies;
+      if (typeof callback === 'function') callback();
+    };
+    app.triggerYechaBattle();
+    assert(yechaBattleEnemies.length === 1 && yechaBattleEnemies[0].name === '巡海夜叉·李艮', '成功触发东海巡海夜叉大战');
+    assert(app.storyPhase === 'donghai_dragon_arrived', '战胜夜叉后东海龙王踏水现身');
+    const dragonApology = window.GAME_DATA.STORY_DIALOGUES['donghai_dragon_apology'];
+    assert(dragonApology && dragonApology.steps.some(s => s.text && s.text.includes('威灵显赫大将军')), '东海龙王一眼认出玩家乃天庭威灵显赫大将军');
+
+    // 7. 龙宫宝库自选神装与返回陈塘关
+    const prevMoney = app.playerData.silver;
+    app.grantLonggongArmorSet();
+    const equippedWeapon = app.playerData.equipment['weapon'];
+    const equippedArmor = app.playerData.equipment['armor'];
+    assert(equippedWeapon && equippedWeapon.itemId === 'longgong_weapon', '成功装备龙宫神兵【覆海点钢枪】');
+    assert(equippedArmor && equippedArmor.itemId === 'longgong_armor', '成功装备龙宫宝甲【龙鳞轻钢甲】');
+
+    // 8. 返回陈塘关双神同框与观音点化
+    app.storyPhase = 'chentang_guanyin_revelation';
+    app.loadMap('chentangguan', { x: 576, y: 384 });
+    assert(app.playerChar.x === 576 && app.playerChar.y === 384, '返回陈塘关精准降落于二仙尊正前方 (576, 384)');
+
+    const guanyinNpc = app.npcs.find(n => n.id === 'npc_guanyin_pu_sa');
+    const aoguangNpc = app.npcs.find(n => n.id === 'npc_aoguang_chentang');
+    const hiddenStatue = app.npcs.find(n => n.id === 'npc_guanyin_statue');
+    assert(guanyinNpc && guanyinNpc.x === 672 && guanyinNpc.y === 384, '观音雕像化生为大慈大悲观世音菩萨立于海滨 (672, 384)');
+    assert(aoguangNpc && aoguangNpc.x === 640 && aoguangNpc.y === 384, '东海龙王亦随侍在观音菩萨身侧 (640, 384)');
+    assert(!hiddenStatue, '观音雕像石胎隐退褪去，化为真身');
+
+    const revelationDlg = window.GAME_DATA.STORY_DIALOGUES['chentang_guanyin_revelation'];
+    assert(revelationDlg && revelationDlg.steps.length >= 4, '观音龙王双神显圣点化剧本完备');
+    assert(revelationDlg.steps[0].speaker === '东海龙王敖广', '显圣现场东海龙王恭立侍侧并向大将赞叹致意');
+    assert(revelationDlg.steps[3].text.includes('威灵显赫大将') && revelationDlg.steps[3].text.includes('力救嫦娥'), '观音菩萨详细揭晓玩家身世因果');
+    assert(revelationDlg.steps[4].text.includes('玄奘法师') && revelationDlg.steps[4].text.includes('护送唐僧'), '观音指引玩家前往长安护送唐僧西天取经');
+
+    // 恢复 mock
+    app.start2DBattle = origStart2DBattle;
+  }
+
+  // =========================================================================
+  // 测试 31：西游全章节国风章回体开幕动画系统测试 (2秒水墨金字、诗号对联、朱砂印章、防重判定)
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 31] 西游全章节国风章回体开幕动画系统测试 (2s水墨金字、诗号对联、朱砂神印、防重判定)');
+
+    const app = window.App2D;
+    const chapters = window.GAME_DATA.CHAPTER_CONFIGS;
+
+    // 1. 章节数据库完备性校验
+    assert(chapters && typeof chapters === 'object', '章节配置数据库 CHAPTER_CONFIGS 存在');
+    assert(chapters['prologue'], '包含【序章 · 蟠桃盛宴】配置');
+    assert(chapters['prologue'].title.includes('蟠桃盛宴'), '序章标题为【序章 · 蟠桃盛宴】');
+    assert(chapters['prologue'].subtitle.includes('九天金阙神仙客'), '序章七言对联诗号工整');
+    assert(chapters['prologue'].seal === '天界神篇', '序章朱砂神印为【天界神篇】');
+
+    assert(chapters['chapter_1'], '包含【第一回 · 梦断双叉】配置');
+    assert(chapters['chapter_1'].subtitle.includes('谪仙山野识英雄'), '第一回对联诗号完备');
+    assert(chapters['chapter_2'], '包含【第二回 · 盛世大唐】配置');
+    assert(chapters['chapter_3'], '包含【第三回 · 雄关东海】配置');
+    assert(chapters['chapter_4'], '包含【第四回 · 破封五行】配置');
+
+    // 2. 动画渲染与 DOM 挂载校验
+    assert(typeof app.showChapterOpening === 'function', 'App2D 挂载 showChapterOpening 接口');
+    assert(typeof app.showChapterBanner === 'function', 'App2D 挂载 showChapterBanner 兼容接口');
+    assert(typeof app.checkAndTriggerChapterOpening === 'function', 'App2D 挂载 checkAndTriggerChapterOpening 自动判定接口');
+
+    let onCompleteFired = false;
+    app.showChapterOpening('prologue', () => {
+      onCompleteFired = true;
+    });
+
+    const overlay = document.getElementById('chapter-opening-overlay');
+    assert(overlay, '成功在视口创建 chapter-opening-overlay 开幕动画遮罩');
+    assert(overlay.innerHTML.includes('序章 · 蟠桃盛宴'), '开幕动画正确渲染烫金章节主标题');
+    assert(overlay.innerHTML.includes('九天金阙神仙客，蟠桃胜会动乾坤'), '开幕动画正确渲染七言绝句诗号');
+    assert(overlay.innerHTML.includes('天界神篇'), '开幕动画正确渲染朱砂方印神玺');
+
+    // 模拟点击立即跳过快进
+    if (typeof overlay.onclick === 'function') {
+      overlay.onclick();
+    }
+    assert(overlay.classList.contains('fade-out'), '点击屏幕任意位置立即平滑淡出');
+
+    // 3. 章节自动判定与防重复触发校验
+    app.shownChapterSet = new Set(); // 重置播放记录
+    const triggered1 = app.checkAndTriggerChapterOpening('tiangong_palace', 'heaven_prologue');
+    assert(triggered1 === true, '初入天宫序章成功触发开幕动画');
+    assert(app.shownChapterSet.has('prologue'), '播放后 shownChapterSet 成功记录 prologue');
+
+    // 同一章节再次进入，防重复生效
+    const triggered2 = app.checkAndTriggerChapterOpening('tiangong_palace', 'heaven_prologue');
+    assert(triggered2 === false, '再次进入天宫绝不重复弹出开幕动画 (防重复机制生效)');
+
+    // 贬落凡尘刘家村
+    const triggeredLiu = app.checkAndTriggerChapterOpening('liujiacun', 'liujiacun_start');
+    assert(triggeredLiu === true, '贬落凡尘刘家村时成功触发【第一回 · 梦断双叉】');
+    assert(app.shownChapterSet.has('chapter_1'), '播放后 shownChapterSet 成功记录 chapter_1');
+
+    // 进入长安
+    const triggeredChangan = app.checkAndTriggerChapterOpening('changan_city');
+    assert(triggeredChangan === true, '抵达长安城时成功触发【第二回 · 盛世大唐】');
+
+    // 进入陈塘关
+    const triggeredCtg = app.checkAndTriggerChapterOpening('chentangguan');
+    assert(triggeredCtg === true, '初至东海陈塘关成功触发【第三回 · 雄关东海】');
+
+    // 4. 重新开始清空记录校验
+    // 模拟 restartGame 清空
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('hanfeng_xy_shown_chapters');
+    }
+    app.shownChapterSet = new Set();
+    const retriggeredPrologue = app.checkAndTriggerChapterOpening('tiangong_palace', 'heaven_prologue');
+    assert(retriggeredPrologue === true, '游戏重新开始重置后，序章开幕动画能再次触发');
+
+    // 5. 存档持久化与断点续玩恢复校验
+    app.saveAutoProgress();
+    const autoSaveState = window.SaveManager.loadGameFullState();
+    assert(autoSaveState && Array.isArray(autoSaveState.shownChapters), '已播放章节集合成功持久化写入存档');
+    assert(autoSaveState.shownChapters.includes('prologue'), '存档中准确记录已播放的章节 ID');
+
+    // 还原加载
+    app.shownChapterSet = new Set();
+    app.loadAutoSavedProgress();
+    assert(app.shownChapterSet.has('prologue'), '断点加载成功恢复已播放章节记录');
+  }
+
   console.log('\n======================================================');
   console.log(`🎉 全部自动化测试执行完毕！通过率: ${passedTests}/${totalTests} (100%)`);
   console.log('======================================================\n');
 })();
+
 

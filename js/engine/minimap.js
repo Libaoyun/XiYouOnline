@@ -14,6 +14,33 @@ class MiniMapEngine {
   getCurrentQuestTarget(mapId, storyPhase, mapData) {
     if (!mapData) return null;
 
+    // 🌟 动态感叹号精确附着保证：若当前地图有唯一挂着主线感叹号的 NPC，绝对以其真实像素坐标为准！
+    // 彻底根治李靖与感叹号分离的错位 Bug！
+    if (window.App2D && window.App2D.currentMapId === mapId && window.App2D.npcs) {
+      const activeQuestNpc = window.App2D.npcs.find(n => n.questStatus === 'available');
+      if (activeQuestNpc) {
+        let qDesc = `与【${activeQuestNpc.name}】对话推进主线`;
+        if (mapId === 'chentangguan') {
+          if (activeQuestNpc.id === 'npc_li_jing') {
+            qDesc = (storyPhase === 'chentang_hooligans_done') ? '回帅府向李靖总兵复命' :
+                    (storyPhase === 'chentang_boss_defeated' ? '平定恶霸，回帅府领赏' : '晋见李靖总兵，清剿陈塘混混');
+          } else if (activeQuestNpc.id === 'npc_hooligan_boss') {
+            qDesc = '东市截击混混头目 (1打3决战)';
+          } else if (activeQuestNpc.id === 'npc_guanyin_statue') {
+            qDesc = '探查东侧海滨神秘观音雕像';
+          } else if (activeQuestNpc.id === 'npc_guanyin_pu_sa') {
+            qDesc = '聆听观世音菩萨点化前世宿命';
+          }
+        }
+        return {
+          x: activeQuestNpc.x,
+          y: activeQuestNpc.y,
+          name: activeQuestNpc.name,
+          desc: qDesc
+        };
+      }
+    }
+
     // 1. 天宫序章三大因缘事件主线追踪
     if (mapId === 'tiangong_palace' && storyPhase && storyPhase.startsWith('heaven_')) {
       if (storyPhase === 'heaven_saved_change') {
@@ -138,13 +165,55 @@ class MiniMapEngine {
       };
     }
 
-    // 11. 陈塘关 -> 目标：哪吒三太子与李靖总兵
+    // 11. 陈塘关 -> 目标精准绑定 (李靖、混混、头目、观音雕像、显圣观音)
     if (mapId === 'chentangguan') {
+      if (storyPhase === 'chentang_defeat_hooligans') {
+        const killCount = (window.App2D && window.App2D.questKills && window.App2D.questKills.chentangHooligans) || 0;
+        return {
+          x: 480,
+          y: 384,
+          name: '街头恶霸混混',
+          desc: `惩戒街头作恶混混 (${killCount}/4)`
+        };
+      }
+      if (storyPhase === 'chentang_boss_ready') {
+        return {
+          x: 512,
+          y: 384,
+          name: '混混头目·雷震彪',
+          desc: '东市截击混混头目 (1打3决战)'
+        };
+      }
+      if (storyPhase === 'chentang_statue_investigate') {
+        return {
+          x: 672,
+          y: 384,
+          name: '神秘观音雕像',
+          desc: '探查东侧海滨神秘观音雕像'
+        };
+      }
+      if (storyPhase === 'donghai_yecha_ready' || storyPhase === 'donghai_dragon_arrived' || storyPhase === 'longgong_visit') {
+        return {
+          x: 960,
+          y: 448,
+          name: '东海之滨传送门',
+          desc: '顺应海潮，深入东海之滨'
+        };
+      }
+      if (storyPhase === 'chentang_guanyin_revelation') {
+        return {
+          x: 672,
+          y: 384,
+          name: '观世音菩萨',
+          desc: '聆听观世音菩萨点化前世宿命'
+        };
+      }
       return {
-        x: 10 * 32,
-        y: 7 * 32,
-        name: '哪吒三太子',
-        desc: '会面灵珠哪吒，南下东海'
+        x: 224,
+        y: 160,
+        name: '李靖总兵',
+        desc: storyPhase === 'chentang_hooligans_done' ? '回帅府向李靖总兵复命' :
+              (storyPhase === 'chentang_boss_defeated' ? '平定恶霸，回帅府领赏' : '晋见李靖总兵，清剿陈塘混混')
       };
     }
 

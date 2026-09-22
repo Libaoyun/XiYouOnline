@@ -192,14 +192,23 @@ class Character {
 
     ctx.save();
 
-    // 1. 脚底神话柔光影子与仙家气脉
-    ctx.fillStyle = 'rgba(10, 8, 6, 0.45)';
-    ctx.beginPath();
-    ctx.ellipse(screenX, screenY + this.height / 2 - 2, 14, 5.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    const isMushroom = (this.appearance === 'mushroom' || this.id.startsWith('prop_mushroom_') || this.name.includes('蘑菇'));
+
+    // 1. 脚底神话柔光影子与仙家气脉 (植物道具使用轻量贴地草木微影)
+    if (isMushroom) {
+      ctx.fillStyle = 'rgba(15, 30, 10, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(screenX, screenY + 11, 14, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(10, 8, 6, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(screenX, screenY + this.height / 2 - 2, 14, 5.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // 仙家祥云脚下灵环 (主角神仙形态或骑乘时)
-    if (this.appearance === 'heaven_general' || this.isRiding) {
+    if (!isMushroom && (this.appearance === 'heaven_general' || this.isRiding)) {
       const ringAlpha = 0.3 + Math.sin(this.animTimer * 0.1) * 0.2;
       ctx.strokeStyle = `rgba(255, 215, 0, ${ringAlpha})`;
       ctx.lineWidth = 1.2;
@@ -208,41 +217,70 @@ class Character {
       ctx.stroke();
     }
 
-    // 2. NPC 交互神道金光法阵光环 (带有流转旋转脉冲)
+    // 2. NPC / 道具 交互光环与悬浮气泡
     if (this.type === 'npc') {
-      const auraPulse = Math.sin(this.animTimer * 0.12) * 2;
-      const baseAlpha = isPlayerNear ? 0.85 : 0.4;
-      ctx.strokeStyle = isPlayerNear ? '#ffd700' : 'rgba(212, 175, 55, 0.45)';
-      ctx.lineWidth = isPlayerNear ? 2 : 1;
-      ctx.beginPath();
-      ctx.ellipse(screenX, screenY + this.height / 2 - 2, 18 + auraPulse, 7.5 + auraPulse * 0.4, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      if (isMushroom) {
+        // 野生灵芝蘑菇：植物地脉灵光微晕，绝非人形神道法阵
+        if (isPlayerNear) {
+          ctx.strokeStyle = 'rgba(76, 209, 55, 0.75)';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(screenX, screenY + 11, 16, 5.5, 0, 0, Math.PI * 2);
+          ctx.stroke();
 
-      if (isPlayerNear) {
-        // 内圈太极/星芒光环
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.lineWidth = 1;
+          // 悬浮采摘提示气泡 (🍄 空格采摘)
+          const bubbleY = screenY - 26 + Math.sin(Date.now() / 180) * 2;
+          ctx.save();
+          ctx.fillStyle = 'rgba(20, 35, 20, 0.92)';
+          ctx.strokeStyle = '#4cd137';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.roundRect(screenX - 36, bubbleY - 8, 72, 17, 8);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = 'bold 9.5px "Microsoft YaHei", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#fffa65';
+          ctx.fillText('🍄 空格采摘', screenX, bubbleY + 0.5);
+          ctx.restore();
+        }
+      } else {
+        const auraPulse = Math.sin(this.animTimer * 0.12) * 2;
+        const baseAlpha = isPlayerNear ? 0.85 : 0.4;
+        ctx.strokeStyle = isPlayerNear ? '#ffd700' : 'rgba(212, 175, 55, 0.45)';
+        ctx.lineWidth = isPlayerNear ? 2 : 1;
         ctx.beginPath();
-        ctx.ellipse(screenX, screenY + this.height / 2 - 2, 13, 5.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(screenX, screenY + this.height / 2 - 2, 18 + auraPulse, 7.5 + auraPulse * 0.4, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 悬浮交谈提示气泡
-        const bubbleY = screenY - 42 + Math.sin(Date.now() / 180) * 2.5;
-        ctx.save();
-        ctx.fillStyle = 'rgba(25, 18, 12, 0.92)';
-        ctx.strokeStyle = '#ffd700';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.roundRect(screenX - 35, bubbleY - 8, 70, 17, 8);
-        ctx.fill();
-        ctx.stroke();
+        if (isPlayerNear) {
+          // 内圈太极/星芒光环
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.ellipse(screenX, screenY + this.height / 2 - 2, 13, 5.5, 0, 0, Math.PI * 2);
+          ctx.stroke();
 
-        ctx.font = 'bold 9.5px "Microsoft YaHei", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText('💬 空格交谈', screenX, bubbleY + 0.5);
-        ctx.restore();
+          // 悬浮交谈提示气泡
+          const bubbleY = screenY - 42 + Math.sin(Date.now() / 180) * 2.5;
+          ctx.save();
+          ctx.fillStyle = 'rgba(25, 18, 12, 0.92)';
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.roundRect(screenX - 35, bubbleY - 8, 70, 17, 8);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = 'bold 9.5px "Microsoft YaHei", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#ffd700';
+          ctx.fillText('💬 空格交谈', screenX, bubbleY + 0.5);
+          ctx.restore();
+        }
       }
     }
 
@@ -274,6 +312,28 @@ class Character {
       ctx.lineWidth = 3;
       ctx.strokeText('！', screenX, questY);
       ctx.fillText('！', screenX, questY);
+    }
+
+    if (isMushroom) {
+      // 灵芝野蕈：精致清雅的草木单行标牌，绝不叠压厚重人名黑框
+      const shroomLabel = '🍄 ' + (this.name || '野生青蘑菇');
+      ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
+      const mMetrics = ctx.measureText(shroomLabel);
+      const mBgW = mMetrics.width + 12;
+      const mDrawY = headTopY + 2;
+
+      ctx.fillStyle = 'rgba(18, 38, 18, 0.78)';
+      ctx.beginPath();
+      ctx.roundRect(screenX - mBgW / 2, mDrawY - 7, mBgW, 14, 7);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(76, 209, 55, 0.65)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#a8ff78';
+      ctx.fillText(shroomLabel, screenX, mDrawY);
+      ctx.restore();
+      return;
     }
 
     // 4.2 专属称号 (若有则居于姓名上方)
@@ -450,7 +510,14 @@ class CharacterRenderer {
     const mId = (modelId || 'martial_hero').toLowerCase();
 
     // 模型派发分支
-    // 0. 特别优先：西海龙三太子·小白龙敖烈 (绝非龙虾！)
+    // 0. 特别绝密优先：野生青灵芝与鲜菇植物 (彻底独立，绝对不走任何人形逻辑！)
+    if (mId.includes('mushroom') || mId.includes('mogu') || mId.includes('lingzhi') || mId.includes('蕈') || mId.includes('菇')) {
+      CharacterRenderer.drawMushroom(ctx, by, animTimer);
+      ctx.restore();
+      return;
+    }
+
+    // 0.1 特别优先：西海龙三太子·小白龙敖烈 (绝非龙虾！)
     if (mId.includes('xiaobailong') || mId.includes('bailong_human') || mId.includes('aolie')) {
       CharacterRenderer.drawXiaoBaiLong(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('tudi') || mId.includes('tudi_gong')) {
@@ -513,7 +580,11 @@ class CharacterRenderer {
     } else if (mId.includes('panda') || mId.includes('xiong_mao') || mId.includes('xiongmao')) {
       CharacterRenderer.drawPandaHero(ctx, by, animTimer, direction, isActing, isMoving);
     } else if (mId.includes('hooligan') || mId.includes('hun_hun') || mId.includes('hunhun') || mId.includes('bandit') || mId.includes('tyrant')) {
-      CharacterRenderer.drawHooligan(ctx, by, animTimer, direction, isMoving);
+      if (mId.includes('boss')) {
+        CharacterRenderer.drawHooliganBoss(ctx, by, animTimer, direction, isMoving);
+      } else {
+        CharacterRenderer.drawHooligan(ctx, by, animTimer, direction, isMoving);
+      }
     } else if (mId.includes('clam') || mId.includes('beng') || mId.includes('蚌')) {
       CharacterRenderer.drawClam(ctx, by, animTimer, direction);
     } else if (mId.includes('crab') || mId.includes('xie') || mId.includes('蟹')) {
@@ -555,7 +626,11 @@ class CharacterRenderer {
     } else if (mId.includes('tang_seng') || mId.includes('taibai') || mId.includes('elder') || mId.includes('monk') || mId.includes('tangseng')) {
       CharacterRenderer.drawTangSeng(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('guanyin') || mId.includes('pusa')) {
-      CharacterRenderer.drawGuanyin(ctx, by, animTimer, direction);
+      if (mId.includes('statue') || mId.includes('diao_xiang') || mId.includes('diaoxiang')) {
+        CharacterRenderer.drawGuanyinStatue(ctx, by, animTimer, direction);
+      } else {
+        CharacterRenderer.drawGuanyin(ctx, by, animTimer, direction);
+      }
     } else if (mId.includes('baigu') || mId.includes('baigujing')) {
       CharacterRenderer.drawBaiguJing(ctx, by, animTimer, direction);
     } else if (mId.includes('hu_xianfeng') || mId.includes('huxianfeng')) {
@@ -564,6 +639,8 @@ class CharacterRenderer {
       CharacterRenderer.drawPetSnake(ctx, by, animTimer, direction);
     } else if (mId.includes('gui') || mId.includes('turtle') || mId.includes('dahai_gui')) {
       CharacterRenderer.drawPetTurtle(ctx, by, animTimer, direction);
+    } else if (mId.includes('mushroom') || mId.includes('mogu') || mId.includes('lingzhi') || mId.includes('芝')) {
+      CharacterRenderer.drawMushroom(ctx, by, animTimer);
     } else {
       CharacterRenderer.drawHeavenGeneral(ctx, by, animTimer, direction, isMoving);
     }
@@ -1810,172 +1887,502 @@ class CharacterRenderer {
 
     ctx.restore();
   }
+
+  // =========================================================================
+  // 3.3.1 陈塘关混混头目·雷震彪 (体格魁梧壮硕、烈火赤巾束额、赤裸古铜肌肉刺青、手持镔铁熟铜重棍)
+  // =========================================================================
+  static drawHooliganBoss(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    const flip = direction === 'left' ? -1 : 1;
+    ctx.scale(flip * 1.16, 1.16); // 魁梧霸道首领体魄
+    CharacterRenderer.drawHooligan(ctx, by, animTimer, 'right', isMoving);
+
+    // 专属首领煞气赤色披巾与金环熟铜重棍
+    ctx.save();
+    const headY = by - 10;
+    // 额前赤红怒火头带
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(-7.5, headY - 6, 15, 3.5);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(-2, headY - 5.5, 4, 2.5);
+
+    // 肩头背负的【镔铁熟铜棍】
+    ctx.translate(-10, by - 6);
+    ctx.rotate(0.45);
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(-2.5, -16, 5, 34);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-3.5, -16, 7, 4);
+    ctx.fillRect(-3.5, 14, 7, 4);
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(-2.5, -16, 5, 34);
+    ctx.restore();
+
+    ctx.restore();
+  }
+
   static drawMountKnight(ctx, by, animTimer, direction, isMoving) {
     ctx.save();
     const flip = direction === 'left' ? -1 : 1;
     ctx.scale(flip, 1);
 
-    const horseStep = isMoving ? Math.sin(animTimer * 0.42) * 4 : 0;
-    const maneWave = Math.sin(animTimer * 0.25) * 4.5;
-    const breath = Math.sin(animTimer * 0.16) * 1.2;
+    // 步频与风动参数
+    const gallopCycle = isMoving ? (animTimer * 0.45) : (animTimer * 0.15);
+    const legSwingF = isMoving ? Math.sin(gallopCycle) * 5.2 : 0;
+    const legSwingB = isMoving ? Math.cos(gallopCycle) * 4.8 : 0;
+    const verticalBob = isMoving ? Math.abs(Math.sin(gallopCycle)) * 2.2 : Math.sin(animTimer * 0.18) * 1.0;
+    const waveWind = Math.sin(animTimer * 0.28) * 4.2;
 
-    // ── 0. 神驹踏云大阴影 ──
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    const horseY = by + verticalBob;
+
+    // ── 0. 神兽踏云金晕与地面柔和阴影 ──
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.40)';
     ctx.beginPath();
-    ctx.ellipse(0, by + 18, 26, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, by + 19, 28, 7.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // ── 1. 飘逸修长的银白龙尾 ──
-    ctx.strokeStyle = '#f8fafc';
-    ctx.lineWidth = 3.8;
+    // 踏云祥云微光 (四蹄踏处淡淡升腾的如意仙云)
+    ctx.fillStyle = 'rgba(224, 242, 254, 0.45)';
+    ctx.beginPath();
+    ctx.arc(-14 - legSwingB * 0.4, by + 17, 4.5, 0, Math.PI * 2);
+    ctx.arc(14 + legSwingF * 0.4, by + 17, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // ── 1. 舒展翻飞的银白龙尾 (多束交叠，如瀑布流泉) ──
+    ctx.save();
+    // 尾部底层暗影
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 4.2;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-20, by + 3);
-    ctx.quadraticCurveTo(-32, by + 12 + maneWave, -28, by + 20);
-    ctx.stroke();
-    ctx.strokeStyle = '#bae6fd';
-    ctx.lineWidth = 1.8;
+    ctx.moveTo(-18, horseY + 2);
+    ctx.bezierCurveTo(-26, horseY + 5, -34, horseY + 12 + waveWind, -28, horseY + 23);
     ctx.stroke();
 
-    // ── 2. 神驹健硕四蹄与灿金马蹄铁 ──
-    ctx.fillStyle = '#e2e8f0';
-    // 后双腿
-    ctx.fillRect(-17, by + 7 + horseStep, 4.5, 11);
-    ctx.fillRect(-10, by + 7 - horseStep, 4.5, 11);
-    // 前双腿
-    ctx.fillRect(8, by + 7 - horseStep, 4.5, 11);
-    ctx.fillRect(15, by + 7 + horseStep, 4.5, 11);
+    // 尾部主体纯白
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(-17, horseY + 1);
+    ctx.bezierCurveTo(-25, horseY + 4, -32, horseY + 11 + waveWind, -26, horseY + 22);
+    ctx.stroke();
 
+    // 尾梢青玉流光丝
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-16, horseY + 3);
+    ctx.bezierCurveTo(-23, horseY + 7, -30, horseY + 14 + waveWind, -24, horseY + 24);
+    ctx.stroke();
+    ctx.restore();
+
+    // ── 2. 健硕修长的马腿四肢与纯金马蹄 (真实前后肢骨骼与关节弯曲) ──
+    // A. 远端后腿 (左后腿)
+    ctx.save();
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(-12, horseY + 6);
+    ctx.lineTo(-15 - legSwingB, horseY + 13);
+    ctx.lineTo(-13 - legSwingB, horseY + 18);
+    ctx.lineTo(-9 - legSwingB, horseY + 18);
+    ctx.lineTo(-8, horseY + 9);
+    ctx.closePath();
+    ctx.fill();
+    // 远端后蹄金靴
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(-13 - legSwingB, horseY + 16, 4.2, 2.8);
+    ctx.restore();
+
+    // B. 远端前腿 (左前腿)
+    ctx.save();
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(9, horseY + 6);
+    ctx.lineTo(13 - legSwingF, horseY + 12);
+    ctx.lineTo(11 - legSwingF, horseY + 18);
+    ctx.lineTo(15 - legSwingF, horseY + 18);
+    ctx.lineTo(13, horseY + 8);
+    ctx.closePath();
+    ctx.fill();
+    // 远端前蹄金靴
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(11 - legSwingF, horseY + 16, 4.2, 2.8);
+    ctx.restore();
+
+    // ── 3. 健美流线型神骏白龙马躯干 (饱满前胸、优雅腹线、圆润臀部) ──
+    ctx.save();
+    const bodyGrad = ctx.createLinearGradient(-22, horseY - 4, 22, horseY + 10);
+    bodyGrad.addColorStop(0, '#f1f5f9');
+    bodyGrad.addColorStop(0.3, '#ffffff');
+    bodyGrad.addColorStop(0.8, '#e2e8f0');
+    bodyGrad.addColorStop(1, '#cbd5e1');
+    ctx.fillStyle = bodyGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(-17, horseY + 5);
+    // 饱满后臀
+    ctx.bezierCurveTo(-22, horseY - 1, -16, horseY - 6, -6, horseY - 4);
+    // 马背鞍座凹弧
+    ctx.bezierCurveTo(-2, horseY - 3, 4, horseY - 4, 11, horseY - 5);
+    // 宽阔饱满前胸
+    ctx.bezierCurveTo(18, horseY - 3, 21, horseY + 5, 14, horseY + 9);
+    // 收束有力腹底线
+    ctx.bezierCurveTo(5, horseY + 11, -8, horseY + 12, -17, horseY + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // 龙马身躯高贵银边轮廓
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+    ctx.restore();
+
+    // ── 4. 近端马腿 (右后腿与右前腿，肌肉轮廓立体鲜明) ──
+    // C. 近端后腿
+    ctx.save();
+    const rearLegGrad = ctx.createLinearGradient(-15, horseY, -7, horseY + 18);
+    rearLegGrad.addColorStop(0, '#ffffff');
+    rearLegGrad.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = rearLegGrad;
+    ctx.beginPath();
+    ctx.moveTo(-9, horseY + 4);
+    ctx.bezierCurveTo(-14, horseY + 6, -15, horseY + 10, -11 + legSwingB, horseY + 14);
+    ctx.lineTo(-10 + legSwingB, horseY + 19);
+    ctx.lineTo(-6 + legSwingB, horseY + 19);
+    ctx.lineTo(-6 + legSwingB, horseY + 13);
+    ctx.bezierCurveTo(-5, horseY + 9, -5, horseY + 6, -9, horseY + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
     // 纯金马蹄铁
     ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-17, by + 16 + horseStep, 4.5, 3);
-    ctx.fillRect(-10, by + 16 - horseStep, 4.5, 3);
-    ctx.fillRect(8, by + 16 - horseStep, 4.5, 3);
-    ctx.fillRect(15, by + 16 + horseStep, 4.5, 3);
+    ctx.fillRect(-10 + legSwingB, horseY + 16.5, 4.5, 3.0);
+    ctx.restore();
 
-    // ── 3. 健美流线型白玉龙马躯干 ──
-    const horseGrad = ctx.createLinearGradient(-22, by, 22, by);
-    horseGrad.addColorStop(0, '#f1f5f9');
-    horseGrad.addColorStop(0.5, '#ffffff');
-    horseGrad.addColorStop(1, '#e2e8f0');
-    ctx.fillStyle = horseGrad;
+    // D. 近端前腿
+    ctx.save();
+    const foreLegGrad = ctx.createLinearGradient(8, horseY, 17, horseY + 18);
+    foreLegGrad.addColorStop(0, '#ffffff');
+    foreLegGrad.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = foreLegGrad;
     ctx.beginPath();
-    ctx.ellipse(0, by + 4, 22, 11, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // ── 4. 奢华大红金丝刺绣鞍鞯与纯金马鞍 ──
-    ctx.fillStyle = '#dc2626';
-    ctx.beginPath();
-    ctx.roundRect(-8, by - 2, 16, 9, 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // 纯金马鞍
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.roundRect(-6, by - 3.5, 12, 4.5, 1.8);
-    ctx.fill();
-
-    // ── 5. 龙马昂首长颈、银白鬃毛与青玉龙角 ──
-    // 修长马颈
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(13, by + 1);
-    ctx.lineTo(21, by - 14);
-    ctx.lineTo(28, by - 11);
-    ctx.lineTo(20, by + 5);
+    ctx.moveTo(11, horseY + 4);
+    ctx.bezierCurveTo(16, horseY + 6, 17, horseY + 10, 15 + legSwingF, horseY + 14);
+    ctx.lineTo(15 + legSwingF, horseY + 19);
+    ctx.lineTo(19 + legSwingF, horseY + 19);
+    ctx.lineTo(18 + legSwingF, horseY + 12);
+    ctx.bezierCurveTo(17, horseY + 8, 15, horseY + 5, 11, horseY + 4);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.8;
     ctx.stroke();
+    // 纯金马蹄铁
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(15 + legSwingF, horseY + 16.5, 4.5, 3.0);
+    ctx.restore();
 
-    // 飞扬银白鬃毛
-    ctx.strokeStyle = '#bae6fd';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(17, by - 13);
-    ctx.quadraticCurveTo(9, by - 17 + maneWave, 8, by - 5);
-    ctx.stroke();
-
-    // 神圣青玉龙角
-    ctx.strokeStyle = '#06b6d4';
-    ctx.lineWidth = 2.6;
-    ctx.beginPath();
-    ctx.moveTo(23, by - 15);
-    ctx.lineTo(27, by - 24);
-    ctx.stroke();
-
-    // 黄金缰绳
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(26, by - 9);
-    ctx.lineTo(2, by - 8);
-    ctx.stroke();
-
-    // ── 6. 骑乘其上的金甲天将 ──
-    // 飘扬大红战袍
+    // ── 5. 华贵织锦红鞯与纯金雕龙马鞍 ──
+    ctx.save();
+    // 朱红金丝刺绣大鞍鞯
     ctx.fillStyle = '#b91c1c';
     ctx.beginPath();
-    ctx.moveTo(-6, by - 14);
-    ctx.quadraticCurveTo(-22, by - 11 + maneWave, -24, by + 2);
-    ctx.lineTo(-6, by + 1);
+    ctx.moveTo(-10, horseY - 2);
+    ctx.lineTo(7, horseY - 2);
+    ctx.lineTo(5, horseY + 8);
+    ctx.lineTo(-8, horseY + 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // 金纹祥云滚边
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(-2, horseY + 7, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 纯金马鞍座与鞍桥
+    const saddleGrad = ctx.createLinearGradient(-6, horseY - 5, 5, horseY);
+    saddleGrad.addColorStop(0, '#fde047');
+    saddleGrad.addColorStop(0.5, '#eab308');
+    saddleGrad.addColorStop(1, '#b45309');
+    ctx.fillStyle = saddleGrad;
+    ctx.beginPath();
+    ctx.roundRect(-7, horseY - 5, 13, 5, [2.5, 2.5, 1, 1]);
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 垂悬纯金马镫
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(-1, horseY + 3);
+    ctx.lineTo(-2, horseY + 9.5);
+    ctx.stroke();
+    ctx.fillStyle = '#ca8a04';
+    ctx.fillRect(-3.5, horseY + 9.5, 3.2, 1.8);
+    ctx.restore();
+
+    // ── 6. 龙马昂首秀项、神骏马首与青玉龙角 ──
+    ctx.save();
+    // 优雅昂扬的马颈
+    const neckGrad = ctx.createLinearGradient(10, horseY, 24, horseY - 16);
+    neckGrad.addColorStop(0, '#f1f5f9');
+    neckGrad.addColorStop(0.5, '#ffffff');
+    neckGrad.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = neckGrad;
+    ctx.beginPath();
+    ctx.moveTo(9, horseY - 2);
+    ctx.bezierCurveTo(13, horseY - 8, 16, horseY - 14, 20, horseY - 16);
+    ctx.lineTo(26, horseY - 12);
+    ctx.bezierCurveTo(24, horseY - 3, 20, horseY + 4, 13, horseY + 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 神骏马首立体轮廓 (挺直鼻梁与优美颊线)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(20, horseY - 16);
+    // 额头与鼻梁
+    ctx.lineTo(28, horseY - 13);
+    // 鼻端微吻
+    ctx.bezierCurveTo(31, horseY - 11, 31, horseY - 8, 29, horseY - 6);
+    // 下巴与脸颊
+    ctx.lineTo(24, horseY - 7);
+    ctx.bezierCurveTo(21, horseY - 10, 19, horseY - 13, 20, horseY - 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 立体马嘴与朱红口络
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(28, horseY - 8.5, 2.5, 1.8);
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1.0;
+    ctx.strokeRect(27.5, horseY - 9, 2.5, 2.0);
+
+    // 灵动黑眸星芒
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(23.5, horseY - 12, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(24.0, horseY - 12.5, 0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 挺拔双耳 (耳尖粉嫩通透)
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(19, horseY - 16);
+    ctx.lineTo(18, horseY - 22);
+    ctx.lineTo(21, horseY - 17);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fbcfe8'; // 耳廓内透粉
+    ctx.beginPath();
+    ctx.moveTo(19, horseY - 17);
+    ctx.lineTo(18.5, horseY - 21);
+    ctx.lineTo(20.5, horseY - 18);
     ctx.closePath();
     ctx.fill();
 
-    // 锁子黄金甲
-    const armorGrad = ctx.createLinearGradient(-6, by - 16, 6, by);
+    // 额前晶莹青玉龙角 (神圣龙族血脉标志)
+    ctx.strokeStyle = '#06b6d4';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(22, horseY - 17);
+    ctx.lineTo(25, horseY - 25);
+    ctx.stroke();
+    // 龙角尖端金芒
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(25.2, horseY - 25.5, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 飘逸如云的银白长鬃 (自头顶至肩颈层叠翻卷)
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(19, horseY - 15);
+    ctx.bezierCurveTo(13, horseY - 19 + waveWind, 10, horseY - 11, 7, horseY - 3);
+    ctx.stroke();
+    ctx.strokeStyle = '#bae6fd';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // 黄金丝辔缰绳 (从马嘴顺畅连接至骑士手中)
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(27.5, horseY - 8);
+    ctx.bezierCurveTo(18, horseY - 4, 10, horseY - 8, 2, horseY - 11);
+    ctx.stroke();
+    ctx.restore();
+
+    // ── 7. 端坐其上的英武大侠/金甲神将 ──
+    const riderY = horseY - 7;
+    const riderWind = Math.sin(animTimer * 0.22) * 3.5;
+
+    ctx.save();
+    // A. 背后大红锦缎披风 (随风猛烈翻卷飞扬)
+    ctx.fillStyle = '#b91c1c';
+    ctx.beginPath();
+    ctx.moveTo(-5, riderY - 10);
+    ctx.bezierCurveTo(-18, riderY - 7 + riderWind, -24, riderY + 4 + riderWind, -26, riderY + 12);
+    ctx.lineTo(-12, riderY + 9);
+    ctx.bezierCurveTo(-8, riderY + 5, -3, riderY - 3, -4, riderY - 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    // B. 大将身躯与锁子明光黄金战甲
+    const armorGrad = ctx.createLinearGradient(-6, riderY - 14, 6, riderY + 3);
     armorGrad.addColorStop(0, '#fef08a');
-    armorGrad.addColorStop(0.5, '#f59e0b');
+    armorGrad.addColorStop(0.4, '#f59e0b');
     armorGrad.addColorStop(1, '#b45309');
     ctx.fillStyle = armorGrad;
     ctx.beginPath();
-    ctx.roundRect(-6.5, by - 16, 13, 14, 2.5);
+    ctx.roundRect(-6.5, riderY - 14, 13, 14, [4, 4, 2, 2]);
     ctx.fill();
     ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.9;
     ctx.stroke();
 
-    // 英挺天将面容
-    ctx.fillStyle = '#fde68a';
+    // 纯银护心宝镜 (中央明亮烁目)
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(0, by - 20, 5.8, 0, Math.PI * 2);
+    ctx.arc(0, riderY - 7, 3.2, 0, Math.PI * 2);
     ctx.fill();
-
-    // 凤翅兜鍪金盔与火红战缨
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.roundRect(-6.5, by - 26, 13, 7.5, 2);
-    ctx.fill();
-    ctx.strokeStyle = '#b45309';
+    ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 0.8;
     ctx.stroke();
-    // 火红战缨
+
+    // 龙纹吞肩护臂与手持缰绳
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(4, riderY - 10, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    // 握缰手掌
+    ctx.fillStyle = '#ffedd5';
+    ctx.beginPath();
+    ctx.arc(2, riderY - 8, 2.0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 自然骑乘的双腿与金线乌皮战靴 (跨于鞍旁)
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(-4, riderY, 7.5, 9, 2);
+    ctx.fill();
+    // 金线靴筒
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-4, riderY + 6.5, 7.5, 1.2);
+
+    // C. 俊逸英武的东方侠士面庞
+    ctx.fillStyle = '#ffedd5';
+    ctx.beginPath();
+    ctx.ellipse(0, riderY - 17.5, 5.2, 6.0, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 剑眉与黑亮双瞳
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-3.2, riderY - 19.5, 2.6, 0.8);
+    ctx.fillRect(0.8, riderY - 19.5, 2.6, 0.8);
+    ctx.beginPath();
+    ctx.arc(-1.8, riderY - 17.8, 1.1, 0, Math.PI * 2);
+    ctx.arc(1.8, riderY - 17.8, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.arc(-1.5, riderY - 18.0, 0.4, 0, Math.PI * 2);
+    ctx.arc(2.1, riderY - 18.0, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 挺拔鼻梁与坚毅唇线
+    ctx.strokeStyle = '#ea580c';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(0, riderY - 17.5);
+    ctx.lineTo(0.5, riderY - 16.0);
+    ctx.lineTo(-0.5, riderY - 15.2);
+    ctx.stroke();
+
+    // D. 飞凤束发紫金冠与修长飘逸的赤红凤翎
+    const crownGrad = ctx.createLinearGradient(-5, riderY - 24, 5, riderY - 20);
+    crownGrad.addColorStop(0, '#fde047');
+    crownGrad.addColorStop(1, '#b45309');
+    ctx.fillStyle = crownGrad;
+    ctx.beginPath();
+    ctx.roundRect(-4.5, riderY - 23, 9, 5.5, [2, 2, 1, 1]);
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 优雅向后飞挑的朱红长凤翎 (随疾行向后飘扬)
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, riderY - 23);
+    ctx.bezierCurveTo(-6, riderY - 29, -14, riderY - 27 + riderWind, -19, riderY - 21);
+    ctx.stroke();
+    // 翎顶金彩
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.arc(-19, riderY - 21, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // E. 龙胆亮银枪 (斜指南天，枪头红缨如火，枪芒雪亮)
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-4, riderY + 4);
+    ctx.lineTo(19, riderY - 32);
+    ctx.stroke();
+
+    // 枪尖如火红缨
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
-    ctx.arc(0, by - 27.5, 3.5, 0, Math.PI * 2);
+    ctx.arc(17, riderY - 29, 3.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // 龙胆亮银枪 (斜指苍穹)
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, by - 10);
-    ctx.lineTo(22, by - 32);
-    ctx.stroke();
+    // 淬火精钢枪尖 (带寒光夺目高光)
     ctx.fillStyle = '#f8fafc';
     ctx.beginPath();
-    ctx.moveTo(21, by - 31);
-    ctx.lineTo(26, by - 36);
-    ctx.lineTo(24, by - 30);
+    ctx.moveTo(17, riderY - 29);
+    ctx.lineTo(23, riderY - 37);
+    ctx.lineTo(21, riderY - 27);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
 
+    // 枪尖闪耀星芒
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(23, riderY - 37, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
     ctx.restore();
   }
 
@@ -2856,6 +3263,110 @@ class CharacterRenderer {
 
     ctx.restore();
   }
+
+  // =========================================================================
+  // 12.1 陈塘关海滨沉寂观音雕像 (机缘未至、青玉汉白玉石刻古朴质感、沉静微光、无华内敛)
+  // =========================================================================
+  static drawGuanyinStatue(ctx, by, animTimer, direction) {
+    ctx.save();
+    // 1. 底层石台古朴淡青微影
+    ctx.fillStyle = 'rgba(71, 85, 105, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(0, by + 18, 24, 7.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. 沉静内敛的青玉汉白玉千叶石莲座
+    const stoneBaseGrad = ctx.createLinearGradient(-20, by + 14, 20, by + 21);
+    stoneBaseGrad.addColorStop(0, '#94a3b8');
+    stoneBaseGrad.addColorStop(0.5, '#cbd5e1');
+    stoneBaseGrad.addColorStop(1, '#64748b');
+    ctx.fillStyle = stoneBaseGrad;
+    ctx.beginPath();
+    ctx.roundRect(-20, by + 14, 40, 7, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 3. 青石雕刻莲瓣 (古朴灰青)
+    for (let i = 0; i < 9; i++) {
+      const angle = (i / 9) * Math.PI + Math.PI;
+      const lx = Math.cos(angle) * 16;
+      const ly = by + 13 + Math.sin(angle) * 4.5;
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.ellipse(lx, ly, 4, 5, angle, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+
+    // 4. 石刻观音端坐宝相
+    const statueY = by - 8;
+    // 石袍身姿
+    const robeGrad = ctx.createLinearGradient(-10, statueY, 10, statueY + 18);
+    robeGrad.addColorStop(0, '#e2e8f0');
+    robeGrad.addColorStop(0.5, '#cbd5e1');
+    robeGrad.addColorStop(1, '#94a3b8');
+    ctx.fillStyle = robeGrad;
+    ctx.beginPath();
+    ctx.moveTo(-9, statueY + 18);
+    ctx.lineTo(-6, statueY);
+    ctx.lineTo(6, statueY);
+    ctx.lineTo(9, statueY + 18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 手托石净瓶
+    ctx.fillStyle = '#f1f5f9';
+    ctx.beginPath();
+    ctx.roundRect(1, statueY + 6, 4.5, 7, 1.5);
+    ctx.fill();
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+
+    // 石刻面容与高髻
+    ctx.fillStyle = '#e2e8f0';
+    ctx.beginPath();
+    ctx.ellipse(0, statueY - 6, 6, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+
+    // 微阖石目
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-3.5, statueY - 6); ctx.lineTo(-1, statueY - 5.5);
+    ctx.moveTo(1, statueY - 5.5); ctx.lineTo(3.5, statueY - 6);
+    ctx.stroke();
+
+    // 石刻佛冠
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.roundRect(-4, statueY - 15, 8, 7, [2, 2, 0, 0]);
+    ctx.fill();
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+
+    // 隐隐流转的微弱内敛青莲灵气光丝
+    const faintAura = 0.2 + Math.sin(animTimer * 0.08) * 0.12;
+    ctx.strokeStyle = `rgba(186, 230, 253, ${faintAura})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(0, statueY + 4, 15, 19, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
   // =========================================================================
   // 13. 白骨精 (白骨幽魂、幽紫长裙、骨刃双匕)
   // =========================================================================
@@ -3674,6 +4185,147 @@ class CharacterRenderer {
   }
 
   // =========================================================================
+  // 17.5 野生灵芝青香蕈群落 (簇拥三朵野生仙芝、白嫩菌褶菌柄、白斑灵韵、露珠青草)
+  // =========================================================================
+  static drawMushroom(ctx, by, animTimer) {
+    ctx.save();
+    const pulse = Math.sin(animTimer * 0.2) * 1.5;
+    const sway = Math.sin(animTimer * 0.15) * 0.8;
+
+    // 1. 底部潮湿肥沃黑土与贴地阴影
+    ctx.fillStyle = 'rgba(20, 35, 15, 0.55)';
+    ctx.beginPath();
+    ctx.ellipse(0, 11, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 贴地散落青草与嫩叶露珠
+    ctx.strokeStyle = '#4cd137';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-11, 11);
+    ctx.quadraticCurveTo(-15, 6, -17, 3);
+    ctx.moveTo(9, 11);
+    ctx.quadraticCurveTo(14, 7, 16, 4);
+    ctx.moveTo(-4, 12);
+    ctx.quadraticCurveTo(-7, 7, -8, 5);
+    ctx.stroke();
+
+    // 露珠点缀
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.arc(-16, 3.5, 1, 0, Math.PI * 2);
+    ctx.arc(15, 4.5, 1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ── 2. 左侧小香蕈 (偏黄嫩色小菌) ──
+    ctx.save();
+    ctx.translate(-8, by + 3);
+    // 左小菌柄
+    ctx.fillStyle = '#dfe4ea';
+    ctx.fillRect(-1.5, 1, 3, 7);
+    // 左小菌盖 (扁圆形圆弧)
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath();
+    ctx.arc(0, 1, 5, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#d4ac0d';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.restore();
+
+    // ── 3. 右侧小灵芝 (赤铜灵芝云纹) ──
+    ctx.save();
+    ctx.translate(7, by + 4);
+    // 右小菌柄
+    ctx.fillStyle = '#ced6e0';
+    ctx.fillRect(-1.5, 0, 3, 6);
+    // 右小如意灵芝伞
+    ctx.fillStyle = '#16a085';
+    ctx.beginPath();
+    ctx.ellipse(1, 0, 6, 3.5, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.restore();
+
+    // ── 4. 中央主体大青灵芝香蕈 ──
+    // 肥美白嫩粗壮菌柄 (微胖小圆柱)
+    const stemGrad = ctx.createLinearGradient(-4, 0, 4, 11);
+    stemGrad.addColorStop(0, '#ffffff');
+    stemGrad.addColorStop(0.5, '#e4e7eb');
+    stemGrad.addColorStop(1, '#c8d6e5');
+    ctx.fillStyle = stemGrad;
+    ctx.beginPath();
+    ctx.moveTo(-4 + sway * 0.2, by + 1);
+    ctx.quadraticCurveTo(-5.5, by + 7, -6, by + 11);
+    ctx.lineTo(6, by + 11);
+    ctx.quadraticCurveTo(5.5, by + 7, 4 + sway * 0.2, by + 1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#8395a7';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 菌柄环状褶皱纹理
+    ctx.strokeStyle = 'rgba(131, 149, 167, 0.6)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-3, by + 4);
+    ctx.lineTo(3, by + 4);
+    ctx.moveTo(-4, by + 7);
+    ctx.lineTo(4, by + 7);
+    ctx.stroke();
+
+    // 伞下菌褶微暗影
+    ctx.fillStyle = 'rgba(16, 85, 50, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(0, by + 3 + sway * 0.3, 11, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 主菌盖 (饱满半圆拱形，青翠碧玉至深山苔绿渐变)
+    const capY = by - 2 + sway;
+    const capGrad = ctx.createRadialGradient(0, capY - 6, 2, 0, capY, 15);
+    capGrad.addColorStop(0, '#1dd1a1');
+    capGrad.addColorStop(0.35, '#10ac84');
+    capGrad.addColorStop(0.8, '#1b8a5a');
+    capGrad.addColorStop(1, '#0e5334');
+
+    ctx.fillStyle = capGrad;
+    ctx.beginPath();
+    ctx.moveTo(-13, capY + 3);
+    ctx.bezierCurveTo(-15, capY - 13, 15, capY - 13, 13, capY + 3);
+    ctx.quadraticCurveTo(0, capY + 6, -13, capY + 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // 金丝灵韵勾勒菌盖外轮廓
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // 伞盖上的圆润白色灵芝斑点
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.beginPath();
+    ctx.arc(-5, capY - 4, 2.2, 0, Math.PI * 2);
+    ctx.arc(3, capY - 6, 2.0, 0, Math.PI * 2);
+    ctx.arc(7, capY - 1, 1.8, 0, Math.PI * 2);
+    ctx.arc(-8, capY + 0.5, 1.5, 0, Math.PI * 2);
+    ctx.arc(0, capY + 0.5, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 顶端灵草仙气呼吸光点
+    const sparkAlpha = Math.max(0.25, (Math.sin(animTimer * 0.3) + 1) / 2);
+    ctx.fillStyle = `rgba(255, 234, 167, ${sparkAlpha})`;
+    ctx.beginPath();
+    ctx.arc(0, capY - 12 + pulse * 0.5, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // =========================================================================
   // 18. 镇天神将 / 托塔天王 (金甲红缨、七宝玲珑塔)
   // =========================================================================
   static drawHeavenGeneral(ctx, by, animTimer, direction, isMoving) {
@@ -3681,65 +4333,211 @@ class CharacterRenderer {
     const flip = direction === 'left' ? -1 : 1;
     ctx.scale(flip, 1);
 
-    const capeWave = Math.sin(animTimer * 0.18) * 3.5;
+    const walkCycle = animTimer * 0.22;
+    const legSwing = isMoving ? Math.sin(walkCycle) * 3.4 : 0;
+    const capeWave = Math.sin(animTimer * 0.20) * 3.8;
 
-    // 大红飘逸披风
-    ctx.fillStyle = '#b71540';
+    // ── 0. 地面阴影 ──
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.40)';
     ctx.beginPath();
-    ctx.moveTo(-9, by - 7);
-    ctx.lineTo(9, by - 7);
-    ctx.quadraticCurveTo(13, by + 12 + capeWave, 11, by + 17);
-    ctx.lineTo(-11, by + 17);
-    ctx.quadraticCurveTo(-13, by + 12 + capeWave, -9, by - 7);
+    ctx.ellipse(0, by + 17, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ── 1. 宽阔飘扬的朱红神威大氅 (披风多层光影翻飞) ──
+    ctx.save();
+    // 披风底层暗红
+    ctx.fillStyle = '#991b1b';
+    ctx.beginPath();
+    ctx.moveTo(-7, by - 8);
+    ctx.lineTo(7, by - 8);
+    ctx.bezierCurveTo(14, by + 6 + capeWave, 16, by + 14 + capeWave, 13, by + 18);
+    ctx.lineTo(-13, by + 18);
+    ctx.bezierCurveTo(-16, by + 14 + capeWave, -14, by + 6 + capeWave, -7, by - 8);
     ctx.closePath();
     ctx.fill();
+
+    // 披风表层金丝滚边朱红
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    ctx.moveTo(-6, by - 8);
+    ctx.lineTo(6, by - 8);
+    ctx.bezierCurveTo(12, by + 5 + capeWave, 14, by + 13 + capeWave, 11, by + 17);
+    ctx.lineTo(-11, by + 17);
+    ctx.bezierCurveTo(-14, by + 13 + capeWave, -12, by + 5 + capeWave, -6, by - 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+    ctx.restore();
+
+    // ── 2. 下肢：战裙与金甲乌皮战靴 ──
+    // 后腿
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(1 + legSwing * 0.4, by + 7, 5.5, 9);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0 + legSwing * 0.4, by + 13, 6.5, 3.5);
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(0 + legSwing * 0.4, by + 13, 6.5, 1.0);
+
+    // 前腿
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(-6 - legSwing * 0.4, by + 7, 5.5, 9);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-7 - legSwing * 0.4, by + 13, 6.5, 3.5);
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(-7 - legSwing * 0.4, by + 13, 6.5, 1.0);
+
+    // 锁子战裙裙摆
+    ctx.fillStyle = '#ca8a04';
+    ctx.beginPath();
+    ctx.moveTo(-8, by + 4);
+    ctx.lineTo(8, by + 4);
+    ctx.lineTo(7, by + 9);
+    ctx.lineTo(-7, by + 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // ── 3. 锁子黄金战甲 (高光金鳞与纯银护心宝镜) ──
+    const armorGrad = ctx.createLinearGradient(-9, by - 12, 9, by + 6);
+    armorGrad.addColorStop(0, '#fef08a');
+    armorGrad.addColorStop(0.3, '#f59e0b');
+    armorGrad.addColorStop(0.8, '#d97706');
+    armorGrad.addColorStop(1, '#92400e');
+    ctx.fillStyle = armorGrad;
+    ctx.beginPath();
+    ctx.roundRect(-8.5, by - 10, 17, 15, [3, 3, 2, 2]);
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    // 纯银雕纹护心镜 (中央高亮烁目)
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(0, by - 2.5, 3.8, 0, Math.PI * 2);
+    ctx.fill();
     ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.0;
     ctx.stroke();
-
-    // 黄金明光铠与纯银护心镜
-    ctx.fillStyle = '#f1c40f';
+    // 镜心微光
+    ctx.fillStyle = '#e0f2fe';
     ctx.beginPath();
-    ctx.roundRect(-9, by - 9, 18, 17, 3);
+    ctx.arc(0, by - 2.5, 1.8, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#b8860b';
-    ctx.lineWidth = 1.2;
+
+    // 狮蛮金带与宝珠玉扣
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(-8.5, by + 2, 17, 2.5);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-2.5, by + 1.2, 5, 4.0);
+
+    // 兽首龙纹护肩
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(-8.5, by - 8, 3.2, 0, Math.PI * 2);
+    ctx.arc(8.5, by - 8, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = 0.8;
     ctx.stroke();
 
+    // ── 4. 俊武神威的天将面容 ──
+    ctx.fillStyle = '#ffedd5';
+    ctx.beginPath();
+    ctx.ellipse(0, by - 14.5, 5.5, 6.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 浓黑剑眉与明亮神目
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-3.5, by - 16.5, 2.8, 0.9);
+    ctx.fillRect(0.7, by - 16.5, 2.8, 0.9);
+    ctx.beginPath();
+    ctx.arc(-2.0, by - 14.8, 1.2, 0, Math.PI * 2);
+    ctx.arc(2.0, by - 14.8, 1.2, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, by - 1, 3.8, 0, Math.PI * 2);
+    ctx.arc(-1.7, by - 15.1, 0.45, 0, Math.PI * 2);
+    ctx.arc(2.3, by - 15.1, 0.45, 0, Math.PI * 2);
     ctx.fill();
 
-    // 天将面庞与金盔
-    ctx.fillStyle = '#fbd38d';
+    // 威严唇线
+    ctx.strokeStyle = '#c2410c';
+    ctx.lineWidth = 0.8;
     ctx.beginPath();
-    ctx.arc(0, by - 14, 6.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#f1c40f';
-    ctx.beginPath();
-    ctx.roundRect(-8, by - 22, 16, 9, 2.5);
-    ctx.fill();
-    ctx.fillStyle = '#e74c3c';
-    ctx.beginPath();
-    ctx.arc(0, by - 23, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 手中镇天宝剑
-    ctx.strokeStyle = '#bdc3c7';
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(-11, by - 18);
-    ctx.lineTo(-11, by + 14);
+    ctx.moveTo(-1.5, by - 11.5);
+    ctx.lineTo(1.5, by - 11.5);
     ctx.stroke();
-    ctx.fillStyle = '#f39c12';
-    ctx.fillRect(-14, by - 10, 6, 2.5);
 
-    // 战靴
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(-6, by + 8, 4, 7);
-    ctx.fillRect(2, by + 8, 4, 7);
+    // ── 5. 凤翅兜鍪紫金神盔与朱红战缨 ──
+    const helmetGrad = ctx.createLinearGradient(-7, by - 24, 7, by - 18);
+    helmetGrad.addColorStop(0, '#fef08a');
+    helmetGrad.addColorStop(0.5, '#eab308');
+    helmetGrad.addColorStop(1, '#a16207');
+    ctx.fillStyle = helmetGrad;
+    ctx.beginPath();
+    ctx.roundRect(-6.5, by - 22, 13, 7.5, [3, 3, 1, 1]);
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 双侧飞挑金凤翅
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(-6.5, by - 19);
+    ctx.lineTo(-10.5, by - 25);
+    ctx.lineTo(-5.5, by - 22);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(6.5, by - 19);
+    ctx.lineTo(10.5, by - 25);
+    ctx.lineTo(5.5, by - 22);
+    ctx.closePath();
+    ctx.fill();
+
+    // 盔顶金盔顶与火红战缨
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-1.5, by - 24, 3, 2.5);
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    ctx.arc(0, by - 25.5, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    // 战缨飘丝
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, by - 25.5);
+    ctx.quadraticCurveTo(-4, by - 28 + capeWave, -7, by - 22);
+    ctx.stroke();
+
+    // ── 6. 左手所持【镇天金柄神剑】──
+    ctx.save();
+    ctx.translate(-9, by - 4);
+    // 剑鞘
+    ctx.fillStyle = '#1e1b4b';
+    ctx.fillRect(-1.8, -8, 3.6, 24);
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(-1.8, -8, 3.6, 24);
+    // 黄金剑首与剑格
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-3.5, -9, 7, 2.2);
+    ctx.fillRect(-1.2, -14, 2.4, 5);
+    ctx.arc(0, -14.5, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    // 明黄剑穗
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, -14.5);
+    ctx.quadraticCurveTo(-2, -19 + capeWave, -1, -17 + capeWave);
+    ctx.stroke();
+    ctx.restore();
 
     ctx.restore();
   }

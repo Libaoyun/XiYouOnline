@@ -64,11 +64,16 @@ class BattleEngine {
 
   // 重构己方战斗阵列
   rebuildAllies() {
+    const classId = this.player.classId || this.player.class || 'jingang';
+    const innateRes = window.SkillMasteryEngine ? window.SkillMasteryEngine.getInnateResistances(classId) : {};
+    const playerRes = Object.assign({}, innateRes, this.player.resistances || {});
+
     this.allies = [
       {
         id: 'player',
         type: 'player',
         name: this.player.name,
+        classId: classId,
         isPlayer: true,
         entity: this.player,
         hp: this.player.hp,
@@ -78,6 +83,7 @@ class BattleEngine {
         atk: this.player.atk,
         def: this.player.def,
         spd: this.player.spd,
+        resistances: playerRes,
         critRate: this.player.critRate || 0.08,
         comboRate: this.player.comboRate || 0.05,
         fatalRate: this.player.fatalRate || 0.02,
@@ -149,10 +155,9 @@ class BattleEngine {
     const passives = (attacker.entity && attacker.entity.passives) || (attacker.passives) || [];
     const targetPassives = (target.entity && target.entity.passives) || (target.passives) || [];
 
-    // 1. 闪避率判定 (目标闪避普通攻击)
-    let finalDodgeRate = dodgeRate;
-    if (targetPassives.some(p => p.id === 'high_sneak')) finalDodgeRate += 0.15;
-    const isDodge = options.forceDodge !== undefined ? options.forceDodge : (Math.random() < finalDodgeRate);
+    // 序章剧情战役（天蓬战、大圣战）保证演出打击感与剧情爽感，默认不被普通闪避打断
+    const isPrologueBattle = (target.id === 'tianpeng_boss' || attacker.id === 'tianpeng_boss' || target.id === 'wukong_havoc_boss' || attacker.id === 'wukong_havoc_boss');
+    const isDodge = options.forceDodge !== undefined ? options.forceDodge : (isPrologueBattle ? false : (Math.random() < finalDodgeRate));
 
     if (isDodge) {
       return {
@@ -176,23 +181,6 @@ class BattleEngine {
       if (options.mockRandomFlux !== undefined) return options.mockRandomFlux;
       return 0.90 + Math.random() * 0.20;
     };
-
-    // 2. 致命一击判定 (无视防御与物理抗性，按目标生命值百分比造成真实伤害)
-    const isFatal = options.forceFatal !== undefined ? options.forceFatal : (Math.random() < fatalRate);
-    if (isFatal) {
-      const isBoss = target.isBoss;
-      const ratio = isBoss ? 0.08 : 0.20; // 20% 最大生命真实伤害 (Boss 8%)
-      const fatalDmg = Math.max(1, Math.floor(maxHpTarget * ratio * getFlux() * defStanceMult));
-      return {
-        isDodge: false,
-        isFatal: true,
-        isCrit: false,
-        comboCount: 0,
-        damages: [fatalDmg],
-        comboHits: [fatalDmg],
-        totalDamage: fatalDmg
-      };
-    }
 
     // === 前戏剧情战役专属数值法则（刘家村前的序章天宫战役）===
     // 1. 玩家大战醉酒天蓬元帅：玩家打天蓬约 50% 血，天蓬打玩家约 10% 血
@@ -247,6 +235,23 @@ class BattleEngine {
         damages: [killDmg],
         comboHits: [killDmg],
         totalDamage: killDmg
+      };
+    }
+
+    // 2. 致命一击判定 (无视防御与物理抗性，按目标生命值百分比造成真实伤害)
+    const isFatal = options.forceFatal !== undefined ? options.forceFatal : (Math.random() < fatalRate);
+    if (isFatal) {
+      const isBoss = target.isBoss;
+      const ratio = isBoss ? 0.08 : 0.20; // 20% 最大生命真实伤害 (Boss 8%)
+      const fatalDmg = Math.max(1, Math.floor(maxHpTarget * ratio * getFlux() * defStanceMult));
+      return {
+        isDodge: false,
+        isFatal: true,
+        isCrit: false,
+        comboCount: 0,
+        damages: [fatalDmg],
+        comboHits: [fatalDmg],
+        totalDamage: fatalDmg
       };
     }
 
@@ -770,83 +775,18 @@ class BattleEngine {
     }
   }
 
-  // 技能法术详细结算 (抗性抵消)
+  // 技能法术详细结算 (抗性抵消与 SkillMasteryEngine 深度集成)
   async handleSkillCast(ally, action, cb) {
-    const skill = (ally.isPlayer ? this.player.getSkills() : (ally.skills || [])).find(s => s.id === action.skillId)
+    const skill = (ally.isPlayer ? (this.player.getSkills ? this.player.getSkills() : (this.player.skills || [])) : (ally.skills || [])).find(s => s.id === action.skillId)
       || (ally.skills && ally.skills[0]);
     if (!skill) return;
 
-    // 精力消耗
-    if (skill.costMp && ally.mp < skill.costMp) {
-      this.log(`【法力枯竭】精力不足，无法施展【${skill.name}】！`);
-      return;
-    }
-    if (skill.costMp) {
-      ally.mp = Math.max(0, ally.mp - skill.costMp);
-    }
-
-    // 自损气血判定 (如舍生取义)
-    if (skill.costHpRatio) {
-      const selfCost = Math.max(1, Math.floor(ally.hp * skill.costHpRatio));
-      ally.hp = Math.max(1, ally.hp - selfCost);
-      this.log(`【决死成仁】${ally.name} 自身反噬受创 ${selfCost} 点气血！`);
-      if (cb) await cb({ type: 'damage', attacker: 'self', target: ally.id, damage: selfCost, text: `自损 -${selfCost}` });
-    }
+    skill.level = skill.level || 1;
+    skill.mastery = (skill.mastery !== undefined) ? skill.mastery : (skill.proficiency || 0);
 
     const aliveEnemies = this.getAliveEnemies();
     if (aliveEnemies.length === 0) return;
     const targetEnemy = this.enemies[action.targetIndex] || aliveEnemies[0];
-
-    // 1. 金刚系：舍生取义
-    if (skill.name === '舍生取义' || skill.id === 'sk_jg_shesheng') {
-      const res = (targetEnemy.resistances && targetEnemy.resistances.res_shesheng) || 0;
-      const lvl = skill.level || 1;
-      const prof = skill.proficiency || 0;
-      const profBonus = prof * 0.0015 + lvl * 0.35;
-      const baseDmg = Math.floor((ally.atk * (2.8 + profBonus) + ally.maxHp * 0.15) - targetEnemy.def * 0.2);
-      const finalDmg = Math.max(50, Math.floor(baseDmg * (1 - res)));
-      targetEnemy.hp = Math.max(0, targetEnemy.hp - finalDmg);
-      this.log(`【舍生取义 Lv.${lvl}】${ally.name} 搏命轰杀【${targetEnemy.name}】造成 ${finalDmg} 点狂暴破甲重创！`);
-      window.Sound.playCrit();
-      if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: finalDmg, text: `破甲 -${finalDmg}` });
-      this.rewardSkillProficiency(ally, skill);
-      return;
-    }
-
-    // 2. 金刚系：佛光普照
-    if (skill.name === '佛光普照' || skill.id === 'sk_jg_foguang') {
-      const res = (targetEnemy.resistances && targetEnemy.resistances.res_foguang) || 0;
-      const lvl = skill.level || 1;
-      const hpRate = Math.min(0.50, 0.22 + lvl * 0.03 + (skill.proficiency || 0) * 0.0001);
-      const mpRate = Math.min(0.60, 0.25 + lvl * 0.04);
-      const hpDmg = Math.max(30, Math.floor(targetEnemy.hp * hpRate * (1 - res)));
-      const mpDrain = Math.floor(targetEnemy.maxMp * mpRate);
-      targetEnemy.hp = Math.max(0, targetEnemy.hp - hpDmg);
-      targetEnemy.mp = Math.max(0, targetEnemy.mp - mpDrain);
-      this.log(`【佛光普照 Lv.${lvl}】纯阳佛火涤荡，削去【${targetEnemy.name}】${hpDmg} 点真实气血，并焚毁其 ${mpDrain} 点精力！`);
-      window.Sound.playMagic();
-      if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: hpDmg, text: `佛光 -${hpDmg}` });
-      this.rewardSkillProficiency(ally, skill);
-      return;
-    }
-
-    // 3. 金刚系：金刚护体 (随等级护持目标数递增：1级1人，2级2人，3级全体)
-    if (skill.name === '金刚护体' || skill.id === 'sk_jg_huti') {
-      const lvl = skill.level || 1;
-      const targetCount = lvl === 1 ? 1 : (lvl === 2 ? 2 : 99);
-      const aliveAllies = this.allies.filter(a => a.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
-      const targets = aliveAllies.slice(0, targetCount);
-      const defRate = 0.35 + lvl * 0.08;
-      targets.forEach(t => {
-        t.buffs.push({ name: '金刚护体', duration: 3, defBonusRate: defRate });
-      });
-      const names = targets.map(t => t.name).join('、');
-      this.log(`【金刚护体 Lv.${lvl}】罗汉金身普照【${names}】(${targets.length}人)！物防与法抗大幅飙升！`);
-      window.Sound.playMagic();
-      if (cb) await cb({ type: 'buff', target: 'allies', text: `金刚护体(${targets.length}人)` });
-      this.rewardSkillProficiency(ally, skill);
-      return;
-    }
 
     const getAdjustedSkillDamage = (targetUnit, rawDmg) => {
       if (targetUnit.id === 'wukong_havoc_boss') {
@@ -858,118 +798,284 @@ class BattleEngine {
       return rawDmg;
     };
 
-    // 4. 妖魔系：雷霆万钧 (单体高伤)
+    // 1. 金刚系：舍生取义 (自损换爆发核心神技)
+    if (skill.name === '舍生取义' || skill.id === 'sk_jg_shesheng') {
+      // 气血限制法则：当前气血低于 10% 无法施展
+      const hpCheck = window.SkillMasteryEngine.canCastShesheng ? window.SkillMasteryEngine.canCastShesheng(ally) : { canCast: ally.hp >= Math.ceil((ally.maxHp || 100) * 0.1) };
+      if (!hpCheck.canCast) {
+        this.log(`【气血枯竭】${ally.name} 气血不足 10% (${ally.hp}/${ally.maxHp})，无力施展【舍生取义】！(需恢复至 10% 以上方可使用)`);
+        if (cb) await cb({ type: 'message', text: '气血低于10%无法施展！' });
+        return;
+      }
+
+      const calc = window.SkillMasteryEngine.calculateShesheng(ally, targetEnemy, skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【舍生取义】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      // 自损反噬法则：如果不够单次扣血或刚好耗尽，血量保持在 1，下次因低于 10% 无法使用
+      if (calc.selfDamage > 0) {
+        if (ally.hp <= calc.selfDamage) {
+          ally.hp = 1;
+          this.log(`【决死成仁】${ally.name} 承受反噬 ${calc.selfDamage} 点真伤！气血枯竭保持在 1 点濒死，下次无法施展！`);
+        } else {
+          ally.hp = Math.max(1, ally.hp - calc.selfDamage);
+          this.log(`【决死成仁】${ally.name} 自身承受反噬 ${calc.selfDamage} 点真伤！(剩余气血: ${ally.hp})`);
+        }
+        if (cb) await cb({ type: 'damage', attacker: 'self', target: ally.id, damage: calc.selfDamage, text: `自损 -${calc.selfDamage}` });
+      }
+
+      const res = (targetEnemy.resistances && targetEnemy.resistances.res_shesheng) || 0;
+      let finalDmg = Math.max(50, Math.floor(calc.damage * (1 - res)));
+      finalDmg = getAdjustedSkillDamage(targetEnemy, finalDmg);
+      targetEnemy.hp = Math.max(0, targetEnemy.hp - finalDmg);
+      this.log(`【舍生取义 Lv.${skill.level}】${ally.name} 破防狂轰【${targetEnemy.name}】造成 ${finalDmg} 点破甲绝杀！`);
+      if (window.Sound) window.Sound.playCrit();
+      if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: finalDmg, text: `破甲 -${finalDmg}` });
+      this.rewardSkillProficiency(ally, skill);
+      return;
+    }
+
+    // 2. 金刚系：佛光普照 (男金刚单体玄击：伤害基数 + 当前生命百分比 + 扣除当前法力百分比)
+    if (skill.name === '佛光普照' || skill.id === 'sk_jg_foguang') {
+      const calc = window.SkillMasteryEngine.calculateMpDrainAttack(false, ally, targetEnemy, skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【佛光普照】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      let hpDmg = getAdjustedSkillDamage(targetEnemy, calc.damage);
+      targetEnemy.hp = Math.max(0, targetEnemy.hp - hpDmg);
+      targetEnemy.mp = Math.max(0, (targetEnemy.mp || 0) - calc.mpDrain);
+      this.log(`【佛光普照 Lv.${skill.level}】纯阳玄击！对【${targetEnemy.name}】造成【基数${calc.baseDmg} + 当前生命${(calc.hpRatio * 100).toFixed(0)}%】共 ${hpDmg} 点伤害，并焚毁其 ${(calc.mpRatio * 100).toFixed(0)}% (${calc.mpDrain}MP) 法力！(受抗玄击减免)`);
+      if (window.Sound) window.Sound.playMagic();
+      if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: hpDmg, text: `玄击 -${hpDmg}` });
+      this.rewardSkillProficiency(ally, skill);
+      return;
+    }
+
+    // 3. 金刚系：如来神掌 (女金刚群体玄击：基数+生命百分比+法力百分比，单体威力低于佛光，升级覆盖多目标)
+    if (skill.name === '如来神掌' || skill.id === 'sk_jg_ruxiang') {
+      const calc = window.SkillMasteryEngine.calculateMpDrainAttack(true, ally, targetEnemy, skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【如来神掌】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
+      for (const e of hitTargets) {
+        const targetCalc = window.SkillMasteryEngine.calculateMpDrainAttack(true, ally, e, skill.level, skill.mastery);
+        let hpDmg = getAdjustedSkillDamage(e, targetCalc.damage);
+        e.hp = Math.max(0, e.hp - hpDmg);
+        e.mp = Math.max(0, (e.mp || 0) - targetCalc.mpDrain);
+        if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: hpDmg, text: `玄击 -${hpDmg}` });
+      }
+      this.log(`【如来神掌 Lv.${skill.level}】大日如来佛光盖顶！群体玄击轰击敌方 ${hitTargets.length} 个目标！`);
+      if (window.Sound) window.Sound.playHit();
+      this.rewardSkillProficiency(ally, skill);
+      return;
+    }
+
+    // 4. 金刚系：金刚护体 (团队双抗)
+    if (skill.name === '金刚护体' || skill.id === 'sk_jg_huti') {
+      const calc = window.SkillMasteryEngine.calculateHutiBuff(skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【金刚护体】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const aliveAllies = this.allies.filter(a => a.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+      const targets = aliveAllies.slice(0, calc.targetCount);
+      targets.forEach(t => {
+        t.buffs = t.buffs || [];
+        t.buffs.push({ name: '金刚护体', duration: calc.duration, defBonusRate: calc.resRate, mdefBonusRate: calc.resRate });
+      });
+      const names = targets.map(t => t.name).join('、');
+      this.log(`【金刚护体 Lv.${skill.level}】罗汉金身普照【${names}】！物防与法抗激增 ${(calc.resRate * 100).toFixed(0)}%！`);
+      if (window.Sound) window.Sound.playMagic();
+      if (cb) await cb({ type: 'buff', target: 'allies', text: `金刚护体(${targets.length}人)` });
+      this.rewardSkillProficiency(ally, skill);
+      return;
+    }
+
+    // 5. 妖魔系：雷霆万钧 (男妖魔单体极高法伤高蓝耗)
     if (skill.name === '雷霆万钧' || skill.id === 'sk_ym_leiting') {
+      const calc = window.SkillMasteryEngine.calculateLeiting(ally, targetEnemy, skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】妖魔法力消耗巨大 (${ally.mp}/${calc.costMp})，无法引动【雷霆万钧】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
       const res = (targetEnemy.resistances && targetEnemy.resistances.res_leiting) || 0;
-      const lvl = skill.level || 1;
-      const profBonus = (skill.proficiency || 0) * 0.002 + lvl * 0.35;
-      let dmg = Math.max(60, Math.floor(((ally.matk || ally.atk) * (3.2 + profBonus) - targetEnemy.mdef * 0.3) * (1 - res)));
+      let dmg = Math.max(60, Math.floor(calc.damage * (1 - res)));
       dmg = getAdjustedSkillDamage(targetEnemy, dmg);
       targetEnemy.hp = Math.max(0, targetEnemy.hp - dmg);
-      this.log(`【雷霆万钧 Lv.${lvl}】九天狂雷轰顶！对【${targetEnemy.name}】造成 ${dmg} 点极高雷法伤害！`);
-      window.Sound.playCrit();
+      this.log(`【雷霆万钧 Lv.${skill.level}】九霄魔雷裂空轰击！对【${targetEnemy.name}】造成 ${dmg} 点极高雷罚伤害！`);
+      if (window.Sound) window.Sound.playCrit();
       if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: dmg, text: `雷霆 -${dmg}` });
       this.rewardSkillProficiency(ally, skill);
       return;
     }
 
-    // 5. 妖魔系：飞沙走石 (群体攻击)
-    if (skill.name === '飞沙走石' || skill.id === 'sk_ym_feisha') {
-      const lvl = skill.level || 1;
-      const profBonus = (skill.proficiency || 0) * 0.001 + lvl * 0.25;
-      for (const e of aliveEnemies) {
-        const res = (e.resistances && e.resistances.res_feisha) || 0;
-        let dmg = Math.max(40, Math.floor(((ally.matk || ally.atk) * (1.8 + profBonus) - e.mdef * 0.4) * (1 - res)));
-        dmg = getAdjustedSkillDamage(e, dmg);
-        e.hp = Math.max(0, e.hp - dmg);
-        if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `飞沙 -${dmg}` });
+    // 6. 妖魔系：万毒攻心 (女妖魔群体挂毒75%衰减)
+    if (skill.name === '万毒攻心' || skill.id === 'sk_ym_wandu') {
+      const calc = window.SkillMasteryEngine.calculateWandu(ally, targetEnemy, skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【万毒攻心】！`);
+        return;
       }
-      this.log(`【飞沙走石 Lv.${lvl}】三昧神风怒卷黄沙，漫天狂飙轰击敌方全体！`);
-      window.Sound.playMagic();
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
+      for (const e of hitTargets) {
+        if (Math.random() < calc.hitRate) {
+          e.buffs = e.buffs || [];
+          e.buffs.push({ id: 'wandu', name: '中毒', duration: calc.duration, poisonDmg: calc.firstRoundDmg, decayRatio: calc.decayRatio });
+          e.hp = Math.max(0, e.hp - calc.firstRoundDmg);
+          if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: calc.firstRoundDmg, text: `毒伤 -${calc.firstRoundDmg}` });
+        }
+      }
+      this.log(`【万毒攻心 Lv.${skill.level}】九幽魔毒侵蚀敌阵 ${hitTargets.length} 人，每回合按75%持续衰减扣血！`);
+      if (window.Sound) window.Sound.playMagic();
       this.rewardSkillProficiency(ally, skill);
       return;
     }
 
-    // 6. 妖魔系：三昧真火
-    if (skill.name === '三昧真火' || skill.id === 'sk_ym_sanmei') {
-      const lvl = skill.level || 1;
-      const profBonus = (skill.proficiency || 0) * 0.001 + lvl * 0.25;
-      for (const e of aliveEnemies) {
-        const res = (e.resistances && e.resistances.res_sanmei) || 0;
-        let dmg = Math.max(45, Math.floor(((ally.matk || ally.atk) * (2.0 + profBonus) - e.mdef * 0.3) * (1 - res)));
-        dmg = getAdjustedSkillDamage(e, dmg);
-        e.hp = Math.max(0, e.hp - dmg);
-        if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `真火 -${dmg}` });
+    // 7. 妖魔系：三昧真火 / 飞沙走石 (群体必中法术)
+    if (skill.name === '三昧真火' || skill.id === 'sk_ym_sanmei' || skill.name === '飞沙走石' || skill.id === 'sk_ym_feisha') {
+      const spellTitle = (skill.name === '三昧真火' || skill.id === 'sk_ym_sanmei') ? '三昧真火' : '飞沙走石';
+      const calc = window.SkillMasteryEngine.calculateGroupSpell(spellTitle, ally, aliveEnemies.length, skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】群法消耗高昂 (${ally.mp}/${calc.costMp})，无法施展【${spellTitle}】！`);
+        return;
       }
-      this.log(`【三昧真火 Lv.${lvl}】鼻端喷火，眼中吐烟！敌方全体葬身无边烈焰！`);
-      window.Sound.playHit();
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const hitTargets = aliveEnemies.slice(0, calc.actualTargets);
+      for (const e of hitTargets) {
+        let dmg = getAdjustedSkillDamage(e, calc.perTargetDamage);
+        e.hp = Math.max(0, e.hp - dmg);
+        if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: e.enemyIndex, damage: dmg, text: `${spellTitle} -${dmg}` });
+      }
+      this.log(`【${spellTitle} Lv.${skill.level}】神法必中席卷敌方 ${hitTargets.length} 人，轰出 ${calc.totalDamage} 点群伤！`);
+      if (window.Sound) window.Sound.playHit();
       this.rewardSkillProficiency(ally, skill);
       return;
     }
 
-    // 7. 神仙系：封印咒 (单体强封3回合)
+    // 8. 仙人系：乱魂咒 (男仙人混乱)
+    if (skill.name === '乱魂咒' || skill.id === 'sk_xr_luanhun') {
+      const calc = window.SkillMasteryEngine.calculateControlSpell('luanhun', skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【乱魂咒】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
+      for (const e of hitTargets) {
+        if (Math.random() < calc.hitRate) {
+          e.buffs = e.buffs || [];
+          e.buffs.push({ id: 'luanhun', name: '混乱', duration: calc.duration });
+          this.log(`【乱魂咒 Lv.${skill.level}】灵犀乱魄，【${e.name}】陷入混乱神智不清！`);
+          if (cb) await cb({ type: 'luanhun', targetIndex: e.enemyIndex, text: '混乱状态！' });
+        } else {
+          this.log(`【乱魂未果】${e.name} 灵台清明挣脱了乱魂术！`);
+        }
+      }
+      if (window.Sound) window.Sound.playMagic();
+      this.rewardSkillProficiency(ally, skill);
+      return;
+    }
+
+    // 9. 仙人系：封印咒 (女仙人刚性硬控)
     if (skill.name === '封印咒' || skill.id === 'sk_xr_fengyin') {
-      const res = (targetEnemy.resistances && targetEnemy.resistances.res_fengyin) || 0;
-      const lvl = skill.level || 1;
-      const hitRate = Math.max(0.3, 0.75 + lvl * 0.03 + (skill.proficiency || 0) * 0.0002 - res);
-      if (Math.random() < hitRate) {
-        targetEnemy.buffs.push({ id: 'fengyin', name: '封印', duration: 3 });
-        this.log(`【封印大成 Lv.${lvl}】神仙金符化作万道金锁，将【${targetEnemy.name}】彻底封印 3 回合！`);
-        window.Sound.playMagic();
-        if (cb) await cb({ type: 'sealed', targetIndex: targetEnemy.enemyIndex, text: '封印镇压3回合！' });
-      } else {
-        this.log(`【封印落空】${targetEnemy.name} 凭借抗性挣脱了封印神咒！`);
-        window.Sound.playFailure();
-        if (cb) await cb({ type: 'miss', targetIndex: targetEnemy.enemyIndex, text: '封印落空！' });
+      const calc = window.SkillMasteryEngine.calculateControlSpell('fengyin', skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【封印咒】！`);
+        return;
       }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
+      for (const e of hitTargets) {
+        if (Math.random() < calc.hitRate) {
+          e.buffs = e.buffs || [];
+          e.buffs.push({ id: 'fengyin', name: '封印', duration: calc.duration, blocksAllActions: true });
+          this.log(`【封印大成 Lv.${skill.level}】八卦神符化作万道金锁，彻底封禁【${e.name}】！`);
+          if (cb) await cb({ type: 'sealed', targetIndex: e.enemyIndex, text: '封印硬控！' });
+        } else {
+          this.log(`【封印落空】${e.name} 遁法敏捷闪避了封印！`);
+        }
+      }
+      if (window.Sound) window.Sound.playMagic();
       this.rewardSkillProficiency(ally, skill);
       return;
     }
 
-    // 8. 神仙系：定身咒 (无法攻击施法)
+    // 10. 仙人系：定身咒 (仙人通用半控，挨打即解)
     if (skill.name === '定身咒' || skill.id === 'sk_xr_dingshen') {
-      const res = (targetEnemy.resistances && targetEnemy.resistances.res_dingshen) || 0;
-      const lvl = skill.level || 1;
-      const hitRate = Math.max(0.35, 0.80 + lvl * 0.03 + (skill.proficiency || 0) * 0.0002 - res);
-      if (Math.random() < hitRate) {
-        targetEnemy.buffs.push({ id: 'dingshen', name: '定身', duration: 3 });
-        this.log(`【定身神咒 Lv.${lvl}】玄门金索缚定，【${targetEnemy.name}】无法攻击与施法！`);
-        window.Sound.playMagic();
-        if (cb) await cb({ type: 'dingshen', targetIndex: targetEnemy.enemyIndex, text: '定身禁锢！' });
-      } else {
-        this.log(`【定身落空】定身符光被【${targetEnemy.name}】闪避！`);
-        window.Sound.playFailure();
-        if (cb) await cb({ type: 'miss', targetIndex: targetEnemy.enemyIndex, text: '定身失败！' });
+      const calc = window.SkillMasteryEngine.calculateControlSpell('dingshen', skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【定身咒】！`);
+        return;
       }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
+      for (const e of hitTargets) {
+        if (Math.random() < calc.hitRate) {
+          e.buffs = e.buffs || [];
+          e.buffs.push({ id: 'dingshen', name: '定身', duration: calc.duration, breakOnDamage: true });
+          this.log(`【定身神咒 Lv.${skill.level}】金索缚定【${e.name}】，禁止攻击法术，受击即解！`);
+          if (cb) await cb({ type: 'dingshen', targetIndex: e.enemyIndex, text: '定身禁锢！' });
+        } else {
+          this.log(`【定身落空】定身灵光被【${e.name}】闪避！`);
+        }
+      }
+      if (window.Sound) window.Sound.playMagic();
       this.rewardSkillProficiency(ally, skill);
       return;
     }
 
-    // 9. 神仙系：隐身咒
+    // 11. 仙人系：隐身咒
     if (skill.name === '隐身咒' || skill.id === 'sk_xr_yinshen') {
-      const lvl = skill.level || 1;
-      ally.buffs.push({ id: 'yinshen', name: '隐身潜行', duration: 3, hideAttributes: true });
-      this.log(`【隐身咒 Lv.${lvl}】${ally.name} 遁入太虚虚空！属性不可窥探，闪避与暴击率飙升！`);
-      window.Sound.playMagic();
-      if (cb) await cb({ type: 'invis', target: ally.id, text: '遁入虚空隐身！' });
+      const calc = window.SkillMasteryEngine.calculateControlSpell('yinshen', skill.level, skill.mastery);
+      if (ally.mp < calc.costMp) {
+        this.log(`【法力枯竭】精力不足 (${ally.mp}/${calc.costMp})，无法施展【隐身咒】！`);
+        return;
+      }
+      ally.mp = Math.max(0, ally.mp - calc.costMp);
+
+      ally.buffs = ally.buffs || [];
+      ally.buffs.push({ id: 'yinshen', name: '隐身潜行', duration: calc.duration, hideAttributes: true, dodgeBonus: calc.dodgeBonus });
+      this.log(`【隐身咒 Lv.${skill.level}】${ally.name} 遁入虚空隐匿血条时序！`);
+      if (window.Sound) window.Sound.playMagic();
+      if (cb) await cb({ type: 'invis', target: ally.id, text: '隐匿身形！' });
       this.rewardSkillProficiency(ally, skill);
       return;
     }
   }
 
-  // 绝技熟练度结算与升级
+  // 绝技熟练度结算 (严格遵循 SkillMasteryEngine 5级25000法则与神坛菩提老祖突破铁律)
   rewardSkillProficiency(ally, skill) {
-    if (!skill) return;
+    if (!skill || !window.SkillMasteryEngine) return;
     const gain = Math.floor(Math.random() * 5 + 10);
-    skill.proficiency = (skill.proficiency || 0) + gain;
-    const curLvl = skill.level || 1;
-    const thresholds = { 1: 100, 2: 250, 3: 500, 4: 850 };
-    if (curLvl < 5 && skill.proficiency >= (thresholds[curLvl] || 9999)) {
-      skill.level = curLvl + 1;
-      this.log(`🌟【技能精进】${ally.name} 勤修苦练，绝技【${skill.name}】熟练度圆满，晋升至 Lv.${skill.level}！威力跃迁！`);
-      if (window.Sound) window.Sound.playSuccess();
+    const res = window.SkillMasteryEngine.gainMastery(skill, gain);
+
+    // 双向同步字段兼容
+    skill.proficiency = skill.mastery;
+
+    if (res.locked) {
+      this.log(`⚠️【熟练度瓶颈】${skill.name} 已达 Lv.${skill.level} 熟练度极境 (${skill.mastery})！已自动锁级，请前往长安城神坛拜谒【菩提老祖】突破升级！`);
       if (window.showGameMessage) {
-        window.showGameMessage(`🌟 绝技【${skill.name}】晋升至 Lv.${skill.level}！威力大幅提升！`, 'success');
+        window.showGameMessage(`⚠️ 绝技【${skill.name}】已达 ${skill.mastery} 熟练度极境！需前往长安城神坛拜谒菩提老祖突破！`, 'warning', 4500);
       }
     }
   }

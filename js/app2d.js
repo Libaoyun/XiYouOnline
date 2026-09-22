@@ -86,6 +86,7 @@ class GameApp2D {
 
     // 已交互/已点击 NPC 记录集合 (点击后永久消除头顶感叹号)
     this.interactedNpcSet = new Set();
+    this.collectedProps = new Set();
 
     // 收集与击杀任务计数器 (蘑菇、枯树精、硕鼠)
     this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
@@ -127,6 +128,9 @@ class GameApp2D {
     this.canvas.height = 580;
     this.camera.viewportWidth = 760;
     this.camera.viewportHeight = 580;
+
+    // 初始化已播放章节记录
+    this.initShownChapterSet();
 
     // 1. 初始化玩家数据 (序章：九重天阙威灵大将军开局)
     this.playerData = new window.Player({
@@ -224,8 +228,14 @@ class GameApp2D {
 
     this.bindInputs();
 
-    // 绑定离开页面自动保存与定时静默保存
+    // 绑定离开页面、切后台、隐藏标签页多维即时自动保存与心跳静默保存
     window.addEventListener('beforeunload', () => this.saveAutoProgress());
+    window.addEventListener('pagehide', () => this.saveAutoProgress());
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        this.saveAutoProgress();
+      }
+    });
     setInterval(() => this.saveAutoProgress(), 15000);
 
     // 启动 60FPS 渲染主循环
@@ -494,7 +504,10 @@ class GameApp2D {
         companions: this.companions,
         ghostQuest: this.ghostQuest,
         escortQuest: this.escortQuest,
-        interactedNpcIds: Array.from(this.interactedNpcSet || [])
+        interactedNpcIds: Array.from(this.interactedNpcSet || []),
+        collectedProps: Array.from(this.collectedProps || []),
+        shownChapters: Array.from(this.shownChapterSet || []),
+        questKills: this.questKills || { mushrooms: 0, trees: 0, rats: 0 }
       };
       if (window.SaveManager) {
         window.SaveManager.saveGameFullState(state);
@@ -511,6 +524,15 @@ class GameApp2D {
     if (!state || !state.mapId) return false;
 
     try {
+      if (state.shownChapters && Array.isArray(state.shownChapters)) {
+        this.shownChapterSet = new Set(state.shownChapters);
+      }
+      if (state.collectedProps && Array.isArray(state.collectedProps)) {
+        this.collectedProps = new Set(state.collectedProps);
+      }
+      if (state.questKills) {
+        this.questKills = Object.assign({ mushrooms: 0, trees: 0, rats: 0 }, state.questKills);
+      }
       if (state.interactedNpcIds && Array.isArray(state.interactedNpcIds)) {
         this.interactedNpcSet = new Set(state.interactedNpcIds);
       }
@@ -556,9 +578,13 @@ class GameApp2D {
       const targetMap = (state.mapId && window.GAME_DATA.MAPS_2D[state.mapId]) ? state.mapId : 'tiangong_palace';
       let spawn = state.playerPos || null;
       if (spawn && typeof this.ensurePlayerSafePosition === 'function') {
-        spawn = this.ensurePlayerSafePosition(targetMap, spawn.x, spawn.y);
+        const safe = this.ensurePlayerSafePosition(targetMap, spawn.x, spawn.y);
+        spawn = { x: safe.x, y: safe.y, direction: spawn.direction || 'down' };
       }
       this.loadMap(targetMap, spawn);
+      if (spawn && spawn.direction) {
+        this.playerChar.direction = spawn.direction;
+      }
       this.playerChar.isRiding = this.mountSystem.isRiding;
 
       const mapName = window.GAME_DATA.MAPS_2D[targetMap]?.name || '西游三界';
@@ -677,12 +703,14 @@ class GameApp2D {
             localStorage.removeItem('xiyou_story_progress');
             localStorage.removeItem('xiyou_pet_save');
             localStorage.removeItem('hanfeng_xy_save_auto_progress');
+            localStorage.removeItem('hanfeng_xy_shown_chapters');
           }
         } catch (e) {
           console.warn('清空存档异常:', e);
         }
 
         // 内存状态立即同步复位至天宫序章
+        this.shownChapterSet = new Set();
         this.storyPhase = 'heaven_prologue';
         this.isSealTriggered = false;
         this.isSealTriggering = false;
@@ -726,14 +754,21 @@ class GameApp2D {
     const tileY = Math.floor(targetY / ts);
 
     const isTileWalkable = (tx, ty) => {
+      if (this.tilemap && typeof this.tilemap.isWalkable === 'function') {
+        return this.tilemap.isWalkable(mapData, tx, ty);
+      }
       if (tx < 0 || ty < 0 || tx >= mapData.width || ty >= mapData.height) return false;
       if (!mapData.tiles[ty]) return false;
       const t = mapData.tiles[ty][tx];
       if (!t) return false;
-      if (t === 'water' || t === 'dark_water' || t === 'mountain_rock' || t === 'wall' || t === 'stone_wall' || t === 'void' || t === 'abyss') {
-        return false;
-      }
-      return true;
+      const solidTiles = [
+        'cloud_void', 'heaven_pillar', 'bamboo', 'water', 'dark_water',
+        'city_wall', 'hut_wall', 'palace_eaves', 'wooden_barricade',
+        'blacksmith_forge', 'mountain_rock', 'demon_cave_wall',
+        'ginseng_tree', 'purple_bamboo', 'tang_palace', 'tang_store',
+        'stone_temple', 'two_realms_stele', 'wall', 'stone_wall', 'void', 'abyss'
+      ];
+      return !solidTiles.includes(t);
     };
 
     if (isTileWalkable(tileX, tileY)) {
@@ -766,6 +801,16 @@ class GameApp2D {
 
   // 📜 剧情驱动 NPC 可见性：未到达指定剧情阶段前，后续主线 NPC 绝不提前现身
   isNpcVisibleInStoryPhase(npcId, storyPhase, mapId) {
+    const rawId = (typeof npcId === 'object' && npcId !== null) ? (npcId.id || '') : (npcId || '');
+    storyPhase = storyPhase || this.storyPhase;
+    mapId = mapId || this.currentMapId;
+    npcId = String(rawId);
+
+    // 采集品永续消隐校验：凡是已采集道具永久不可见
+    if (this.collectedProps && this.collectedProps.has(npcId)) {
+      return false;
+    }
+
     const phaseWeights = {
       heaven_prologue: 0,
       liujiacun_start: 10,
@@ -898,8 +943,9 @@ class GameApp2D {
       return true;
     }
 
-    // 11. 凡间刘家村：野生青蘑菇仅在采摘阶段可见
+    // 11. 凡间刘家村：野生青蘑菇仅在采摘阶段可见，且已采集过的永久不再出现
     if (npcId.startsWith('prop_mushroom_')) {
+      if (this.collectedProps && this.collectedProps.has(npcId)) return false;
       return storyPhase === 'liujiacun_find_mushrooms';
     }
 
@@ -914,8 +960,17 @@ class GameApp2D {
       return storyPhase === 'longgong_visit';
     }
 
-    // 13. 陈塘关观音菩萨显圣
+    // 13. 陈塘关主线 NPC 显隐（混混头目、观音雕像、显圣观音、侍侧龙王）
+    if (npcId === 'npc_hooligan_boss') {
+      return storyPhase === 'chentang_boss_ready';
+    }
+    if (npcId === 'npc_guanyin_statue') {
+      return storyPhase === 'chentang_statue_investigate' || storyPhase === 'donghai_yecha_ready' || storyPhase === 'donghai_dragon_arrived' || storyPhase === 'longgong_visit';
+    }
     if (npcId === 'npc_guanyin_pu_sa') {
+      return storyPhase === 'chentang_guanyin_revelation';
+    }
+    if (npcId === 'npc_aoguang_chentang') {
       return storyPhase === 'chentang_guanyin_revelation';
     }
 
@@ -1018,6 +1073,11 @@ class GameApp2D {
       // 长安与陈塘关东海
       'changan_arrived': 'npc_changan_tea',
       'chentang_investigate': 'npc_li_jing',
+      'chentang_defeat_hooligans': null,          // 街头惩戒4名混混中(李靖头顶无感叹号)
+      'chentang_hooligans_done': 'npc_li_jing',   // 复命李靖总兵
+      'chentang_boss_ready': 'npc_hooligan_boss', // 迎战混混头目雷震彪(1打3决战)
+      'chentang_boss_defeated': 'npc_li_jing',    // 击败头目后回总兵府领赏
+      'chentang_statue_investigate': 'npc_guanyin_statue', // 查探东侧海滨沉寂观音雕像
       'donghai_yecha_ready': 'npc_yecha',
       'donghai_dragon_arrived': 'npc_aoguang_coast',
       'longgong_visit': 'npc_aoguang',
@@ -1083,7 +1143,7 @@ class GameApp2D {
         type: 'monster',
         x: m.x,
         y: m.y,
-        speed: 1.6, // 平缓巡逻
+        speed: 1.12, // 野怪舒缓巡逻速度 (由原先 1.6 调降至 70% 约 1.12)
         patrolRadius: m.patrolRadius !== undefined ? m.patrolRadius : 30,
         appearance: m.appearance || (window.Character ? window.Character.inferMonsterType(m.name, m.id) : 'wild_wolf'),
         dialogue: [`【${m.name}】(Lv.${m.level || 5}) 呲牙咧嘴，凶煞逼人！`]
@@ -1105,6 +1165,9 @@ class GameApp2D {
 
     // 每次过图或进入新场景，自动持久化历练进度
     this.saveAutoProgress();
+
+    // 🌟 检查并自动触发当前章节国风开幕动画 (每个章节每位玩家只开幕一次，持久化到存档)
+    this.checkAndTriggerChapterOpening(mapId, this.storyPhase);
   }
 
   updateLocationHeader(name, region) {
@@ -1453,6 +1516,16 @@ class GameApp2D {
       }
     }
 
+    // 3.5 移动停步检测与位置即时持久化防抖 (彻底确保玩家停下后的最新坐标100%存入本地)
+    const isMovingNow = (dx !== 0 || dy !== 0 || this.autoMovePath.length > 0);
+    if (this._wasPlayerMoving && !isMovingNow) {
+      if (this._stopMoveSaveTimer) clearTimeout(this._stopMoveSaveTimer);
+      this._stopMoveSaveTimer = setTimeout(() => {
+        this.saveAutoProgress();
+      }, 300);
+    }
+    this._wasPlayerMoving = isMovingNow;
+
     // 4. 摄像机跟随
     const mapPixelW = mapData.width * this.tilemap.tileSize;
     const mapPixelH = mapData.height * this.tilemap.tileSize;
@@ -1543,6 +1616,54 @@ class GameApp2D {
       this.interactedNpcSet = new Set();
     }
     this.interactedNpcSet.add(npc.id);
+
+    // 依据当前最新 storyPhase 动态匹配李靖总兵的剧情对话
+    if (npc.id === 'npc_li_jing') {
+      if (this.storyPhase === 'chentang_hooligans_done') {
+        npc.dialogueKey = 'chentang_lijing_hooligans_done';
+      } else if (this.storyPhase === 'chentang_boss_defeated') {
+        npc.dialogueKey = 'chentang_lijing_reward';
+      } else if (this.storyPhase === 'chentang_defeat_hooligans') {
+        const count = (this.questKills && this.questKills.chentangHooligans) || 0;
+        window.Dialogue.start({
+          steps: [
+            {
+              speaker: '李靖总兵',
+              speakerTitle: '【陈塘总兵】',
+              speakerIcon: '👑',
+              text: `壮士，街头作恶混混甚是猖獗，还请速速前去将其制伏！目前已惩戒 (${count}/4)。`
+            }
+          ]
+        });
+        return;
+      } else if (this.storyPhase === 'chentang_boss_ready') {
+        window.Dialogue.start({
+          steps: [
+            {
+              speaker: '李靖总兵',
+              speakerTitle: '【陈塘总兵】',
+              speakerIcon: '👑',
+              text: `壮士，混混头目雷震彪正带着随从直奔东市而来，事不宜迟，请速速前往截击将其一网打尽！`
+            }
+          ]
+        });
+        return;
+      } else if (this.storyPhase === 'chentang_statue_investigate' || this.storyPhase === 'donghai_yecha_ready') {
+        window.Dialogue.start({
+          steps: [
+            {
+              speaker: '李靖总兵',
+              speakerTitle: '【陈塘总兵】',
+              speakerIcon: '👑',
+              text: `东侧海滨那尊观音雕像佛光沉寂，无法言语对话。海潮正向东海翻涌，壮士可深入东海之滨探查一番！`
+            }
+          ]
+        });
+        return;
+      } else if (this.storyPhase === 'chentang_investigate') {
+        npc.dialogueKey = 'chentang_lijing_talk';
+      }
+    }
 
     if (npc.dialogueKey && window.GAME_DATA.STORY_DIALOGUES[npc.dialogueKey]) {
       window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES[npc.dialogueKey]);
@@ -1974,35 +2095,227 @@ class GameApp2D {
     }
   }
 
-  // 汉风西游 - 正统水墨章节过场大幕演绎
-  showChapterBanner(title, subtitle, seal = '西游正传', duration = 2800) {
-    let overlay = document.getElementById('chapter-banner-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'chapter-banner-overlay';
-      overlay.className = 'chapter-banner-overlay';
-      const viewport = document.getElementById('game-viewport') || document.querySelector('.phone-screen-frame') || document.body;
-      viewport.appendChild(overlay);
+  // =========================================================================
+  // 🌟 汉风西游 - 2秒国风章回体震撼开幕动画系统 (ChapterOpeningSystem)
+  // 水墨展卷、金光劈空裂痕、烫金流光大字、七言绝句对联、朱砂御篆神印
+  // =========================================================================
+  showChapterOpening(chapterInput, onComplete = null) {
+    let config = null;
+    if (typeof chapterInput === 'string') {
+      if (window.GAME_DATA && window.GAME_DATA.CHAPTER_CONFIGS && window.GAME_DATA.CHAPTER_CONFIGS[chapterInput]) {
+        config = window.GAME_DATA.CHAPTER_CONFIGS[chapterInput];
+      } else {
+        config = {
+          title: chapterInput,
+          subtitle: '西游万古弘誓愿，荡魔诛邪踏征程',
+          seal: '西游正传'
+        };
+      }
+    } else if (typeof chapterInput === 'object' && chapterInput) {
+      config = chapterInput;
+    } else {
+      if (typeof onComplete === 'function') onComplete();
+      return;
     }
 
+    const title = config.title || '西游正传';
+    const subtitle = config.subtitle || '九万里西行求真经，荡魔斩妖立正果';
+    const seal = config.seal || '西游正传';
+    const duration = config.duration || 2000; // 精准 2 秒 (2000ms)
+
+    if (typeof document === 'undefined') {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    // 移除已有开幕节点（若有）
+    const existing = document.getElementById('chapter-opening-overlay');
+    if (existing && existing.parentNode) {
+      existing.remove();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'chapter-opening-overlay';
+    overlay.className = 'chapter-opening-overlay';
+
     overlay.innerHTML = `
-      <div class="chapter-banner-box">
-        <div class="chapter-banner-header">✦ JOURNEY TO THE WEST ✦</div>
-        <div class="chapter-banner-title">${title}</div>
-        <div class="chapter-banner-subtitle">${subtitle}</div>
-        <div class="chapter-banner-seal">【 ${seal} 】</div>
+      <div class="chapter-opening-bar-top">✦ 汉 风 西 游 · 章 回 演 义 ✦</div>
+      <div class="chapter-opening-box">
+        <div class="chapter-opening-goldline"></div>
+        <div class="chapter-opening-tag">✦ JOURNEY TO THE WEST ✦</div>
+        <div class="chapter-opening-title">${title}</div>
+        <div class="chapter-opening-poem">${subtitle}</div>
+        <div class="chapter-opening-seal-wrap">
+          <span class="chapter-opening-seal">【 ${seal} 】</span>
+        </div>
       </div>
+      <div class="chapter-opening-bar-bottom">✦ 西 天 取 经 · 功 德 圆 满 ✦</div>
+      <div class="chapter-opening-skip">点击屏幕任意位置跳过</div>
     `;
 
-    setTimeout(() => overlay.classList.add('active'), 30);
-    if (window.Sound) window.Sound.playSuccess();
+    const viewport = document.getElementById('game-viewport') || document.querySelector('.phone-screen-frame') || document.body;
+    viewport.appendChild(overlay);
 
-    setTimeout(() => {
+    if (window.Sound) {
+      try {
+        if (typeof window.Sound.playSuccess === 'function') {
+          window.Sound.playSuccess();
+        }
+      } catch (e) {}
+    }
+
+    let isClosed = false;
+    const closeOpening = () => {
+      if (isClosed) return;
+      isClosed = true;
       overlay.classList.remove('active');
+      overlay.classList.add('fade-out');
       setTimeout(() => {
-        if (overlay && overlay.parentNode) overlay.remove();
-      }, 550);
-    }, duration);
+        if (overlay && overlay.parentNode) {
+          overlay.remove();
+        }
+        if (typeof onComplete === 'function') {
+          onComplete();
+        }
+      }, 400);
+    };
+
+    // 支持点击屏幕任意位置立即跳过
+    if (typeof overlay.addEventListener === 'function') {
+      overlay.addEventListener('click', () => {
+        closeOpening();
+      });
+    } else {
+      overlay.onclick = () => {
+        closeOpening();
+      };
+    }
+
+    // 动效启动
+    setTimeout(() => {
+      if (!isClosed && overlay) overlay.classList.add('active');
+    }, 20);
+
+    // 持续时间到达 (1600ms 开始淡出，2000ms 彻底完成)
+    const fadeOutDelay = Math.max(800, duration - 400);
+    setTimeout(() => {
+      closeOpening();
+    }, fadeOutDelay);
+  }
+
+  // 兼容老版本调用，直接复用全新 2s 开幕动画
+  showChapterBanner(title, subtitle, seal = '西游正传', duration = 2000, onComplete = null) {
+    this.showChapterOpening({ title, subtitle, seal, duration }, onComplete);
+  }
+
+  // 章节自动判定与触发器 (每章节每位玩家只开幕一次，持久化到存档)
+  checkAndTriggerChapterOpening(mapId, storyPhase, onDone = null) {
+    if (!this.shownChapterSet) {
+      this.initShownChapterSet();
+    }
+
+    const configs = (window.GAME_DATA && window.GAME_DATA.CHAPTER_CONFIGS) || {};
+    let matchedChapterKey = null;
+
+    // 1. 序章：天宫蟠桃盛会
+    if (mapId === 'tiangong_palace' && (!storyPhase || storyPhase.startsWith('heaven_'))) {
+      if (!this.shownChapterSet.has('prologue')) {
+        matchedChapterKey = 'prologue';
+      }
+    }
+    // 2. 第一回：凡尘刘家村
+    else if (mapId === 'liujiacun' && (!storyPhase || storyPhase.startsWith('liujiacun_'))) {
+      if (!this.shownChapterSet.has('chapter_1')) {
+        matchedChapterKey = 'chapter_1';
+      }
+    }
+    // 3. 第二回：大唐长安城
+    else if (mapId === 'changan_city' || mapId === 'changan_shendan') {
+      if (!this.shownChapterSet.has('chapter_2')) {
+        matchedChapterKey = 'chapter_2';
+      }
+    }
+    // 4. 第三回：东海陈塘关与东海龙宫
+    else if (mapId === 'chentangguan' || mapId === 'donghai_coast' || mapId === 'longgong_palace' || mapId === 'shuijinggong') {
+      if (!this.shownChapterSet.has('chapter_3')) {
+        matchedChapterKey = 'chapter_3';
+      }
+    }
+    // 5. 第四回：两界山五行山
+    else if (mapId === 'wuxingshan') {
+      if (!this.shownChapterSet.has('chapter_4')) {
+        matchedChapterKey = 'chapter_4';
+      }
+    }
+    // 6. 第五回：鹰愁涧
+    else if (mapId === 'yingchoujian') {
+      if (!this.shownChapterSet.has('chapter_5')) {
+        matchedChapterKey = 'chapter_5';
+      }
+    }
+    // 7. 第六回：高老庄
+    else if (mapId === 'gaolaozhuang') {
+      if (!this.shownChapterSet.has('chapter_6')) {
+        matchedChapterKey = 'chapter_6';
+      }
+    }
+    // 8. 第七回：流沙河
+    else if (mapId === 'liushaho') {
+      if (!this.shownChapterSet.has('chapter_7')) {
+        matchedChapterKey = 'chapter_7';
+      }
+    }
+    // 9. 第八回：五庄观
+    else if (mapId === 'wuzhuangguan') {
+      if (!this.shownChapterSet.has('chapter_8')) {
+        matchedChapterKey = 'chapter_8';
+      }
+    }
+    // 10. 第九回：白虎岭
+    else if (mapId === 'baihuling') {
+      if (!this.shownChapterSet.has('chapter_9')) {
+        matchedChapterKey = 'chapter_9';
+      }
+    }
+    // 11. 第十回：宝象国
+    else if (mapId === 'baoxiangguo') {
+      if (!this.shownChapterSet.has('chapter_10')) {
+        matchedChapterKey = 'chapter_10';
+      }
+    }
+
+    if (matchedChapterKey && configs[matchedChapterKey]) {
+      this.shownChapterSet.add(matchedChapterKey);
+      this.saveShownChapterSet();
+      this.showChapterOpening(configs[matchedChapterKey], onDone);
+      return true;
+    }
+
+    if (typeof onDone === 'function') onDone();
+    return false;
+  }
+
+  initShownChapterSet() {
+    this.shownChapterSet = new Set();
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('hanfeng_xy_shown_chapters');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            arr.forEach(k => this.shownChapterSet.add(k));
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  saveShownChapterSet() {
+    try {
+      if (typeof localStorage !== 'undefined' && this.shownChapterSet) {
+        localStorage.setItem('hanfeng_xy_shown_chapters', JSON.stringify(Array.from(this.shownChapterSet)));
+      }
+    } catch (e) {}
   }
 
   // 绘制图3右上角四极雷达罗盘 (体、力、敏、法)
@@ -3158,8 +3471,10 @@ class GameApp2D {
         setTimeout(() => flash.remove(), 1200);
 
         setTimeout(() => {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.liuboqin_talk);
-        }, 1000);
+          if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.liuboqin_talk) {
+            window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.liuboqin_talk);
+          }
+        }, 2200);
       }, 800);
     }
   }
@@ -3172,7 +3487,7 @@ class GameApp2D {
     this.inventory.addItem('item_fresh_mushroom', 1);
     if (window.Sound) window.Sound.playSuccess();
 
-    // 拾取距离玩家最近的蘑菇实体
+    // 拾取距离玩家最近的蘑菇实体并永久移除，绝不重复刷新
     let nearestMushroom = null;
     let minDist = 9999;
     for (const n of this.npcs) {
@@ -3185,17 +3500,21 @@ class GameApp2D {
       }
     }
     if (nearestMushroom) {
+      if (!this.collectedProps) this.collectedProps = new Set();
+      this.collectedProps.add(nearestMushroom.id);
       this.npcs = this.npcs.filter(n => n.id !== nearestMushroom.id);
     }
 
-    if (this.questKills.mushrooms >= 4) {
+    if (this.questKills.mushrooms >= 2) {
       this.storyPhase = 'liujiacun_mushrooms_collected';
-      window.showGameMessage('🎉 4朵新鲜野生青蘑菇已采齐！快拿去给刘伯钦生火下锅！', 'success', 4500);
+      window.showGameMessage('🎉 2朵新鲜野生青蘑菇已采齐！快拿去给刘伯钦生火下锅！', 'success', 4500);
+      const boqin = this.npcs.find(n => n.id === 'npc_liuboqin');
+      if (boqin) boqin.questStatus = 'available';
     } else {
-      window.showGameMessage(`🍄 采得野生青蘑菇！(${this.questKills.mushrooms}/4)`, 'info', 3000);
+      window.showGameMessage(`🍄 采得野生青蘑菇！(${this.questKills.mushrooms}/2)`, 'info', 3000);
     }
     this.updatePlayerHud();
-    this.refreshMapNpcs();
+    this.saveAutoProgress();
   }
 
   // 4. 刘伯钦资助
@@ -3272,6 +3591,96 @@ class GameApp2D {
           this.refreshMapNpcs();
         }
       }
+
+      // 陈塘关清剿 4 名作恶混混主线推进
+      if (monsterChar.name.includes('混混') || monsterChar.id.includes('hooligan') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'hooligan')) {
+        if (this.storyPhase === 'chentang_defeat_hooligans') {
+          if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0, chentangHooligans: 0 };
+          this.questKills.chentangHooligans = (this.questKills.chentangHooligans || 0) + 1;
+          if (this.questKills.chentangHooligans >= 4) {
+            this.storyPhase = 'chentang_hooligans_done';
+            if (window.Sound) window.Sound.playCrit();
+            window.showGameMessage('🎉 4名作恶混混已全部制伏！陈塘关街市初定，快回总兵府向李靖复命！', 'success', 4500);
+          } else {
+            window.showGameMessage(`🥋 制伏街头作恶混混 (${this.questKills.chentangHooligans}/4)`, 'info', 3000);
+          }
+          this.refreshMapNpcs();
+        }
+      }
+    });
+  }
+
+  // 5.5 陈塘关混混头目 1 打 3 决战 (头目 + 两名小兵随从)
+  triggerHooliganBossBattle() {
+    if (window.Dialogue) {
+      window.Dialogue.close();
+    }
+    const boss = {
+      id: 'hooligan_boss',
+      templateId: 'hooligan',
+      appearance: 'hooligan_boss',
+      modelId: 'hooligan_boss',
+      name: '混混头目·雷震彪',
+      isMutated: false,
+      isBoss: true,
+      level: 16,
+      hp: 1500,
+      maxHp: 1500,
+      mp: 300,
+      maxMp: 300,
+      atk: 105,
+      def: 48,
+      matk: 20,
+      mdef: 20,
+      spd: 26,
+      skills: ['破甲拳', '连击']
+    };
+    const minion1 = {
+      id: 'hooligan_minion_1',
+      templateId: 'hooligan',
+      appearance: 'hooligan',
+      modelId: 'hooligan',
+      name: '地痞随从·恶犬',
+      isMutated: false,
+      isBoss: false,
+      level: 12,
+      hp: 500,
+      maxHp: 500,
+      mp: 100,
+      maxMp: 100,
+      atk: 60,
+      def: 28,
+      matk: 10,
+      mdef: 10,
+      spd: 22,
+      skills: ['普通攻击']
+    };
+    const minion2 = {
+      id: 'hooligan_minion_2',
+      templateId: 'hooligan',
+      appearance: 'hooligan',
+      modelId: 'hooligan',
+      name: '地痞随从·飞蝗',
+      isMutated: false,
+      isBoss: false,
+      level: 12,
+      hp: 500,
+      maxHp: 500,
+      mp: 100,
+      maxMp: 100,
+      atk: 60,
+      def: 28,
+      matk: 10,
+      mdef: 10,
+      spd: 22,
+      skills: ['普通攻击']
+    };
+
+    this.start2DBattle([boss, minion1, minion2], () => {
+      this.storyPhase = 'chentang_boss_defeated';
+      if (window.Sound) window.Sound.playCrit();
+      window.showGameMessage('🎉 混混头目携随从惨败求饶，落荒而逃！速回陈塘总兵帅府向李靖复命领赏！', 'success', 5000);
+      this.refreshMapNpcs();
     });
   }
 
@@ -3339,7 +3748,7 @@ class GameApp2D {
 
     setTimeout(() => {
       this.storyPhase = 'chentang_guanyin_revelation';
-      this.loadMap('chentangguan');
+      this.loadMap('chentangguan', { x: 576, y: 384 });
       window.showGameMessage('☁️ 返回陈塘关！天际祥云缭绕，仙乐阵阵！', 'info', 3500);
       setTimeout(() => {
         if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation) {
@@ -6435,66 +6844,74 @@ class GameApp2D {
       }
     }
 
-    // 构建生灵名册 HTML
+    // 构建生灵与场景任务万象名册 HTML
     modal.innerHTML = `
       <div class="roster-modal-box" onclick="event.stopPropagation()">
-        <!-- 顶栏标题 -->
-        <div class="roster-header">
-          <div class="roster-header-title">
-            <span>📜</span>
-            <span>【${mapData.name}】当前场景生灵名册</span>
-            <span style="font-size:11px;color:#a8e6cf;font-weight:normal;">(按 Tab 键关闭)</span>
+        <!-- 顶栏双龙金匾 -->
+        <div class="roster-dragon-header">
+          <div class="roster-header-left">
+            <span class="roster-dragon-crest">🐉</span>
+            <div class="roster-header-title-box">
+              <span class="roster-header-main-title">当前场景万灵名册 · 任务探寻</span>
+              <span class="roster-scene-tag">🏯 ${mapData.name} (${mapData.region || '大唐'})</span>
+            </div>
           </div>
-          <button class="roster-close-btn" onclick="window.App2D.toggleSceneRosterModal(false)" title="关闭名册 (Esc/Tab)">✕</button>
+          <div class="roster-header-right">
+            <span class="roster-hotkey-tip">[Tab / Esc 关闭]</span>
+            <button class="roster-close-btn" onclick="window.App2D.toggleSceneRosterModal(false)" title="关闭名册 (Esc/Tab)">✕</button>
+          </div>
         </div>
 
         <!-- 主体：左侧名录 + 右侧生灵详案 -->
-        <div class="roster-body">
-          <!-- 左侧生灵两级列表 -->
+        <div class="roster-main-body">
+          <!-- 左侧生灵两级列表 (固定宽 300px，自适应平滑滚动) -->
           <div class="roster-list-panel">
-            <!-- 1. NPC 栏目 -->
-            <div class="roster-section-title">
-              <span>🏛️ 场景仙民 / NPC (${npcs.length}位)</span>
+            <!-- 1. NPC 任务仙民分组 -->
+            <div class="roster-group-title">
+              <span class="roster-group-icon">🏛️</span>
+              <span class="roster-group-name">场景仙民 / NPC (${npcs.length}位)</span>
             </div>
-            <div class="roster-items-group">
-              ${npcs.length === 0 ? `<div class="roster-empty-tip">当前场景无往来仙民</div>` : npcs.map(n => {
+            <div class="roster-items-column">
+              ${npcs.length === 0 ? `<div class="roster-empty-tip">当前场景暂无往来仙民</div>` : npcs.map(n => {
                 const isSelected = (selectedType === 'npc' && selectedObj && selectedObj.id === n.id);
                 const roleId = window.Dialogue ? window.Dialogue.inferRoleId(n.name, n.title) : 'shaoxia';
-                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 28) : '👤';
+                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 32) : '👤';
+                const hasQuest = (n.questStatus === 'available');
                 return `
                   <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${n.id}')">
-                    <div class="roster-item-avatar">${portraitSvg}</div>
-                    <div class="roster-item-meta">
-                      <div class="roster-item-name">
-                        <span>${n.name}</span>
-                        ${n.questStatus === 'available' ? '<span class="roster-quest-badge">！</span>' : ''}
+                    <div class="roster-item-avatar-frame">${portraitSvg}</div>
+                    <div class="roster-item-info">
+                      <div class="roster-item-title-row">
+                        <span class="roster-item-name-text">${n.name}</span>
+                        ${hasQuest ? '<span class="roster-quest-pulse-tag">🌟 任务</span>' : ''}
                       </div>
-                      <div class="roster-item-sub">${n.title || '三界隐逸仙民'}</div>
+                      <div class="roster-item-desc-text">${n.title || '驻留仙民'} · [${Math.round(n.x/32)}, ${Math.round(n.y/32)}]</div>
                     </div>
                   </div>
                 `;
               }).join('')}
             </div>
 
-            <!-- 2. 野怪栏目 (每种严格只展示一个) -->
-            <div class="roster-section-title" style="margin-top:8px;">
-              <span>🐾 出没异兽 / 野怪 (${uniqueMonsters.length}种)</span>
+            <!-- 2. 野怪异兽分组 (每种严格只展示一个) -->
+            <div class="roster-group-title" style="margin-top:12px;">
+              <span class="roster-group-icon">🐾</span>
+              <span class="roster-group-name">出没异兽 / 野怪 (${uniqueMonsters.length}种)</span>
             </div>
-            <div class="roster-items-group">
+            <div class="roster-items-column">
               ${uniqueMonsters.length === 0 ? `<div class="roster-empty-tip">当前场景太平安谧，无恶煞出没</div>` : uniqueMonsters.map(um => {
                 const m = um.instance;
                 const isSelected = (selectedType === 'monster' && selectedObj && selectedObj.key === um.key);
                 const mobType = m.appearance || (window.Character ? window.Character.inferMonsterType(um.pureName, m.id) : 'wild_wolf');
-                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 28) : '🐺';
+                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 32) : '🐺';
                 return `
                   <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${um.key}')">
-                    <div class="roster-item-avatar">${portraitSvg}</div>
-                    <div class="roster-item-meta">
-                      <div class="roster-item-name">
-                        <span class="roster-level-badge">Lv.${m.level || 5}</span>
-                        <span>${um.pureName}</span>
+                    <div class="roster-item-avatar-frame">${portraitSvg}</div>
+                    <div class="roster-item-info">
+                      <div class="roster-item-title-row">
+                        <span class="roster-item-name-text">${um.pureName}</span>
+                        <span class="roster-mob-level-pill">Lv.${m.level || 5}</span>
                       </div>
-                      <div class="roster-item-sub">气血: ${m.hp}/${m.maxHp} · 攻击: ${m.atk}</div>
+                      <div class="roster-item-desc-text">气血: ${m.hp}/${m.maxHp} · 攻击: ${m.atk}</div>
                     </div>
                   </div>
                 `;
@@ -6502,58 +6919,73 @@ class GameApp2D {
             </div>
           </div>
 
-          <!-- 右侧生灵精研档案详情 -->
+          <!-- 右侧生灵精研档案详情 (自适应弹性填充) -->
           <div class="roster-detail-panel">
-            ${selectedObj ? this._renderRosterDetailCard(selectedType, selectedObj) : `<div class="roster-empty-tip">请选择左侧生灵查阅档案</div>`}
+            ${selectedObj ? this._renderRosterDetailCard(selectedType, selectedObj) : `<div class="roster-empty-tip">请选择左侧生灵查阅档案详案</div>`}
           </div>
         </div>
       </div>
     `;
   }
 
-  // 内部辅助：渲染名册右侧详案卡片
+  // 内部辅助：渲染名册右侧详案卡片 (国风玉简极度精细排版)
   _renderRosterDetailCard(type, obj) {
     if (type === 'npc') {
       const npc = obj;
       const roleId = window.Dialogue ? window.Dialogue.inferRoleId(npc.name, npc.title) : 'shaoxia';
-      const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 64) : '👤';
+      const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 68) : '👤';
       const roleSeal = window.Dialogue ? window.Dialogue.getRoleBadge(roleId, npc.name) : '<div class="dialogue-role-seal seal-mortal">人</div>';
       const coordX = Math.round(npc.x / 32);
       const coordY = Math.round(npc.y / 32);
+      const hasQuest = (npc.questStatus === 'available');
 
       return `
-        <div class="roster-detail-card">
-          <div class="roster-detail-top">
-            <div class="roster-detail-avatar-box">
+        <div class="roster-card-content">
+          <!-- 头部肖像与尊号 -->
+          <div class="roster-card-header">
+            <div class="roster-card-avatar-wrap">
               ${bigPortraitSvg}
               ${roleSeal}
             </div>
-            <div class="roster-detail-titles">
-              <div class="roster-detail-name">${npc.name}</div>
-              <div class="roster-detail-title-tag">${npc.title || '驻留仙民'}</div>
-              <div class="roster-detail-coords">📍 场景坐标: [${coordX}, ${coordY}]</div>
+            <div class="roster-card-title-wrap">
+              <div class="roster-card-name-row">
+                <span class="roster-card-name">${npc.name}</span>
+                <span class="roster-card-tag">${npc.title || '三界隐逸仙民'}</span>
+              </div>
+              <div class="roster-card-location">📍 场景罗盘坐标: [横向 ${coordX}, 纵向 ${coordY}]</div>
             </div>
           </div>
 
-          <div class="roster-detail-divider"></div>
+          <div class="roster-card-divider"></div>
 
-          <div class="roster-detail-section">
-            <div class="roster-detail-label">📖 仙家生平与传记:</div>
-            <div class="roster-detail-bio">
-              ${npc.dialogueKey ? `司掌西游命数羁绊之仙道人物。与之交谈可领悟天道因缘、领取三界宏愿或探知西行机密。` : `驻留于此的世外散仙凡灵，常对来往侠士予以修行指引。`}
+          <!-- 任务机缘专区 -->
+          <div class="roster-info-block ${hasQuest ? 'highlight-quest-block' : ''}">
+            <div class="roster-block-label">
+              <span>${hasQuest ? '🌟 核心任务机缘与交接' : '🎯 往来仙道机缘'}</span>
+            </div>
+            <div class="roster-block-desc">
+              ${hasQuest 
+                ? '【重要提示】当前少侠正处于此人主持的剧情因缘中！与之交谈将触发关键剧情推进、领取神装或进入全新冒险章节！' 
+                : '闲暇神游于此方天地。少侠可前往与之探讨西行秘辛、市井风物或请教天地大道。'}
             </div>
           </div>
 
-          <div class="roster-detail-section">
-            <div class="roster-detail-label">🎯 交互机缘:</div>
-            <div class="roster-detail-text">
-              ${npc.questStatus === 'available' ? '🌟 当前有重要主线/奇遇任务在此人身上，请速前往对话！' : '🌿 处于闲暇神游状态，少侠可随时前往与之论道切磋。'}
+          <!-- 仙灵生平传记专区 -->
+          <div class="roster-info-block">
+            <div class="roster-block-label">
+              <span>📖 仙家生平与三界因缘</span>
+            </div>
+            <div class="roster-block-desc">
+              ${npc.dialogueKey 
+                ? '西游大世中举足轻重之关键神佛仙灵，一言一行牵动九重天阙与幽冥六道。' 
+                : '常年驻留于此的世外散仙凡灵，热心指引过往少侠历练修行。'}
             </div>
           </div>
 
-          <div class="roster-detail-action-bar">
-            <button class="roster-nav-btn" onclick="window.App2D.navigateRosterToNpc('${npc.id}')">
-              🚶 智能寻路前往拜会
+          <!-- 底部快捷寻路按钮 -->
+          <div class="roster-card-action-row">
+            <button class="roster-action-nav-btn" onclick="window.App2D.navigateRosterToNpc('${npc.id}')">
+              🚶 一键智能寻路前往拜会
             </button>
           </div>
         </div>
@@ -6562,63 +6994,86 @@ class GameApp2D {
       const um = obj;
       const mob = um.instance;
       const mobType = mob.appearance || (window.Character ? window.Character.inferMonsterType(um.pureName, mob.id) : 'wild_wolf');
-      const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 64) : '🐺';
+      const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 68) : '🐺';
       const hpPct = Math.round((mob.hp / mob.maxHp) * 100);
 
       return `
-        <div class="roster-detail-card">
-          <div class="roster-detail-top">
-            <div class="roster-detail-avatar-box">
+        <div class="roster-card-content">
+          <!-- 头部肖像与等级 -->
+          <div class="roster-card-header">
+            <div class="roster-card-avatar-wrap">
               ${bigPortraitSvg}
               <div class="dialogue-role-seal seal-demon">妖</div>
             </div>
-            <div class="roster-detail-titles">
-              <div class="roster-detail-name">
-                <span>${um.pureName}</span>
-                <span class="roster-level-badge" style="font-size:12px;margin-left:6px;">Lv.${mob.level || 5}</span>
+            <div class="roster-card-title-wrap">
+              <div class="roster-card-name-row">
+                <span class="roster-card-name">${um.pureName}</span>
+                <span class="roster-mob-level-pill" style="font-size:12px;padding:2px 8px;">Lv.${mob.level || 5}</span>
               </div>
-              <div class="roster-detail-title-tag" style="background:#5c2424;color:#ff9f43;">天地精怪 · 凶性四溢</div>
-              <div class="roster-detail-coords" style="color:#ff7675;">⚔️ 巡逻警戒半径: ${mob.patrolRadius || 30}步</div>
+              <div class="roster-card-location" style="color:#ff7675;">⚔️ 巡逻警戒领地: 半径 ${mob.patrolRadius || 30} 步</div>
             </div>
           </div>
 
-          <div class="roster-detail-divider"></div>
+          <div class="roster-card-divider"></div>
 
-          <!-- 气血与战力属性 -->
-          <div class="roster-detail-section">
-            <div class="roster-detail-label">🩸 气血灵韵:</div>
-            <div class="roster-hp-bar-outer">
-              <div class="roster-hp-bar-fill" style="width:${hpPct}%;"></div>
-              <span class="roster-hp-bar-text">${mob.hp} / ${mob.maxHp} (${hpPct}%)</span>
+          <!-- 气血与元神充盈度 -->
+          <div class="roster-info-block">
+            <div class="roster-block-label">
+              <span>🩸 气血灵韵 (生命值)</span>
+              <span style="font-size:11px;color:#fffa65;">${mob.hp} / ${mob.maxHp} (${hpPct}%)</span>
+            </div>
+            <div class="roster-bar-container">
+              <div class="roster-bar-fill" style="width:${hpPct}%;"></div>
             </div>
           </div>
 
-          <div class="roster-detail-section">
-            <div class="roster-detail-label">⚡ 战法修行三维:</div>
-            <div class="roster-stats-grid">
-              <div class="roster-stat-cell">⚔️ 攻击: <span style="color:#ff6b6b;font-weight:bold;">${mob.atk}</span></div>
-              <div class="roster-stat-cell">🛡️ 防御: <span style="color:#48dbfb;font-weight:bold;">${mob.def}</span></div>
-              <div class="roster-stat-cell">🌪️ 身法速度: <span style="color:#1dd1a1;font-weight:bold;">${mob.spd}</span></div>
+          <!-- 战法修持三维 -->
+          <div class="roster-info-block">
+            <div class="roster-block-label">
+              <span>⚡ 战法修行三维能力</span>
+            </div>
+            <div class="roster-stats-triplet">
+              <div class="roster-stat-box">
+                <span class="stat-icon">⚔️</span>
+                <span class="stat-name">物理攻击</span>
+                <span class="stat-num" style="color:#ff6b6b;">${mob.atk}</span>
+              </div>
+              <div class="roster-stat-box">
+                <span class="stat-icon">🛡️</span>
+                <span class="stat-name">物理防御</span>
+                <span class="stat-num" style="color:#48dbfb;">${mob.def}</span>
+              </div>
+              <div class="roster-stat-box">
+                <span class="stat-icon">🌪️</span>
+                <span class="stat-name">身法速度</span>
+                <span class="stat-num" style="color:#1dd1a1;">${mob.spd}</span>
+              </div>
             </div>
           </div>
 
-          <div class="roster-detail-section">
-            <div class="roster-detail-label">🔥 掌握神通绝技:</div>
-            <div class="roster-skills-list">
-              ${(mob.skills || ['普通攻击']).map(sk => `<span class="roster-skill-tag">🥋 ${sk}</span>`).join('')}
+          <!-- 掌握神通 -->
+          <div class="roster-info-block">
+            <div class="roster-block-label">
+              <span>🔥 掌握神通武技</span>
+            </div>
+            <div class="roster-skills-wrap">
+              ${(mob.skills || ['普通攻击']).map(sk => `<span class="roster-skill-badge">🥋 ${sk}</span>`).join('')}
             </div>
           </div>
 
-          <div class="roster-detail-section">
-            <div class="roster-detail-label">📜 异兽生息录:</div>
-            <div class="roster-detail-bio">
-              ${mob.dialogue?.[0] || `游荡于本方场景之天地凶煞野怪。斩灭可淬炼道行真元，亦可于回合战斗中施展【收服】降伏为护法仙宠。`}
+          <!-- 异兽生息录与警示 -->
+          <div class="roster-info-block">
+            <div class="roster-block-label">
+              <span>📜 异兽生息录</span>
+            </div>
+            <div class="roster-block-desc">
+              ${mob.dialogue?.[0] || '游荡于此方胜境之天地凶兽精怪。斩灭可淬炼道行经验，战斗中亦可施展【收服】将其纳为护法仙宠。'}
             </div>
           </div>
 
-          <div class="roster-detail-action-bar">
-            <div class="roster-mob-caution">
-              ⚠️ 野外游荡怪物具有攻击戒备心，走至身旁将触发回合对决！
+          <div class="roster-card-action-row">
+            <div class="roster-mob-warning-box">
+              ⚠️ 靠近游荡野怪身旁将立即切入回合制对战，请备好仙药！
             </div>
           </div>
         </div>
@@ -6660,9 +7115,229 @@ class GameApp2D {
       }
     }
   }
+
+  // =========================================================================
+  // 菩提老祖神坛交互：技能熟练度体系、1/5提前突破、全职业授业与仙宠10级觉醒
+  // =========================================================================
+
+  // 初始化或保障角色门派技能
+  ensurePlayerClassSkills() {
+    this.playerData = this.playerData || {};
+    this.playerData.skills = this.playerData.skills || [];
+    if (this.playerData.skills.length === 0) {
+      const clsId = this.playerData.class || 'jingang';
+      const gender = this.playerData.gender || 'male';
+      if (window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
+        this.playerData.skills = window.GAME_DATA.getSkillsForClassAndGender(clsId, gender);
+      }
+    }
+    return this.playerData.skills;
+  }
+
+  // 拜谒菩提老祖：领悟门派道法
+  learnClassSkillsFromMaster() {
+    const clsId = this.playerData.class || 'jingang';
+    const gender = this.playerData.gender || 'male';
+    if (window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
+      const newSkills = window.GAME_DATA.getSkillsForClassAndGender(clsId, gender);
+      // 保留已有的熟练度和等级
+      newSkills.forEach(ns => {
+        const exist = (this.playerData.skills || []).find(s => s.id === ns.id);
+        if (exist) {
+          ns.level = exist.level || 1;
+          ns.mastery = exist.mastery || 0;
+        }
+      });
+      this.playerData.skills = newSkills;
+      if (window.Sound && window.Sound.playSuccess) window.Sound.playSuccess();
+      if (window.showGameMessage) {
+        window.showGameMessage(`✨【老祖传道】菩提老祖拂尘点化，恭喜领悟本门三大正统神通技能！`, 'success', 4500);
+      }
+    }
+  }
+
+  // 仙宠 10 级觉醒授法
+  awakenPetSkillAtMaster() {
+    const activePet = this.playerData.activePet || (this.playerData.pets && this.playerData.pets[0]);
+    if (!activePet) {
+      if (window.showGameMessage) window.showGameMessage('菩提老祖温和道：“少侠身侧尚未唤出随行仙宠，请先唤出仙宠再来授业！”', 'info', 3500);
+      return;
+    }
+    if ((activePet.level || 1) < 10) {
+      if (window.showGameMessage) window.showGameMessage(`菩提老祖抚须道：“仙宠【${activePet.name}】当前仅 Lv.${activePet.level || 1}，需待其达 Lv.10 灵智开化方可受法！”`, 'warning', 4000);
+      return;
+    }
+
+    activePet.skills = activePet.skills || [];
+    if (!activePet.skills.some(s => s.id === 'sk_pet_tianlei' || s.name === '天雷引')) {
+      activePet.skills.push({
+        id: 'sk_pet_tianlei',
+        name: '天雷引',
+        level: 1,
+        mastery: 0,
+        maxLevel: 5,
+        icon: '⚡',
+        desc: '灵宠专属雷法！引动九霄天雷轰杀敌方单个目标，受熟练度增幅威力强盛！'
+      });
+      if (window.Sound && window.Sound.playSuccess) window.Sound.playSuccess();
+      if (window.showGameMessage) {
+        window.showGameMessage(`🌟【灵智觉醒】仙宠【${activePet.name}】得菩提老祖真传，领悟专属仙法【天雷引】！`, 'success', 5000);
+      }
+    } else {
+      if (window.showGameMessage) {
+        window.showGameMessage(`仙宠【${activePet.name}】已受老祖启智，可常在战斗中施展以积累熟练度！`, 'info', 3500);
+      }
+    }
+  }
+
+  // 打开【神坛·技能参悟与熟练度突破】模态框
+  openSkillMasteryModal() {
+    if (typeof document === 'undefined') return;
+    const old = document.getElementById('skill-mastery-modal');
+    if (old) old.remove();
+
+    this.ensurePlayerClassSkills();
+    const skills = this.playerData.skills || [];
+    const isAtShendan = (this.currentMapId === 'changan_shendan');
+
+    const html = `
+      <div id="skill-mastery-modal" class="modal-overlay active" style="z-index:9999;display:flex;align-items:center;justify-content:center;">
+        <div class="roster-modal-box" style="width:720px;max-width:96vw;height:520px;display:flex;flex-direction:column;background:radial-gradient(circle at center, #24140b 0%, #120904 100%);border:2px solid #ffd700;box-shadow:0 0 25px rgba(0,0,0,0.9), 0 0 15px rgba(255,215,0,0.3);border-radius:10px;overflow:hidden;font-family:'Noto Serif SC','SimSun',serif;">
+          
+          <!-- 顶栏金匾 -->
+          <div class="roster-dragon-header" style="padding:10px 16px;background:linear-gradient(to right, #4a2810, #804e1c, #4a2810);border-bottom:2px solid #ffd700;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">✨</span>
+              <span style="font-size:16px;font-weight:bold;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,0.6);">长安神坛 · 菩提老祖道法参悟</span>
+              <span style="font-size:11px;padding:1px 6px;border-radius:4px;background:#3a1c0c;border:1px solid #c59b27;color:#f5deb3;">五级熟练度法则</span>
+            </div>
+            <button onclick="document.getElementById('skill-mastery-modal').remove()" style="background:transparent;border:none;color:#ffd700;font-size:18px;cursor:pointer;">✕</button>
+          </div>
+
+          <!-- 法则提醒条 -->
+          <div style="background:#1b0f07;padding:6px 16px;border-bottom:1px solid #5a3818;font-size:11px;color:#dcdcdc;display:flex;justify-content:space-between;align-items:center;">
+            <span>📜 <strong>五级熟练度法则</strong>：每级跨度5000，满熟练度25000！当前品级达到 1/5(1000点) 即可找菩提老祖突破！</span>
+            <span style="color:${isAtShendan ? '#2ed573' : '#ffa502'};font-weight:bold;">${isAtShendan ? '📍 现正处于长安神坛' : '⚠️ 需至长安神坛找菩提老祖突破'}</span>
+          </div>
+
+          <!-- 技能列表区 -->
+          <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;">
+            ${skills.map(sk => {
+              const lvl = sk.level || 1;
+              const mastery = (sk.mastery !== undefined) ? sk.mastery : (sk.proficiency || 0);
+              const isLocked = window.SkillMasteryEngine ? window.SkillMasteryEngine.isLevelLocked(lvl, mastery) : (mastery >= lvl * 5000);
+              const canUp = window.SkillMasteryEngine ? window.SkillMasteryEngine.canUpgrade(lvl, mastery) : false;
+              const minReq = window.SkillMasteryEngine ? window.SkillMasteryEngine.getMinMasteryForUpgrade(lvl) : 1000;
+              const spanMax = lvl * 5000;
+              const pct = Math.min(100, Math.floor((mastery / spanMax) * 100));
+
+              // 预览数值
+              let previewText = '';
+              if (sk.name === '舍生取义' || sk.id === 'sk_jg_shesheng') {
+                const c = window.SkillMasteryEngine.calculateShesheng(null, null, lvl, mastery);
+                previewText = `破甲绝杀: ${c.damage} | 自损反噬: ${c.selfDamage} | 耗蓝: ${c.costMp} (气血需>=10%)`;
+              } else if (sk.name === '雷霆万钧' || sk.id === 'sk_ym_leiting') {
+                const c = window.SkillMasteryEngine.calculateLeiting(null, null, lvl, mastery);
+                previewText = `单体法伤: ${c.damage} | 耗蓝: ${c.costMp} MP (极高魔雷)`;
+              } else if (sk.name === '封印咒' || sk.id === 'sk_xr_fengyin') {
+                const c = window.SkillMasteryEngine.calculateControlSpell('fengyin', lvl, mastery);
+                previewText = `封印硬控 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 耗蓝: ${c.costMp} MP`;
+              } else if (sk.name === '定身咒' || sk.id === 'sk_xr_dingshen') {
+                const c = window.SkillMasteryEngine.calculateControlSpell('dingshen', lvl, mastery);
+                previewText = `定身禁锢 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 受击即苏醒 | 耗蓝: ${c.costMp} MP`;
+              } else if (sk.name === '乱魂咒' || sk.id === 'sk_xr_luanhun') {
+                const c = window.SkillMasteryEngine.calculateControlSpell('luanhun', lvl, mastery);
+                previewText = `混乱内讧 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 耗蓝: ${c.costMp} MP`;
+              } else if (sk.name === '三昧真火' || sk.name === '飞沙走石') {
+                const c = window.SkillMasteryEngine.calculateGroupSpell(sk.name, null, 4, lvl, mastery);
+                previewText = `群法必中 | 目标: 1~${c.maxTargets}人 | 人均: ${c.perTargetDamage} | 耗蓝: ${c.costMp} MP`;
+              } else if (sk.name === '佛光普照' || sk.name === '如来神掌') {
+                const c = window.SkillMasteryEngine.calculateMpDrainAttack(sk.name === '如来神掌', null, null, lvl, mastery);
+                previewText = `削血: ${c.damage} | 扣蓝: ${c.mpDrain} MP | 耗蓝: ${c.costMp} MP`;
+              } else {
+                previewText = sk.desc;
+              }
+
+              return `
+                <div style="background:#1a0f07;border:1.5px solid ${isLocked ? '#ff4757' : (canUp ? '#ffd700' : '#4a2c16')};border-radius:8px;padding:12px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 8px rgba(0,0,0,0.5);">
+                  <div style="font-size:32px;width:52px;height:52px;background:#2d170a;border:1px solid #c59b27;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    ${sk.icon || '⚔️'}
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                      <span style="font-size:16px;font-weight:bold;color:#ffd700;">${sk.name}</span>
+                      <span style="font-size:11px;padding:1px 6px;border-radius:4px;background:#502c11;color:#fff;border:1px solid #ffd700;">Lv.${lvl} / 5</span>
+                      ${isLocked ? '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#eb4d4b;color:#fff;">⚠️ 当前品级已锁级(满5000)</span>' : ''}
+                      ${canUp && !isLocked ? '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#27ae60;color:#fff;">✨ 达到1/5门槛可提前突破</span>' : ''}
+                    </div>
+
+                    <!-- 进度条 -->
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                      <div style="flex:1;height:8px;background:#0d0603;border:1px solid #5a361c;border-radius:4px;overflow:hidden;">
+                        <div style="width:${pct}%;height:100%;background:linear-gradient(to right, #e67e22, #f1c40f);border-radius:4px;"></div>
+                      </div>
+                      <span style="font-size:11px;color:#f39c12;font-family:monospace;white-space:nowrap;">熟练度: ${mastery} / ${spanMax} (${pct}%)</span>
+                    </div>
+
+                    <div style="font-size:11px;color:#bdc3c7;display:flex;justify-content:space-between;">
+                      <span>${previewText}</span>
+                      <span style="color:#aaa;">升Lv.${lvl+1}最低门槛: ${minReq || 25000}</span>
+                    </div>
+                  </div>
+
+                  <!-- 操作按钮 -->
+                  <div style="flex-shrink:0;">
+                    ${lvl >= 5 ? `
+                      <button disabled style="padding:6px 12px;background:#333;color:#888;border:1px solid #555;border-radius:6px;font-size:12px;">已登峰造极</button>
+                    ` : (canUp ? `
+                      <button onclick="window.App2D.upgradeSkillAtMaster('${sk.id}')" style="padding:6px 14px;background:linear-gradient(to bottom, #f39c12, #d35400);color:#fff;font-weight:bold;border:1px solid #ffd700;border-radius:6px;font-size:12px;cursor:pointer;box-shadow:0 0 8px rgba(243,156,18,0.6);" ${!isAtShendan ? 'title="当前未在神坛，点击将由老祖神念传道"' : ''}>
+                        🌟 老祖点化突破 (升Lv.${lvl+1})
+                      </button>
+                    ` : `
+                      <button disabled style="padding:6px 12px;background:#221208;color:#777;border:1px solid #442512;border-radius:6px;font-size:11px;">
+                        需熟练度 ${minReq}
+                      </button>
+                    `)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- 底栏 -->
+          <div style="padding:10px 16px;background:#140b05;border-top:1px solid #4a2810;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:11px;color:#aaa;">长安城左上角入口直通神坛，凡技能初悟、突破与仙宠授法皆系于菩提老祖。</span>
+            <button onclick="document.getElementById('skill-mastery-modal').remove()" style="padding:5px 16px;background:#3a1d0c;color:#ffd700;border:1px solid #ffd700;border-radius:4px;cursor:pointer;">关闭面板</button>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    const v = document.getElementById('game-viewport') || document.body;
+    v.insertAdjacentHTML('beforeend', html);
+  }
+
+  // 在菩提老祖处执行突破升级
+  upgradeSkillAtMaster(skillId) {
+    this.ensurePlayerClassSkills();
+    const skill = (this.playerData.skills || []).find(s => s.id === skillId);
+    if (!skill) return;
+
+    if (!window.SkillMasteryEngine) return;
+    const res = window.SkillMasteryEngine.upgradeSkill(skill, true);
+    if (res.success) {
+      if (window.Sound && window.Sound.playSuccess) window.Sound.playSuccess();
+      if (window.showGameMessage) window.showGameMessage(res.message, 'success', 4500);
+      this.openSkillMasteryModal(); // 刷新界面
+    } else {
+      if (window.showGameMessage) window.showGameMessage(res.message, 'warning', 3500);
+    }
+  }
 }
 
 window.App2D = new GameApp2D();
 window.addEventListener('DOMContentLoaded', () => {
   window.App2D.init();
 });
+

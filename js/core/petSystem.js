@@ -54,6 +54,10 @@ class PetSystem {
       aptitudes: aptitudes,
       skills: [], // 领悟后的技能对象数组 [{ id, name, classId, level, proficiency, icon, desc, costMp, costHpRatio }]
       passives: [], // 研习魔兽要诀领悟的被动特技列表 [{ id, name, icon, desc }]
+      // 金仙独门元神变身与天赋点
+      talentPoints: quality === 'jinxian' ? 0 : 0,
+      avatarTransformed: false,
+      avatarRoundsLeft: 0,
       // 抗性字典
       resistances: {
         res_phy: 0,
@@ -352,6 +356,250 @@ class PetSystem {
       replacedSkill: replaced,
       newSkill: newPassive,
       msg: msg
+    };
+  }
+
+  // =========================================================================
+  // 金仙【元神变身】独门法则与十二大变身天赋系统 (Jinxian Primordial Avatar System)
+  // 1. 每回合初几率判定，固定持续 3 回合
+  // 2. 血量越低几率越高：P = P_base(TalentPoints) + 0.1 * (已损失生命百分比)
+  // 3. 天赋点 0~5000，每次变身 +1，使用【天赋丹】+50
+  // =========================================================================
+
+  static JINXIAN_AVATAR_TALENTS = {
+    baigu_jing: {
+      id: 'avatar_baigu',
+      name: '画皮移伤',
+      desc: '变身后受到直接伤害时，将一定比例伤害(5%~30%)随机转移给场上一名单位。',
+      type: 'damage_transfer',
+      getTransferRatio(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.05 + (p / 5000) * 0.25).toFixed(3)); // 5% ~ 30%
+      }
+    },
+    huangfeng_guai: {
+      id: 'avatar_huangfeng',
+      name: '三昧神风·断速',
+      desc: '变身后普攻或技能命中敌方，概率(30%~70%)使目标速度降为全场最低；群法命中则群体降速。',
+      type: 'speed_slow',
+      getSlowRate(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.30 + (p / 5000) * 0.40).toFixed(3)); // 30% ~ 70%
+      }
+    },
+    sha_seng: {
+      id: 'avatar_shaseng',
+      name: '流沙护体·蓝移',
+      desc: '变身后受到的直接伤害，15%~35%必中由法力值(MP)直接抵扣抵免。',
+      type: 'mp_absorb',
+      getMpAbsorbRatio(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.15 + (p / 5000) * 0.20).toFixed(3)); // 15% ~ 35%
+      }
+    },
+    zhu_bajie: {
+      id: 'avatar_bajie',
+      name: '天蓬真元·巨灵',
+      desc: '变身瞬间气血上限与当前血量暴增(+500~2000 HP 及 +15%~35% 最大气血)。',
+      type: 'hp_boost',
+      getHpBoost(talentPoints, maxHp) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        const flatHp = Math.floor(500 + (p / 5000) * 1500); // 500 ~ 2000
+        const percentRatio = Number((0.15 + (p / 5000) * 0.20).toFixed(3)); // 15% ~ 35%
+        const totalBonus = flatHp + Math.floor((maxHp || 1000) * percentRatio);
+        return { flatHp, percentRatio, totalBonus };
+      }
+    },
+    niumo_wang: {
+      id: 'avatar_niumo',
+      name: '大力蛮牛·狂暴',
+      desc: '变身后生命增加(+300~1200 HP 及 +10%~25% 血量)，物理攻击力狂暴暴增(+20%~50%，仅普攻生效)。',
+      type: 'atk_boost',
+      getBoosts(talentPoints, maxHp, baseAtk) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        const flatHp = Math.floor(300 + (p / 5000) * 900); // 300 ~ 1200
+        const hpPercent = Number((0.10 + (p / 5000) * 0.15).toFixed(3)); // 10% ~ 25%
+        const atkPercent = Number((0.20 + (p / 5000) * 0.30).toFixed(3)); // 20% ~ 50%
+        return { flatHp, hpPercent, atkPercent };
+      }
+    },
+    xiaobai_long: {
+      id: 'avatar_bailong',
+      name: '龙魂啸天·疾行',
+      desc: '变身后速度直接增加(+50~100 点抢占一速)，法术攻击有概率(20%~45%)触发法术连击。',
+      type: 'spd_combo',
+      getEffects(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        const spdBonus = Math.floor(50 + (p / 5000) * 50); // 50 ~ 100
+        const doubleCastRate = Number((0.20 + (p / 5000) * 0.25).toFixed(3)); // 20% ~ 45%
+        return { spdBonus, doubleCastRate };
+      }
+    },
+    jinjiao_dawang: {
+      id: 'avatar_jinjiao',
+      name: '紫金吸魂·断蓝',
+      desc: '变身后法术命中抽取目标 10%~25% 当前法力值回补自身。',
+      type: 'mp_drain',
+      getMpDrainRatio(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.10 + (p / 5000) * 0.15).toFixed(3)); // 10% ~ 25%
+      }
+    },
+    yinjiao_dawang: {
+      id: 'avatar_yinjiao',
+      name: '羊脂封魄·逆御',
+      desc: '变身后法暴率提升(+15%~30%)，自身已损生命转化为免伤(最高25%)。',
+      type: 'damage_reduction',
+      getReductionRatio(talentPoints, curHp, maxHp) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        const maxRed = Number((0.10 + (p / 5000) * 0.15).toFixed(3)); // 10% ~ 25%
+        const lostRatio = 1 - (curHp / (maxHp || 1));
+        return Number((lostRatio * maxRed).toFixed(3));
+      }
+    },
+    honghai_er: {
+      id: 'avatar_honghaier',
+      name: '六道真火·嗜血',
+      desc: '变身后造成伤害的 15%~35% 转化为自身气血回复。',
+      type: 'vampire',
+      getVampireRatio(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.15 + (p / 5000) * 0.20).toFixed(3)); // 15% ~ 35%
+      }
+    },
+    tieshan_gongzhu: {
+      id: 'avatar_tieshan',
+      name: '太阴神风·破障',
+      desc: '变身后风系法术命中 40%~80% 概率驱散敌方全部防御 Buff。',
+      type: 'buff_dispel',
+      getDispelRate(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.40 + (p / 5000) * 0.40).toFixed(3)); // 40% ~ 80%
+      }
+    },
+    huangpao_guai: {
+      id: 'avatar_huangpao',
+      name: '奎木凶星·噬魂',
+      desc: '变身后普攻 20%~40% 吸血，击杀后 30%~80% 概率对随机敌人追加攻击。',
+      type: 'vampire_chase',
+      getEffects(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return {
+          vampireRatio: Number((0.20 + (p / 5000) * 0.20).toFixed(3)),
+          chaseRate: Number((0.30 + (p / 5000) * 0.50).toFixed(3))
+        };
+      }
+    },
+    heixiong_jing: {
+      id: 'avatar_heixiong',
+      name: '黑风磐石·化劲',
+      desc: '变身后双抗提升 15%~30%，受到近战物理攻击反震 20%~40% 伤害给敌人。',
+      type: 'reflect',
+      getEffects(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return {
+          resBonus: Number((0.15 + (p / 5000) * 0.15).toFixed(3)),
+          reflectRatio: Number((0.20 + (p / 5000) * 0.20).toFixed(3))
+        };
+      }
+    }
+  };
+
+  /**
+   * 计算金仙变身几率 (血量越低变身几率越高)
+   */
+  static calculateTransformRate(pet) {
+    if (!pet || pet.quality !== 'jinxian') return 0;
+    const points = Math.max(0, Math.min(5000, pet.talentPoints || 0));
+    // 基础变身几率 5% ~ 25%
+    const baseRate = 0.05 + (points / 5000) * 0.20;
+    // 逆境加成：0.1 * 已损失生命值百分比
+    const curHp = pet.hp !== undefined ? pet.hp : (pet.maxHp || 100);
+    const maxHp = pet.maxHp || 100;
+    const lostHpRatio = Math.max(0, Math.min(1, 1 - (curHp / maxHp)));
+    const adversityBonus = 0.10 * lostHpRatio;
+    return Number((baseRate + adversityBonus).toFixed(4));
+  }
+
+  /**
+   * 尝试在回合初触发金仙元神变身
+   */
+  static tryTriggerAvatarTransform(pet, force = null) {
+    if (!pet || pet.quality !== 'jinxian') return { triggered: false, reason: 'not_jinxian' };
+
+    // 如果当前正在变身状态中，持续回合维系
+    if (pet.avatarRoundsLeft > 0) {
+      return { triggered: true, roundsLeft: pet.avatarRoundsLeft, isNew: false };
+    }
+
+    const rate = this.calculateTransformRate(pet);
+    const isSuccess = force !== null ? force : (Math.random() < rate);
+
+    if (isSuccess) {
+      pet.avatarTransformed = true;
+      pet.avatarRoundsLeft = 3; // 固定变身时长 3 回合
+      // 变身成功永久增加 1 点天赋点 (上限 5000)
+      pet.talentPoints = Math.min(5000, (pet.talentPoints || 0) + 1);
+
+      const talent = this.getPetAvatarTalent(pet);
+      return {
+        triggered: true,
+        isNew: true,
+        roundsLeft: 3,
+        rate,
+        talentPoints: pet.talentPoints,
+        talent,
+        text: `✨【真灵觉醒】金仙【${pet.name}】激发元神变身，法相真身降临！加持专属天赋【${talent ? talent.name : '至尊元神'}】，持续 3 回合！(天赋点 +1 -> ${pet.talentPoints})`
+      };
+    }
+
+    return { triggered: false, rate, isNew: false };
+  }
+
+  /**
+   * 回合结束时变身回合数递减
+   */
+  static tickAvatarRound(pet) {
+    if (!pet || !pet.avatarTransformed) return { expired: false, roundsLeft: 0 };
+    pet.avatarRoundsLeft = Math.max(0, (pet.avatarRoundsLeft || 0) - 1);
+    if (pet.avatarRoundsLeft <= 0) {
+      pet.avatarTransformed = false;
+      return { expired: true, text: `【元神归位】金仙【${pet.name}】真灵收敛回归本相，变身状态解除。` };
+    }
+    return { expired: false, roundsLeft: pet.avatarRoundsLeft };
+  }
+
+  /**
+   * 使用稀世宝物【天赋丹】
+   */
+  static useTalentPill(pet) {
+    if (!pet || pet.quality !== 'jinxian') {
+      return { success: false, msg: '只有【金仙】品阶仙宠方可使用【天赋丹】淬炼元神！' };
+    }
+    const oldPoints = pet.talentPoints || 0;
+    if (oldPoints >= 5000) {
+      return { success: false, msg: `【${pet.name}】的元神天赋点已达 5000 极境巅峰，无需再服用天赋丹！` };
+    }
+    const newPoints = Math.min(5000, oldPoints + 50);
+    pet.talentPoints = newPoints;
+    return {
+      success: true,
+      added: newPoints - oldPoints,
+      currentPoints: newPoints,
+      msg: `🔮【天赋灌顶】成功喂食【天赋丹】！金仙【${pet.name}】元神天赋点永久增加 50 点（当前: ${newPoints}/5000），变身几率与天赋神威大幅提升！`
+    };
+  }
+
+  /**
+   * 获取该仙宠的天赋配置
+   */
+  static getPetAvatarTalent(pet) {
+    if (!pet) return null;
+    const tid = pet.templateId;
+    return this.JINXIAN_AVATAR_TALENTS[tid] || {
+      id: 'avatar_generic',
+      name: '金仙法相',
+      desc: '变身后全属性提升 15%，受到伤害减免 10%。'
     };
   }
 }

@@ -628,11 +628,11 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '刘家村草地上正长着不少野蕈，烦请少侠在村中草地上采摘 4 朵【野生青蘑菇】回来，我好生火做饭为你接风暖身！这把短剑与皮靴你先拿去防身！',
+        text: '刘家村草地上正长着不少野蕈，烦请少侠在村中草地上采摘 2 朵【野生青蘑菇】回来，我好生火做饭为你接风暖身！这把短剑与皮靴你先拿去防身！',
         action: () => {
           window.App2D.grantStarterItems();
           window.App2D.storyPhase = 'liujiacun_find_mushrooms';
-          window.showGameMessage('🍄 请在刘家村草地上寻找并拾取 4 朵【野生青蘑菇】！', 'info', 4000);
+          window.showGameMessage('🍄 请在刘家村草地上寻找并拾取 2 朵【野生青蘑菇】！', 'info', 4000);
           if (window.App2D.showChapterBanner) {
             window.App2D.showChapterBanner('第一回 · 梦断九霄', '谪仙落两界，山野逢太保', '西游序章');
           }
@@ -669,7 +669,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '哈哈！少侠好利落的身手！这 4 朵青蘑菇肥美鲜嫩，正是做羹汤的上等好料！'
+        text: '哈哈！少侠好利落的身手！这 2 朵青蘑菇肥美鲜嫩，正是做羹汤的上等好料！'
       },
       {
         speaker: '刘伯钦',
@@ -787,24 +787,180 @@ window.GAME_DATA.STORY_DIALOGUES = {
     ]
   },
 
+  // 1. 陈塘关初见李靖：委托清剿 4 名作恶混混
   chentang_lijing_talk: {
     steps: [
       {
         speaker: '李靖总兵',
         speakerTitle: '【陈塘总兵】',
         speakerIcon: '👑',
-        text: '壮士来得正好！东海巡海夜叉李艮近来狂妄至极，在东海之滨掀起千层浊浪，击沉渔船，伤我军民！'
+        text: '壮士远道而来，本帅有礼了！实不相瞒，近日陈塘关街市多有恶霸地痞纠集作恶，混混猖獗，欺凌商贾百姓，扰乱东南海疆安宁！'
       },
       {
         speaker: '李靖总兵',
         speakerTitle: '【陈塘总兵】',
         speakerIcon: '👑',
-        text: '壮士若能前往东海之滨制伏那凶残夜叉，还东南百姓朗朗乾坤，陈塘关上下感激不尽！',
-        action: () => {
-          window.App2D.storyPhase = 'donghai_yecha_ready';
-          window.showGameMessage('🔱 前往【东海之滨】，迎战作恶多端的巡海夜叉李艮！', 'warn', 4000);
-          window.App2D.refreshMapNpcs();
-        }
+        text: '本帅坐镇总兵府守备要塞，兵力吃紧。观壮士气宇轩昂、武艺高强，可否替本帅走一趟关内街头，教训惩戒 4 名作恶混混，煞煞这帮歹徒的嚣张气焰？',
+        options: [
+          {
+            text: '【🥋 义不容辞，前往街头惩戒4名作恶混混！】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.storyPhase = 'chentang_defeat_hooligans';
+                if (!window.App2D.questKills) window.App2D.questKills = {};
+                window.App2D.questKills.chentangHooligans = 0;
+                window.showGameMessage('🥋 接下总兵军令！前往陈塘关街市制伏 4 名作恶混混 (0/4)！', 'warn', 4000);
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 2. 击败 4 名混混后复命：李靖告知混混头目要来报复
+  chentang_lijing_hooligans_done: {
+    steps: [
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【大喜过望】',
+        speakerIcon: '👑',
+        text: '哈哈！打得痛快！探子来报，关内百姓对壮士交口称赞，那帮地痞被打得抱头鼠窜！壮士果然身手不凡！'
+      },
+      {
+        speaker: '前哨校尉',
+        speakerTitle: '【疾步来报】',
+        speakerIcon: '🛡️',
+        text: '报——！总兵大人，城东码头路口突然跳出一个【混混头目·雷震彪】，正纠集了混混精锐随从，扬言要替被教训的弟兄报仇，直冲总兵府杀来了！'
+      },
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【怒拍帅案】',
+        speakerIcon: '👑',
+        text: '放肆！这帮贼首好大的狗胆！壮士，那雷震彪纠集恶徒随从，来者不善。还请壮士即刻前往陈塘关东市截住贼寇，将其一网打尽！',
+        options: [
+          {
+            text: '【⚔️ 截击贼首！前往东市迎战混混头目！】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.storyPhase = 'chentang_boss_ready';
+                window.showGameMessage('🔥 混混头目雷震彪已现身城东！速速前去将其铲除！', 'warn', 4500);
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 3. 混混头目雷震彪对话：叫嚣报复，触发 1 打 3 战斗
+  chentang_hooligan_boss_talk: {
+    steps: [
+      {
+        speaker: '混混头目·雷震彪',
+        speakerTitle: '【横肉满面】',
+        speakerIcon: '🥋',
+        text: '呔！你这外乡人好大的胆子，就是你打伤了我雷震彪手下的弟兄？！也不打听打听陈塘关这一片谁说了算！'
+      },
+      {
+        speaker: '混混头目·雷震彪',
+        speakerTitle: '【挥棒叫嚣】',
+        speakerIcon: '🥋',
+        text: '小的们，抄家伙一起上！今天就让这爱管闲事的家伙横着滚出陈塘关！',
+        options: [
+          {
+            text: '【⚔️ 挺身出战！以一敌三决战混混头目与随从！】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.triggerHooliganBossBattle();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 4. 战胜混混头目后领赏：李靖给奖励，并提及神秘观音雕像无法对话
+  chentang_lijing_reward: {
+    steps: [
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【由衷赞叹】',
+        speakerIcon: '👑',
+        text: '好！壮士以一敌三，不仅将那猖狂头目彻底制伏，更将贼众彻底荡平，当真神勇盖世！关内商贾无不欢欣鼓舞！'
+      },
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【重赏勇将】',
+        speakerIcon: '👑',
+        text: '李某身为总兵，言出必行！来人，奉上【纹银五千两】与【修真灵元 (2500 EXP)】，请壮士笑纳！'
+      },
+      {
+        speaker: '李靖总兵',
+        speakerTitle: '【奇案告知】',
+        speakerIcon: '👑',
+        text: '另外，本帅心中尚有一桩悬案：近日陈塘关东侧海滨突现一尊神秘的【观音雕像】，隐有佛光流转。但本帅手下多番查探，雕像神息内敛、双眸微阖，任凭如何呼唤皆无法对话回应。壮士身怀非凡仙道灵根，不妨前往东侧海滨圣台一探究竟！',
+        options: [
+          {
+            text: '【🪷 领受厚赏，前往东侧海滨探查观音雕像】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.playerData.silver = (window.App2D.playerData.silver || 0) + 5000;
+                window.App2D.playerData.gainExp(2500);
+                window.App2D.updatePlayerHud();
+                window.App2D.storyPhase = 'chentang_statue_investigate';
+                if (window.Sound) window.Sound.playSuccess();
+                window.showGameMessage('🎁 获得李靖总兵赏赐：银两+5000两、修为+2500！前往东侧海滨探查！', 'success', 5000);
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 5. 东侧海滨观音雕像交互：雕像无法言语对话，海潮涌动，指引往东海探查
+  chentang_guanyin_statue_talk: {
+    steps: [
+      {
+        speaker: '神秘观音雕像',
+        speakerTitle: '【宝相庄严】',
+        speakerIcon: '🪨',
+        text: '【这是一尊汉白玉与青石精心雕琢的观音石雕，隐隐泛着青莲佛光。然而雕像双眸微阖，神息深敛，无论你如何躬身呼唤，雕像均寂然无声，无法言语对话回应……】'
+      },
+      {
+        speaker: '心有所悟',
+        speakerTitle: '【海潮感应】',
+        speakerIcon: '🌊',
+        text: '【正当你凝神端详之际，忽闻东侧海浪如惊雷翻滚，滔天狂澜正汹涌向东海之滨深处翻卷！冥冥中仿佛有一种机缘在召唤你，若要唤醒此雕像，不妨顺着东侧传送门深入【东海之滨】探查！】',
+        options: [
+          {
+            text: '【🌊 顺应海潮异动，前往东海之滨深入探查！】',
+            action: () => {
+              if (window.App2D) {
+                window.App2D.storyPhase = 'donghai_yecha_ready';
+                window.showGameMessage('🔱 海潮翻卷异动！穿过东侧传送门前往【东海之滨】！', 'warn', 4500);
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // 6. 陈塘关显圣后随侍在旁的东海龙王对话
+  chentang_aoguang_talk: {
+    steps: [
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【恭敬侍立】',
+        speakerIcon: '🐉',
+        text: '大将军！菩萨亲临点化，实乃大将军无上造化！老龙在东海恭候大将军西行功德圆满，早日重归天阙大放光彩！'
       }
     ]
   },
@@ -920,22 +1076,33 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '东海龙王敖广',
         speakerTitle: '【躬身相送】',
         speakerIcon: '🐉',
-        text: '宝甲赠英雄！将军如今神装在身，真乃威风凛凛！老龙这便送将军返回陈塘关码头！',
+        text: '宝甲赠英雄！将军如今神装在身，真乃威风凛凛！老龙这便送将军返回陈塘关海滨！',
         action: () => {
           if (window.Dialogue) window.Dialogue.close();
           if (window.App2D) {
             window.App2D.storyPhase = 'chentang_guanyin_revelation';
-            window.App2D.loadMap('chentangguan');
+            window.App2D.loadMap('chentangguan', { x: 576, y: 384 });
             window.showGameMessage('☁️ 返回陈塘关！天际祥云缭绕，仙乐阵阵！', 'info', 3500);
+            setTimeout(() => {
+              if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation) {
+                window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation);
+              }
+            }, 600);
           }
         }
       }
     ]
   },
 
-  // 陈塘关：观音菩萨显圣点化前世因果与西行宿命
+  // 陈塘关：观音菩萨显圣点化前世因果与西行宿命（东海龙王恭侍在侧）
   chentang_guanyin_revelation: {
     steps: [
+      {
+        speaker: '东海龙王敖广',
+        speakerTitle: '【恭立侍侧】',
+        speakerIcon: '🐉',
+        text: '大将军！方才天际佛光大盛，老龙见大慈大悲观世音菩萨法驾降临陈塘关，特随菩萨一同前来！老龙昔日只敬佩大将军三界神威，今日随菩萨亲临，方知大将军当年舍生取义的大仁大勇！'
+      },
       {
         speaker: '大慈大悲观世音菩萨',
         speakerTitle: '【佛光显圣】',
@@ -943,10 +1110,10 @@ window.GAME_DATA.STORY_DIALOGUES = {
         text: '威灵显赫大将军，别来无恙乎？'
       },
       {
-        speaker: '失忆玩家',
+        speaker: '失忆行者',
         speakerTitle: '【心神巨震】',
         speakerIcon: '🧙‍♂️',
-        text: '菩萨！您……认得我？我究竟是谁？'
+        text: '菩萨！龙王陛下！您二位……认得我？我脑中一片混沌，我究竟是何来历？'
       },
       {
         speaker: '大慈大悲观世音菩萨',
@@ -956,14 +1123,22 @@ window.GAME_DATA.STORY_DIALOGUES = {
       },
       {
         speaker: '大慈大悲观世音菩萨',
-        speakerTitle: '【点化西行】',
+        speakerTitle: '【指引西行】',
         speakerIcon: '🪷',
-        text: '如今南赡部洲多贪多杀，大唐长安城中，金蝉子转世为【玄奘法师】，正承唐天子圣旨欲往西天求取大乘真经。你具宿世仁勇，正当为西行护法真灵！速回长安城拜见玄奘法师与大唐天子，共启西天取经大业！',
-        action: () => {
-          window.App2D.storyPhase = 'changan_meet_xuanzang';
-          window.showGameMessage('✨ 【观音点化】明悟前世因果！速回长安城拜见玄奘法师与唐天子！', 'success', 5000);
-          window.App2D.refreshMapNpcs();
-        }
+        text: '如今南赡部洲多贪多杀，大唐长安城中，金蝉子转世为【玄奘法师】，正承唐天子圣旨欲往西天求取大乘真经。你具宿世仁勇，正当为西行护法真灵！速回长安城拜见玄奘法师与大唐天子，一路护送唐僧西天取经，解救苍生，功德圆满之日便是你重返天阙之期！',
+        options: [
+          {
+            text: '【🙏 谨遵菩萨法旨！启程返回长安城，护送唐僧西行！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D) {
+                window.App2D.storyPhase = 'changan_meet_xuanzang';
+                window.showGameMessage('✨ 【观音点化】明悟前世宿命！速回长安城拜见玄奘法师与唐天子！', 'success', 5000);
+                window.App2D.refreshMapNpcs();
+              }
+            }
+          }
+        ]
       }
     ]
   },
@@ -2115,6 +2290,62 @@ window.GAME_DATA.STORY_DIALOGUES = {
         ]
       }
     ]
+  },
+
+  // =========================================================================
+  // 长安城左上角【神坛】菩提老祖：全系技能参悟、1/5突破升级与仙宠10级授法
+  // =========================================================================
+  puti_shendan_talk: {
+    steps: [
+      {
+        speaker: '菩提老祖',
+        speakerTitle: '【万法之宗·太上道祖】',
+        speakerIcon: '✨',
+        text: '福生无量天尊！贫道在此神坛静候少侠多时。三界道法无边，凡有神通与灵宠法术，皆有熟练度沉淀。初学为零，最高五级，每级跨度五千，满熟练度二万五千大圆满！'
+      },
+      {
+        speaker: '菩提老祖',
+        speakerTitle: '【万法之宗·太上道祖】',
+        speakerIcon: '✨',
+        text: '若达本级五千瓶颈，即便多放千万次亦不增一分熟练度，必须由老夫为你洗髓突破方可升阶。若达本级满额五分之一（一千熟练度），亦可提前突破升华！少侠今日欲问何道？',
+        options: [
+          {
+            text: '【参悟突破·提升技能品级】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D && typeof window.App2D.openSkillMasteryModal === 'function') {
+                window.App2D.openSkillMasteryModal();
+              }
+            }
+          },
+          {
+            text: '【领悟门派道法神通】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D && typeof window.App2D.learnClassSkillsFromMaster === 'function') {
+                window.App2D.learnClassSkillsFromMaster();
+              }
+            }
+          },
+          {
+            text: '【仙宠10级灵智授业】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              if (window.App2D && typeof window.App2D.awakenPetSkillAtMaster === 'function') {
+                window.App2D.awakenPetSkillAtMaster();
+              }
+            }
+          },
+          {
+            text: '【聆听熟练度与五级道法法则】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.showGameMessage('【老祖传道】熟练度越高威力越盛！一级满5000锁级，1000熟练度(满额1/5)即可提前找老祖升2级！', 'info', 5000);
+            }
+          }
+        ]
+      }
+    ]
   }
 };
 
@@ -2123,4 +2354,106 @@ if (window.GAME_DATA && window.GAME_DATA.STORY_DIALOGUES) {
   window.GAME_DATA.STORY_DIALOGUES.huaguoshan_battle_intro = window.GAME_DATA.STORY_DIALOGUES.juling_shuilien_battle;
   window.GAME_DATA.STORY_DIALOGUES.wukong_respect_scene = window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan;
   window.GAME_DATA.STORY_DIALOGUES.wukong_final_spar = window.GAME_DATA.STORY_DIALOGUES.wukong_huaguoshan_havoc;
+}
+
+// =========================================================================
+// 汉风西游 - 全章节国风章回体配置系统 (CHAPTER_CONFIGS)
+// 包含序章与西游正传各大主要章节，提供2秒国风开幕水墨、金字、七言诗号与朱砂御印
+// =========================================================================
+if (window.GAME_DATA) {
+  window.GAME_DATA.CHAPTER_CONFIGS = {
+    'prologue': {
+      id: 'prologue',
+      chapterNum: '序章',
+      title: '序章 · 蟠桃盛宴',
+      subtitle: '九天金阙神仙客，蟠桃胜会动乾坤',
+      seal: '天界神篇',
+      triggerMap: 'tiangong_palace',
+      triggerPhase: 'heaven_prologue'
+    },
+    'chapter_1': {
+      id: 'chapter_1',
+      chapterNum: '第一回',
+      title: '第一回 · 梦断双叉',
+      subtitle: '梦断九天削神位，谪仙山野识英雄',
+      seal: '凡世初醒',
+      triggerMap: 'liujiacun',
+      triggerPhase: 'liujiacun_start'
+    },
+    'chapter_2': {
+      id: 'chapter_2',
+      chapterNum: '第二回',
+      title: '第二回 · 盛世大唐',
+      subtitle: '紫气东来聚帝京，金蝉发愿向西天',
+      seal: '大唐天命',
+      triggerMap: 'changan_city',
+      triggerPhase: 'changan_arrived'
+    },
+    'chapter_3': {
+      id: 'chapter_3',
+      chapterNum: '第三回',
+      title: '第三回 · 雄关东海',
+      subtitle: '陈塘风云平盗寇，龙神宝库现雄威',
+      seal: '东海龙波',
+      triggerMap: 'chentangguan',
+      triggerPhase: 'chentang_investigate'
+    },
+    'chapter_4': {
+      id: 'chapter_4',
+      chapterNum: '第四回',
+      title: '第四回 · 破封五行',
+      subtitle: '六字真言金帖解，五行山下大圣归',
+      seal: '齐天出世',
+      triggerMap: 'wuxingshan',
+      triggerPhase: 'wuxingshan_ready'
+    },
+    'chapter_5': {
+      id: 'chapter_5',
+      chapterNum: '第五回',
+      title: '第五回 · 龙腾鹰愁',
+      subtitle: '蛇盘山下擒烈马，鹰愁涧底踏云龙',
+      seal: '玉龙归宗',
+      triggerMap: 'yingchoujian'
+    },
+    'chapter_6': {
+      id: 'chapter_6',
+      chapterNum: '第六回',
+      title: '第六回 · 智收天蓬',
+      subtitle: '乌斯藏界降天蓬，云栈高庄配良缘',
+      seal: '天蓬入道',
+      triggerMap: 'gaolaozhuang'
+    },
+    'chapter_7': {
+      id: 'chapter_7',
+      chapterNum: '第七回',
+      title: '第七回 · 沙界沉砂',
+      subtitle: '八百流沙深不测，九顶骷髅渡法船',
+      seal: '金身罗汉',
+      triggerMap: 'liushaho'
+    },
+    'chapter_8': {
+      id: 'chapter_8',
+      chapterNum: '第八回',
+      title: '第八回 · 五庄仙缘',
+      subtitle: '万寿山前偷草还，袖里乾坤结八拜',
+      seal: '地仙祖庭',
+      triggerMap: 'wuzhuangguan'
+    },
+    'chapter_9': {
+      id: 'chapter_9',
+      chapterNum: '第九回',
+      title: '第九回 · 白骨尸魔',
+      subtitle: '白虎岭头迷幻相，火眼金睛辨妖氛',
+      seal: '三打白骨',
+      triggerMap: 'baihuling'
+    },
+    'chapter_10': {
+      id: 'chapter_10',
+      chapterNum: '第十回',
+      title: '第十回 · 奎宿星耀',
+      subtitle: '波月洞深降奎木，宝象国里救天仙',
+      seal: '星宿正果',
+      triggerMap: 'baoxiangguo'
+    }
+  };
 }

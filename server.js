@@ -64,7 +64,9 @@ function startServer(port) {
       const contentType = getContentType(filePath);
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       });
 
       const stream = fs.createReadStream(filePath);

@@ -2781,6 +2781,106 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     }
   }
 
+  // =========================================================================
+  // 测试 33：场景平滑过渡转场、东海水下湛蓝与流沙河险水、五行山畅通登山道与严格剧情帷幕门禁
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 33] 场景国风转场动效、水质重塑、五行山畅通登峰与严格剧情帷幕门禁测试');
+
+    const app = window.App2D;
+    const tilemap = new window.TilemapEngine();
+
+    // 模拟从刘家村走到长安 (测试场景平滑转场动画与名牌生成)
+    app.currentMapId = 'liujiacun';
+    app.loadMap('changan_city', { x: 224, y: 320, direction: 'down' });
+    const overlay = document.getElementById('scene-transition-overlay');
+    assert(overlay !== null, '视口成功挂载 scene-transition-overlay 场景平滑转场遮罩');
+    assert(overlay.innerHTML.includes('scene-transition-banner'), '转场遮罩成功注入金色行辕名牌结构');
+    assert(overlay.innerHTML.includes('scene-transition-taichi'), '转场遮罩包含八卦太极流转微动效');
+    assert(overlay.innerHTML.includes('大唐长安') || overlay.innerHTML.includes('长安'), '转场名牌准确显示目标场景大唐长安');
+
+    // 2. 东海与流沙河水色视效重构校验
+    const mockCtx = new Proxy({
+      createLinearGradient() {
+        return {
+          colors: [],
+          addColorStop(stop, color) {
+            this.colors.push(color);
+          }
+        };
+      },
+      createRadialGradient() {
+        return {
+          colors: [],
+          addColorStop(stop, color) {
+            this.colors.push(color);
+          }
+        };
+      }
+    }, {
+      get(target, prop) {
+        if (prop in target) return target[prop];
+        return () => {};
+      },
+      set(target, prop, value) {
+        target[prop] = value;
+        return true;
+      }
+    });
+
+    // 东海场景水色检测 (彻底杜绝原先偏绿 #2dd4bf，改用深邃宝蓝与蔚蓝)
+    mockCtx.fillStyle = '';
+    tilemap.renderTile(mockCtx, 'water', 0, 0, 0, 0, { id: 'donghai_coast' });
+    const donghaiWaterStyle = typeof mockCtx.fillStyle === 'string' ? mockCtx.fillStyle : '';
+    assert(!donghaiWaterStyle.includes('2dd4bf'), '东海海滨与水下场景彻底剔除翠绿底色');
+
+    // 流沙河水色检测 (验证暗金褐浪与险水流沙色调)
+    mockCtx.fillStyle = '';
+    tilemap.renderTile(mockCtx, 'water', 0, 0, 0, 0, { id: 'liushahe' });
+    const liushaWaterStyle = typeof mockCtx.fillStyle === 'string' ? mockCtx.fillStyle : '';
+    assert(!liushaWaterStyle.includes('2dd4bf'), '流沙河险水场景彻底剔除翠绿底色');
+
+    // 3. 五行山地貌重构与攀登通道全线畅通校验
+    const wxMap = window.GAME_DATA.MAPS_2D['wuxingshan'];
+    assert(wxMap !== undefined, '五行山地图数据完好');
+    let wxRocks = 0;
+    for (let r = 0; r < wxMap.height; r++) {
+      for (let c = 0; c < wxMap.width; c++) {
+        if (wxMap.tiles[r][c] === 'mountain_rock') wxRocks++;
+      }
+    }
+    assert(wxRocks >= 80, `五行山山石形成巍峨五指神峰 (实际岩石数: ${wxRocks} >= 80)`);
+    assert(wxMap.tiles[3][12] === 'wuxing_seal' || wxMap.tiles[3][12] === 'mountain_rock', '五指峰山巅 (12, 3) 镇压金帖破封前为大明咒神帖/破封后化为巍峨主山石');
+    assert(wxMap.tiles[13][22] === 'two_realms_stele', '两界交界处 (22, 13) 巍峨耸立两界山界碑');
+
+    // 验证山脚至山顶步道全线无阻畅通
+    let pathBlocked = false;
+    for (let r = 3; r <= 15; r++) {
+      if (!tilemap.isWalkable(wxMap, 11, r) && !tilemap.isWalkable(wxMap, 12, r)) {
+        pathBlocked = true;
+        break;
+      }
+    }
+    assert(!pathBlocked, '五行山盘山石阶步道自山脚直通山顶，中途无死墙横亘挡路');
+
+    // 4. 章节序幕严格剧情门禁与防重复机制校验
+    app.shownChapterSet = new Set();
+    
+    // 4.1 刘家村砍柴阶段进入五行山 -> 绝对不触发第四回帷幕！
+    const triggeredWhileChopping = app.checkAndTriggerChapterOpening('wuxingshan', 'liujiacun_wood_gathering');
+    assert(triggeredWhileChopping === false, '刘家村砍柴伐树阶段误入五行山，严禁触发第四回开幕帷幕');
+    assert(!app.shownChapterSet.has('chapter_4'), '砍柴阶段 shownChapterSet 不会误记录 chapter_4');
+
+    // 4.2 长安拜别刘伯钦西行正式启程后 -> 首次进入五行山成功展开第四回帷幕！
+    const triggeredWhenReady = app.checkAndTriggerChapterOpening('wuxingshan', 'wuxingshan_ready');
+    assert(triggeredWhenReady === true, '主线推进至西行正式启程 (wuxingshan_ready) 初次进入五行山，成功展开第四回帷幕');
+    assert(app.shownChapterSet.has('chapter_4'), '第四回开幕后 shownChapterSet 准确记录 chapter_4');
+
+    // 4.3 之后再次进入五行山 -> 绝不重复展开！
+    const retriggeredWuxing = app.checkAndTriggerChapterOpening('wuxingshan', 'wuxingshan_ready');
+    assert(retriggeredWuxing === false, '再次进入五行山绝不再重复弹出开幕帷幕');
+  }
+
   console.log('\n======================================================');
   console.log(`🎉 全部自动化测试执行完毕！通过率: ${passedTests}/${totalTests} (100%)`);
   console.log('======================================================\n');

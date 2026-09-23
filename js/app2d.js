@@ -1013,8 +1013,9 @@ class GameApp2D {
     this.loadMap(this.currentMapId, { x: this.playerChar.x, y: this.playerChar.y });
   }
 
-  // 载入指定地图（支持场景平滑过渡动效：走动切图约0.75s，对话剧情切图约1.0s，无DOM或单测瞬时）
+  // 载入指定地图（支持场景平滑过渡动效：走动切图约0.75s，对话剧情切图约1.0s，Node单测环境同步立即执行）
   loadMap(mapId, customSpawn = null, options = {}) {
+    const isNodeTest = typeof process !== 'undefined' && process.release && process.release.name === 'node';
     let duration = 0;
     if (typeof options === 'number') {
       duration = options;
@@ -1024,27 +1025,53 @@ class GameApp2D {
       duration = (window.Dialogue && window.Dialogue.currentDialogue) ? 1.0 : 0.75;
     }
 
-    const overlay = (typeof document !== 'undefined') ? document.getElementById('scene-transition-overlay') : null;
+    let overlay = (typeof document !== 'undefined') ? document.getElementById('scene-transition-overlay') : null;
+    if (!overlay && typeof document !== 'undefined' && document.body) {
+      overlay = document.createElement('div');
+      overlay.id = 'scene-transition-overlay';
+      overlay.className = 'scene-transition-overlay';
+      document.body.appendChild(overlay);
+    }
+    const targetMapData = window.GAME_DATA?.MAPS_2D?.[mapId];
+    const targetName = targetMapData?.name || '未知圣境';
+    const targetRegion = targetMapData?.region || '三界造化';
 
     if (overlay && duration > 0 && !this.isTransitioning) {
-      this.isTransitioning = true;
-      this.autoMovePath = [];
-      this.autoMoveTargetCallback = null;
+      overlay.innerHTML = `
+        <div class="scene-transition-banner">
+          <div class="scene-transition-taichi"></div>
+          <div class="scene-transition-header">✦ 腾 云 御 风 · 穿 行 圣 境 ✦</div>
+          <div class="scene-transition-title"><span>入</span> ${targetName}</div>
+          <div class="scene-transition-sub">界属 · ${targetRegion}</div>
+        </div>
+      `;
 
-      const halfMs = Math.max(120, Math.round((duration * 1000) / 2));
-      overlay.style.transition = `opacity ${halfMs / 1000}s ease-in-out`;
-      overlay.classList.add('active');
+      if (!isNodeTest) {
+        this.isTransitioning = true;
+        this.autoMovePath = [];
+        this.autoMoveTargetCallback = null;
+        const halfMs = Math.max(160, Math.round((duration * 1000) / 2));
+        overlay.style.transition = `opacity ${halfMs / 1000}s ease-in-out`;
+        overlay.classList.remove('fade-out');
+        overlay.classList.add('active');
 
-      setTimeout(() => {
-        this._applyMapData(mapId, customSpawn);
+        if (window.Sound && window.Sound.playBeep) {
+          try { window.Sound.playBeep(); } catch (e) {}
+        }
+
         setTimeout(() => {
-          overlay.classList.remove('active');
+          this._applyMapData(mapId, customSpawn);
           setTimeout(() => {
-            this.isTransitioning = false;
-          }, halfMs);
-        }, 50);
-      }, halfMs);
-      return;
+            overlay.classList.remove('active');
+            overlay.classList.add('fade-out');
+            setTimeout(() => {
+              overlay.classList.remove('fade-out');
+              this.isTransitioning = false;
+            }, halfMs);
+          }, 80);
+        }, halfMs);
+        return;
+      }
     }
 
     this._applyMapData(mapId, customSpawn);
@@ -2258,7 +2285,7 @@ class GameApp2D {
     this.showChapterOpening({ title, subtitle, seal, duration }, onComplete);
   }
 
-  // 章节自动判定与触发器 (每章节每位玩家只开幕一次，持久化到存档)
+  // 章节自动判定与触发器 (每章节每位玩家只开幕一次，严格跟随主线剧情进度，持久化到存档)
   checkAndTriggerChapterOpening(mapId, storyPhase, onDone = null) {
     if (!this.shownChapterSet) {
       this.initShownChapterSet();
@@ -2266,22 +2293,24 @@ class GameApp2D {
 
     const configs = (window.GAME_DATA && window.GAME_DATA.CHAPTER_CONFIGS) || {};
     let matchedChapterKey = null;
+    const currentPhase = storyPhase || this.storyPhase || '';
 
-    // 1. 序章：天宫蟠桃盛会
-    if (mapId === 'tiangong_palace' && (!storyPhase || storyPhase.startsWith('heaven_'))) {
+    // 1. 序章：天宫蟠桃盛会 (天宫初始阶段)
+    if (mapId === 'tiangong_palace' && (!currentPhase || currentPhase.startsWith('heaven_') || currentPhase === 'pantao_intro' || currentPhase.startsWith('tiangong_'))) {
       if (!this.shownChapterSet.has('prologue')) {
         matchedChapterKey = 'prologue';
       }
     }
-    // 2. 第一回：凡尘刘家村
-    else if (mapId === 'liujiacun' && (!storyPhase || storyPhase.startsWith('liujiacun_'))) {
+    // 2. 第一回：凡尘刘家村 (凡间初醒/刘家村初期阶段)
+    else if (mapId === 'liujiacun' && (!currentPhase || currentPhase === 'tiangong_fallen' || currentPhase.startsWith('liujiacun_'))) {
       if (!this.shownChapterSet.has('chapter_1')) {
         matchedChapterKey = 'chapter_1';
       }
     }
-    // 3. 第二回：大唐长安城
+    // 3. 第二回：大唐长安城 (受托前往长安盛京或已到长安阶段，刘家村早期绝不触发)
     else if (mapId === 'changan_city' || mapId === 'changan_shendan') {
-      if (!this.shownChapterSet.has('chapter_2')) {
+      const isLiuEarly = currentPhase.startsWith('liujiacun_') && currentPhase !== 'liujiacun_go_changan';
+      if (!isLiuEarly && !this.shownChapterSet.has('chapter_2')) {
         matchedChapterKey = 'chapter_2';
       }
     }
@@ -2291,27 +2320,31 @@ class GameApp2D {
         matchedChapterKey = 'chapter_3';
       }
     }
-    // 5. 第四回：两界山五行山
+    // 5. 第四回：两界山五行山 (核心门禁：刘家村砍柴阶段走到五行山绝不展开！必须是刘家村与刘伯钦告别、西行正式启程后初入才展开)
     else if (mapId === 'wuxingshan') {
-      if (!this.shownChapterSet.has('chapter_4')) {
+      const isLiuEarly = currentPhase.startsWith('liujiacun_') || currentPhase.startsWith('tiangong_');
+      if (!isLiuEarly && !this.shownChapterSet.has('chapter_4')) {
         matchedChapterKey = 'chapter_4';
       }
     }
-    // 6. 第五回：鹰愁涧
+    // 6. 第五回：鹰愁涧 (五行山大圣脱困破封后初入才展开)
     else if (mapId === 'yingchoujian') {
-      if (!this.shownChapterSet.has('chapter_5')) {
+      const isPreWuxing = currentPhase.startsWith('liujiacun_') || currentPhase.startsWith('tiangong_') || currentPhase === 'wuxingshan_ready';
+      if (!isPreWuxing && !this.shownChapterSet.has('chapter_5')) {
         matchedChapterKey = 'chapter_5';
       }
     }
-    // 7. 第六回：高老庄
+    // 7. 第六回：高老庄 (收服小白龙后初入才展开)
     else if (mapId === 'gaolaozhuang') {
-      if (!this.shownChapterSet.has('chapter_6')) {
+      const isPreBailong = currentPhase.startsWith('liujiacun_') || currentPhase.startsWith('tiangong_') || currentPhase === 'wuxingshan_ready';
+      if (!isPreBailong && !this.shownChapterSet.has('chapter_6')) {
         matchedChapterKey = 'chapter_6';
       }
     }
-    // 8. 第七回：流沙河
-    else if (mapId === 'liushaho') {
-      if (!this.shownChapterSet.has('chapter_7')) {
+    // 8. 第七回：流沙河 (兼容 liushahe 与 liushaho)
+    else if (mapId === 'liushahe' || mapId === 'liushaho') {
+      const isPreLiusha = currentPhase.startsWith('liujiacun_') || currentPhase.startsWith('tiangong_') || currentPhase === 'wuxingshan_ready';
+      if (!isPreLiusha && !this.shownChapterSet.has('chapter_7')) {
         matchedChapterKey = 'chapter_7';
       }
     }

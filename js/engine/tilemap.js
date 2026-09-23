@@ -602,42 +602,89 @@ class TilemapEngine {
       }
 
       // === 7. 凡间·山涧清溪与浩瀚东海碧水 (图1同款晶莹剔透碧绿海浪与阳光折射) ===
+      // === 7. 凡间·山涧清溪、浩瀚东海深蓝水底与八百里流沙河浑水 ===
       case 'water':
       case 'dark_water': {
         const isDark = tileType === 'dark_water';
+        const isLiusha = mapData && (mapData.id === 'liushahe' || mapData.id === 'liushaho');
+        const isUnderwater = mapData && (mapData.id === 'shuijinggong' || mapData.id === 'longgong_palace' || mapData.id === 'donghai_coast');
         const wave = Math.sin(this.waterAnimTime * 2.4 + screenX * 0.08 + screenY * 0.08);
         const wave2 = Math.cos(this.waterAnimTime * 1.8 + screenX * 0.06 - screenY * 0.06);
 
-        // 1. 晶莹透亮的碧蓝到湛蓝渐变 (1:1 像素级复刻实机东海碧水：清澈通透，阳光粼粼)
+        // 1. 材质渐变底色
         const g = ctx.createLinearGradient(screenX, screenY, screenX + s * 0.8, screenY + s);
-        if (isDark) {
-          g.addColorStop(0, '#0369a1');
-          g.addColorStop(0.5, '#0284c7');
-          g.addColorStop(1, '#075985');
+
+        if (isLiusha) {
+          // 八百里流沙河：金褐暗涌浊浪、鹅毛不浮浑浊流沙恶水
+          g.addColorStop(0, isDark ? '#451a03' : '#78350f');
+          g.addColorStop(0.5, isDark ? '#78350f' : '#92400e');
+          g.addColorStop(1, isDark ? '#270e01' : '#5c2205');
+        } else if (isUnderwater) {
+          // 东海水下与水晶宫：纯净深邃宝蓝与群青光晕，绝不偏绿！
+          g.addColorStop(0, isDark ? '#082f49' : '#0369a1');
+          g.addColorStop(0.45, isDark ? '#0369a1' : '#0284c7');
+          g.addColorStop(1, isDark ? '#0c4a6e' : '#075985');
         } else {
-          g.addColorStop(0, '#2dd4bf'); // 浅滩晶莹碧绿
-          g.addColorStop(0.4, '#0ea5e9'); // 晴空蔚蓝
-          g.addColorStop(1, '#0284c7'); // 湛蓝海深
+          // 通用海面与清溪：纯净蔚蓝、水天一色
+          if (isDark) {
+            g.addColorStop(0, '#0369a1');
+            g.addColorStop(0.5, '#0284c7');
+            g.addColorStop(1, '#075985');
+          } else {
+            g.addColorStop(0, '#38bdf8'); // 晴空澄澈浅蓝 (摒弃偏绿的原 #2dd4bf)
+            g.addColorStop(0.4, '#0ea5e9'); // 晴空蔚蓝
+            g.addColorStop(1, '#0284c7'); // 湛蓝海深
+          }
         }
         ctx.fillStyle = g;
         ctx.fillRect(screenX, screenY, s, s);
 
-        // 2. 阳光折射水纹与流动涟漪波光 (实机粼粼波光)
-        ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.42 + wave * 0.25) + ')';
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.moveTo(screenX + 2, screenY + 10 + wave * 3);
-        ctx.quadraticCurveTo(screenX + 16, screenY + 6 - wave * 3, screenX + s - 2, screenY + 10 + wave * 3);
-        ctx.moveTo(screenX + 4, screenY + 22 - wave2 * 3);
-        ctx.quadraticCurveTo(screenX + 18, screenY + 26 + wave2 * 3, screenX + s - 3, screenY + 22 - wave2 * 3);
-        ctx.stroke();
-
-        // 3. 翻滚的细腻小水珠与细碎泡沫
-        if (((c || 0) * 17 + (r || 0) * 23) % 3 === 0) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        // 2. 水波涌动涟漪与折射光丝
+        if (isLiusha) {
+          // 流沙河：金砂流动波纹与暗流翻卷
+          ctx.strokeStyle = 'rgba(245, 158, 11, ' + (0.38 + wave * 0.22) + ')';
+          ctx.lineWidth = 1.6;
           ctx.beginPath();
-          ctx.arc(screenX + 14 + wave * 2, screenY + 15, 1.5, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.moveTo(screenX + 2, screenY + 10 + wave * 3.5);
+          ctx.quadraticCurveTo(screenX + 16, screenY + 6 - wave * 3.5, screenX + s - 2, screenY + 10 + wave * 3.5);
+          ctx.moveTo(screenX + 4, screenY + 22 - wave2 * 3.5);
+          ctx.quadraticCurveTo(screenX + 18, screenY + 26 + wave2 * 3.5, screenX + s - 3, screenY + 22 - wave2 * 3.5);
+          ctx.stroke();
+
+          // 金砂漩涡微点
+          if (((c || 0) * 13 + (r || 0) * 19) % 3 === 0) {
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.75)';
+            ctx.beginPath();
+            ctx.arc(screenX + 12 + wave * 2, screenY + 16, 1.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else {
+          // 东海与普通水体：阳光折射水纹与流动涟漪波光
+          ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.45 + wave * 0.25) + ')';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(screenX + 2, screenY + 10 + wave * 3);
+          ctx.quadraticCurveTo(screenX + 16, screenY + 6 - wave * 3, screenX + s - 2, screenY + 10 + wave * 3);
+          ctx.moveTo(screenX + 4, screenY + 22 - wave2 * 3);
+          ctx.quadraticCurveTo(screenX + 18, screenY + 26 + wave2 * 3, screenX + s - 3, screenY + 22 - wave2 * 3);
+          ctx.stroke();
+
+          // 东海水下专属：动态焦散网纹 (Underwater Caustics Wave & Shimmer)
+          if (isUnderwater) {
+            const caustics = Math.sin(this.waterAnimTime * 2.8 + screenX * 0.12) * Math.cos(this.waterAnimTime * 2.2 + screenY * 0.12);
+            ctx.fillStyle = 'rgba(186, 230, 253, ' + (0.12 + Math.abs(caustics) * 0.18) + ')';
+            ctx.beginPath();
+            ctx.arc(screenX + 16 + wave * 2.5, screenY + 16 + wave2 * 2.5, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // 翻滚的细腻小水珠与细碎泡沫
+          if (((c || 0) * 17 + (r || 0) * 23) % 3 === 0) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.beginPath();
+            ctx.arc(screenX + 14 + wave * 2, screenY + 15, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
         break;
       }
@@ -1551,6 +1598,11 @@ class TilemapEngine {
         this.drawTile(ctx, tileType, screenX, screenY, c, r, mapData);
       }
     }
+  }
+
+  // 瓦片渲染统一门禁接口 (兼容 renderTile 别名)
+  renderTile(ctx, tileType, screenX, screenY, c = 0, r = 0, mapData = null) {
+    return this.drawTile(ctx, tileType, screenX, screenY, c, r, mapData);
   }
 }
 

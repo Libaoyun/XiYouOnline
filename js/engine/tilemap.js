@@ -248,22 +248,48 @@ class TilemapEngine {
       // === 4. 凡间·葱郁仙林草地 (自然风吹草尖与杂花生树) ===
       case 'grass': {
         const hash = (c * 43 + r * 29) % 5;
+        const isBoneRidge = mapData && mapData.id === 'baihuling';
+        const isBaoxiang = mapData && mapData.id === 'baoxiangguo';
+        const isLiuVillage = mapData && mapData.id === 'liujiacun';
+        const isHuaguo = mapData && mapData.id === 'huaguoshan';
         // 柔和草甸
         const g = ctx.createLinearGradient(screenX, screenY, screenX, screenY + s);
-        g.addColorStop(0, '#2d5e2e');
-        g.addColorStop(1, '#204620');
+        g.addColorStop(0, isBoneRidge ? '#545648' : isBaoxiang ? '#59663c' : isLiuVillage ? '#527d3e' : isHuaguo ? '#277451' : '#2d5e2e');
+        g.addColorStop(1, isBoneRidge ? '#353c37' : isBaoxiang ? '#394b32' : isLiuVillage ? '#345d32' : isHuaguo ? '#1b543e' : '#204620');
         ctx.fillStyle = g;
         ctx.fillRect(screenX, screenY, s, s);
 
         // 风拂草浪
         const wind = Math.sin(this.waterAnimTime * 2 + c * 0.6) * 1.5;
-        ctx.fillStyle = '#3d7e3e';
+        ctx.fillStyle = isBoneRidge ? '#626952' : isBaoxiang ? '#8b8c4c' : isLiuVillage ? '#78a756' : isHuaguo ? '#55a77a' : '#3d7e3e';
         ctx.fillRect(screenX + 6 + wind, screenY + 8, 2, 6);
         ctx.fillRect(screenX + 18 - wind, screenY + 16, 2, 5);
         ctx.fillRect(screenX + 24 + wind, screenY + 6, 2, 6);
 
         // 随机散落野花/三叶草
-        if (hash === 1) {
+        if (isBoneRidge && hash === 1) {
+          // 朽骨碎石与枯叶，白虎岭不再长满鲜花。
+          ctx.strokeStyle = '#b9b4a0';
+          ctx.lineWidth = 1.3;
+          ctx.beginPath(); ctx.moveTo(screenX + 11, screenY + 19);
+          ctx.lineTo(screenX + 19, screenY + 22);
+          ctx.moveTo(screenX + 14, screenY + 16);
+          ctx.lineTo(screenX + 16, screenY + 24); ctx.stroke();
+        } else if (isBoneRidge && hash === 3) {
+          ctx.fillStyle = '#8c7050';
+          ctx.beginPath(); ctx.ellipse(screenX + 22, screenY + 12, 4, 2, -.5, 0, Math.PI * 2); ctx.fill();
+        } else if (isHuaguo && hash === 1) {
+          // 桃林落英，花果山与凡间草地一眼可辨。
+          ctx.fillStyle = '#f6a5bd';
+          ctx.beginPath(); ctx.ellipse(screenX + 14, screenY + 20, 3, 1.5, -0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ffe1e8';
+          ctx.beginPath(); ctx.ellipse(screenX + 21, screenY + 9, 2, 1, 0.4, 0, Math.PI * 2); ctx.fill();
+        } else if (isLiuVillage && hash === 3) {
+          // 村边小黄花和嫩芽，衬托初醒章节的安宁。
+          ctx.fillStyle = '#f4d35e';
+          ctx.beginPath(); ctx.arc(screenX + 22, screenY + 12, 2.2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#a8c86a'; ctx.fillRect(screenX + 21, screenY + 15, 2, 4);
+        } else if (hash === 1) {
           // 白色雏菊
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
@@ -282,10 +308,13 @@ class TilemapEngine {
       }
 
       // === 5. 凡间·青石古道泥土小径 (细腻泥土肌理与凹凸鹅卵石) ===
+      case 'dirt_road':
       case 'dirt_path': {
+        const villagePath = mapData && mapData.id === 'liujiacun';
+        const peachPath = mapData && mapData.id === 'huaguoshan';
         const g = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
-        g.addColorStop(0, '#6f543c');
-        g.addColorStop(1, '#57412e');
+        g.addColorStop(0, villagePath ? '#927052' : peachPath ? '#846746' : '#6f543c');
+        g.addColorStop(1, villagePath ? '#6e543e' : peachPath ? '#604a38' : '#57412e');
         ctx.fillStyle = g;
         ctx.fillRect(screenX, screenY, s, s);
 
@@ -303,6 +332,10 @@ class TilemapEngine {
         ctx.fillStyle = '#423122';
         ctx.fillRect(screenX + 8, screenY + 18, 3, 2);
         ctx.fillRect(screenX + 22, screenY + 7, 2, 2);
+        if (peachPath && (c * 13 + r * 7) % 9 === 0) {
+          ctx.fillStyle = '#ed9bb0';
+          ctx.beginPath(); ctx.ellipse(screenX + 23, screenY + 11, 3, 1.5, 0.6, 0, Math.PI * 2); ctx.fill();
+        }
         break;
       }
 
@@ -612,7 +645,8 @@ class TilemapEngine {
       // === 8. 大唐·长安青石方砖 (复刻图1：青灰方砖、倒角接缝与质感) ===
       case 'changan_stone': {
         const isAlt = (c + r) % 2 === 0;
-        ctx.fillStyle = isAlt ? '#64748b' : '#59687c';
+        const isChenTang = mapData && mapData.id === 'chentangguan';
+        ctx.fillStyle = isChenTang ? (isAlt ? '#8b9090' : '#798787') : (isAlt ? '#64748b' : '#59687c');
         ctx.fillRect(screenX, screenY, s, s);
 
         // 石砖倒角高光与阴影接缝
@@ -628,6 +662,12 @@ class TilemapEngine {
         ctx.fillStyle = 'rgba(30, 41, 59, 0.2)';
         ctx.fillRect(screenX + 5, screenY + 7, 2, 2);
         ctx.fillRect(screenX + 18, screenY + 16, 2, 2);
+        if (isChenTang && (c * 19 + r * 11) % 13 === 0) {
+          // 海风吹来的贝壳纹，与长安内城石砖区分。
+          ctx.strokeStyle = 'rgba(225, 224, 198, 0.65)';
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(screenX + 22, screenY + 9, 3, Math.PI, Math.PI * 2); ctx.stroke();
+        }
         break;
       }
 
@@ -1228,6 +1268,52 @@ class TilemapEngine {
       }
 
       // === 11. 五行山·巍峨五指岩壁 (阻挡) ===
+      case 'demon_cave_wall': {
+        const boneCave = mapData && mapData.id === 'baihuling';
+        const stone = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
+        stone.addColorStop(0, boneCave ? '#575060' : '#5b5147');
+        stone.addColorStop(.53, boneCave ? '#353542' : '#383a3d');
+        stone.addColorStop(1, '#171d28');
+        ctx.fillStyle = stone;
+        ctx.fillRect(screenX, screenY, s, s);
+
+        // 斜切的岩层使相邻洞壁成为一整片连续的山体，而不是黑色方格。
+        ctx.fillStyle = boneCave ? 'rgba(200,183,211,.16)' : 'rgba(221,181,111,.16)';
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY + 2);
+        ctx.lineTo(screenX + s, screenY + 11);
+        ctx.lineTo(screenX + s, screenY + 13);
+        ctx.lineTo(screenX, screenY + 5);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = boneCave ? 'rgba(186,153,199,.34)' : 'rgba(197,158,101,.34)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(screenX + 3, screenY + 22);
+        ctx.lineTo(screenX + 14, screenY + 17);
+        ctx.lineTo(screenX + 29, screenY + 21);
+        ctx.moveTo(screenX + 20, screenY + 5);
+        ctx.lineTo(screenX + 17, screenY + 12);
+        ctx.lineTo(screenX + 22, screenY + 16);
+        ctx.stroke();
+
+        if ((c * 17 + r * 31) % 6 === 0) {
+          const glow = .22 + .08 * Math.sin(this.waterAnimTime * 2 + c);
+          ctx.fillStyle = boneCave ? `rgba(162,105,195,${glow})` : `rgba(233,169,71,${glow})`;
+          ctx.beginPath();
+          ctx.ellipse(screenX + 15, screenY + 18, 5, 2.5, -.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if ((c + r) % 4 === 0) {
+          ctx.fillStyle = boneCave ? '#a9a5ac' : '#a18d70';
+          ctx.beginPath();
+          ctx.moveTo(screenX + 7, screenY);
+          ctx.lineTo(screenX + 13, screenY);
+          ctx.lineTo(screenX + 10, screenY + 8);
+          ctx.closePath(); ctx.fill();
+        }
+        break;
+      }
+
       case 'mountain_rock': {
         const g = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
         g.addColorStop(0, '#52525b');
@@ -1332,17 +1418,18 @@ class TilemapEngine {
       // === 水帘洞天·钟乳奇石溶洞灵地 ===
       case 'cave_floor': {
         const isAlt = (c + r) % 2 === 0;
-        ctx.fillStyle = isAlt ? '#262626' : '#1f1f1f';
+        const isBoneCave = mapData && mapData.id === 'baihuling';
+        ctx.fillStyle = isBoneCave ? (isAlt ? '#343138' : '#272930') : (isAlt ? '#262626' : '#1f1f1f');
         ctx.fillRect(screenX, screenY, s, s);
 
         // 湿润水汽反光微光
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.06)';
+        ctx.fillStyle = isBoneCave ? 'rgba(179, 138, 206, 0.07)' : 'rgba(56, 189, 248, 0.06)';
         ctx.fillRect(screenX + 2, screenY + 2, s - 4, s - 4);
 
         // 钟乳石滴水水滴涟漪
         if ((c * 13 + r * 29) % 7 === 0) {
           const dripGlow = Math.sin(this.waterAnimTime * 2 + c) * 1.5;
-          ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+          ctx.strokeStyle = isBoneCave ? 'rgba(200, 167, 215, 0.23)' : 'rgba(56, 189, 248, 0.25)';
           ctx.lineWidth = 0.8;
           ctx.beginPath();
           ctx.ellipse(screenX + s / 2, screenY + s / 2, 4 + dripGlow, 2 + dripGlow * 0.5, 0, 0, Math.PI * 2);
@@ -1351,7 +1438,7 @@ class TilemapEngine {
 
         // 荧光苔藓灵草点缀
         if ((c * 7 + r * 17) % 5 === 0) {
-          ctx.fillStyle = 'rgba(52, 211, 153, 0.35)';
+          ctx.fillStyle = isBoneCave ? 'rgba(170, 114, 186, 0.25)' : 'rgba(52, 211, 153, 0.35)';
           ctx.fillRect(screenX + (c * 11) % 20 + 4, screenY + (r * 19) % 20 + 4, 2.5, 2.5);
         }
         break;
@@ -1374,6 +1461,31 @@ class TilemapEngine {
         ctx.fillStyle = '#dc2626';
         ctx.fillRect(screenX + 15, screenY + 9, 2, 6);
         ctx.fillRect(screenX + 15, screenY + 17, 2, 6);
+        break;
+      }
+
+      case 'wuxing_seal': {
+        const rock = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
+        rock.addColorStop(0, '#7c8184'); rock.addColorStop(1, '#343b42');
+        ctx.fillStyle = rock; ctx.fillRect(screenX, screenY, s, s);
+        ctx.strokeStyle = '#b3b8b0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(screenX + 2, screenY + 9);
+        ctx.lineTo(screenX + 11, screenY + 7);
+        ctx.lineTo(screenX + 20, screenY + 10);
+        ctx.moveTo(screenX + 4, screenY + 25);
+        ctx.lineTo(screenX + 16, screenY + 22);
+        ctx.lineTo(screenX + 30, screenY + 26); ctx.stroke();
+        const pulse = .55 + .15 * Math.sin(this.waterAnimTime * 2);
+        ctx.fillStyle = `rgba(255,211,90,${pulse})`;
+        ctx.beginPath(); ctx.arc(screenX + 16, screenY + 16, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fff0b3'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(screenX + 16, screenY + 16, 11, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#b93630';
+        ctx.fillRect(screenX + 11, screenY + 5, 10, 22);
+        ctx.fillStyle = '#f9e8aa';
+        for (let i = 0; i < 6; i++) {
+          ctx.fillRect(screenX + 13 + (i % 2), screenY + 8 + i * 3, 5, 1);
+        }
         break;
       }
 

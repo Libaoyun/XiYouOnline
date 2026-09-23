@@ -1140,7 +1140,7 @@ window.GAME_DATA.MAPS_2D = {
         "title": "【天庭特使】",
         "x": 288,
         "y": 416,
-        "appearance": "tang_seng",
+        "appearance": "taibai_jinxing",
         "icon": "⭐",
         "dialogueKey": "pantao_intro"
       },
@@ -1170,7 +1170,7 @@ window.GAME_DATA.MAPS_2D = {
         "title": "【广寒月神】",
         "x": 544,
         "y": 384,
-        "appearance": "qixiannv",
+        "appearance": "change_fairy",
         "icon": "🧚‍♀️",
         "dialogueKey": "tianpeng_change_encounter"
       },
@@ -1180,7 +1180,7 @@ window.GAME_DATA.MAPS_2D = {
         "title": "【御前侍卫】",
         "x": 704,
         "y": 384,
-        "appearance": "shawujing",
+        "appearance": "juanlian_general",
         "icon": "🧔",
         "dialogueKey": "juanlian_break_cup"
       },
@@ -24169,7 +24169,7 @@ window.GAME_DATA.MAPS_2D = {
         "title": "【二十八宿奎宿星君】",
         "x": 928,
         "y": 672,
-        "appearance": "wild_wolf",
+        "appearance": "huangpao_guai",
         "icon": "🐺",
         "dialogueKey": "huangpao_boss_encounter"
       }

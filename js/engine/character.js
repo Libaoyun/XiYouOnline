@@ -7,6 +7,9 @@ class Character {
 
   static inferMonsterType(name, id) {
     const s = `${name || ''}_${id || ''}`.toLowerCase();
+    if (s.includes('黄袍') || s.includes('奎木狼') || s.includes('huangpao') || s.includes('kuimu')) return 'huangpao_guai';
+    if (s.includes('白骨夫人') || s.includes('白骨精') || s.includes('baigujing')) return 'skeleton';
+    if (s.includes('skeleton') || s.includes('骷髅') || s.includes('怨灵') || s.includes('厉鬼')) return 'skeleton';
     if (s.includes('混混') || s.includes('hooligan') || s.includes('hunhun') || s.includes('地痞') || s.includes('功夫')) return 'hooligan';
     if (s.includes('rat') || s.includes('鼠')) return 'rat';
     if (s.includes('pig') || s.includes('猪') || s.includes('bajie')) return 'pig';
@@ -520,6 +523,12 @@ class CharacterRenderer {
     // 0.1 特别优先：西海龙三太子·小白龙敖烈 (绝非龙虾！)
     if (mId.includes('xiaobailong') || mId.includes('bailong_human') || mId.includes('aolie')) {
       CharacterRenderer.drawXiaoBaiLong(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('change_fairy') || mId.includes('chang_e') || mId.includes('change')) {
+      CharacterRenderer.drawChangE(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('qixiannv')) {
+      CharacterRenderer.drawQixianNv(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('liu_taigong')) {
+      CharacterRenderer.drawLiuTaigong(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('tudi') || mId.includes('tudi_gong')) {
       CharacterRenderer.drawTudiGong(ctx, by, animTimer, direction);
     } else if (mId.includes('longwang') || mId.includes('aoguang')) {
@@ -538,6 +547,10 @@ class CharacterRenderer {
       CharacterRenderer.drawLingganKing(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('baimu')) {
       CharacterRenderer.drawBaimuMojun(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('huangpao') || mId.includes('kuimu')) {
+      CharacterRenderer.drawHuangpaoGuai(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('skeleton') || mId.includes('skel') || mId.includes('ghost')) {
+      CharacterRenderer.drawBoneWraith(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('lijing') || mId.includes('li_jing')) {
       CharacterRenderer.drawLiJing(ctx, by, animTimer, direction, isMoving);
     // 长安城十大专属独立NPC
@@ -605,6 +618,10 @@ class CharacterRenderer {
     } else if (mId.includes('shopkeeper') || mId.includes('yaopu') || mId.includes('yao_pu') || mId.includes('merchant')) {
       CharacterRenderer.drawShopkeeper(ctx, by, animTimer, direction);
     // 【高精模型精准分发】彻底杜绝全员套皮孙悟空/猪八戒/牛魔王！
+    } else if (mId.includes('taibai')) {
+      CharacterRenderer.drawTaibaiJinxing(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('juanlian')) {
+      CharacterRenderer.drawJuanlianGeneral(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('tianpeng_marshal') || (mId.includes('tianpeng') && !mId.includes('bajie') && !mId.includes('pig'))) {
       CharacterRenderer.drawTianpengMarshal(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('juling') || mId.includes('juling_shen')) {
@@ -623,7 +640,7 @@ class CharacterRenderer {
       CharacterRenderer.drawShaWujing(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('liu_boqin') || mId.includes('hunter') || mId.includes('boqin')) {
       CharacterRenderer.drawLiuBoqin(ctx, by, animTimer, direction, isMoving);
-    } else if (mId.includes('tang_seng') || mId.includes('taibai') || mId.includes('elder') || mId.includes('monk') || mId.includes('tangseng')) {
+    } else if (mId.includes('tang_seng') || mId.includes('elder') || mId.includes('monk') || mId.includes('tangseng')) {
       CharacterRenderer.drawTangSeng(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('guanyin') || mId.includes('pusa')) {
       if (mId.includes('statue') || mId.includes('diao_xiang') || mId.includes('diaoxiang')) {
@@ -2395,6 +2412,7 @@ class CharacterRenderer {
     ctx.scale(flip, 1);
 
     const tailTwitch = Math.sin(animTimer * 0.3) * 4;
+    const scurry = isMoving ? Math.sin(animTimer * 0.45) * 1.5 : 0;
 
     // 5.1 细长弯曲粉红鼠尾 (灵动甩动)
     ctx.strokeStyle = '#fab1a0';
@@ -2413,8 +2431,17 @@ class CharacterRenderer {
 
     ctx.fillStyle = ratGrad;
     ctx.beginPath();
-    ctx.ellipse(-2, by + 3, 14, 9.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(-2, by + 3 + scurry, 14, 9.5, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // 从粮仓拖出的麦穗卡在背毛里，强化“偷粮”身份。
+    ctx.strokeStyle = '#d6af60';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-9, by - 5); ctx.lineTo(-12, by - 13); ctx.stroke();
+    ctx.fillStyle = '#e7c975';
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.ellipse(-12 + i * 0.7, by - 12 + i * 2, 2, 1, -0.5, 0, Math.PI * 2); ctx.fill();
+    }
 
     // 软绵绵白灰下腹
     ctx.fillStyle = '#dfe4ea';
@@ -2866,26 +2893,53 @@ class CharacterRenderer {
     ctx.save();
     const flip = direction === 'left' ? -1 : 1;
     ctx.scale(flip, 1);
+    const stride = isMoving ? Math.sin(animTimer * 0.35) * 2 : 0;
+    const breath = Math.sin(animTimer * 0.12) * 0.5;
+
+    ctx.fillStyle = 'rgba(20, 26, 20, 0.3)';
+    ctx.beginPath(); ctx.ellipse(0, by + 17, 12, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+
+    // 皮靴和绑腿先于虎皮绘制，奔走时两腿错步。
+    ctx.fillStyle = '#3f3129';
+    ctx.fillRect(-7, by + 9 + stride, 5, 8);
+    ctx.fillRect(2, by + 9 - stride, 5, 8);
+    ctx.fillStyle = '#bd9b67';
+    ctx.fillRect(-7, by + 10 + stride, 5, 1.5);
+    ctx.fillRect(2, by + 10 - stride, 5, 1.5);
 
     // 虎皮斜披
-    ctx.fillStyle = '#e67e22';
+    ctx.fillStyle = '#b76f32';
     ctx.beginPath();
-    ctx.roundRect(-8, by - 8, 16, 17, 3);
+    ctx.roundRect(-8, by - 8 + breath, 16, 19, 3);
     ctx.fill();
-    ctx.fillStyle = '#2c3e50';
+    ctx.fillStyle = '#34261f';
     // 虎斑纹
-    ctx.fillRect(-6, by - 5, 4, 1.5);
-    ctx.fillRect(2, by - 2, 4, 1.5);
+    ctx.fillRect(-6, by - 5 + breath, 4, 1.5);
+    ctx.fillRect(2, by - 2 + breath, 4, 1.5);
+    ctx.fillRect(-2, by + 4 + breath, 5, 1.5);
+    ctx.strokeStyle = '#ead1a0'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-7, by - 5 + breath); ctx.lineTo(6, by + 10 + breath); ctx.stroke();
 
     // 猎户坚毅面庞与皮毛帽
-    ctx.fillStyle = '#d35400';
+    ctx.fillStyle = '#c58d62';
     ctx.beginPath();
-    ctx.arc(0, by - 14, 6.5, 0, Math.PI * 2);
+    ctx.arc(0, by - 14 + breath, 6.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#795548';
+    ctx.fillStyle = '#584537';
     ctx.beginPath();
-    ctx.roundRect(-7, by - 21, 14, 7, 2);
+    ctx.roundRect(-7, by - 21 + breath, 14, 7, 2);
     ctx.fill();
+    ctx.fillStyle = '#1d211d';
+    ctx.fillRect(-3.5, by - 15 + breath, 1.5, 1.5);
+    ctx.fillRect(2, by - 15 + breath, 1.5, 1.5);
+    ctx.strokeStyle = '#553c2e'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-2, by - 10 + breath); ctx.lineTo(2, by - 10 + breath); ctx.stroke();
+
+    // 背负猎弓，区别于普通守卫与村民。
+    ctx.strokeStyle = '#664b32'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(-7, by - 3, 13, Math.PI * 0.58, Math.PI * 1.42); ctx.stroke();
+    ctx.strokeStyle = '#d8c7a5'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(-11, by - 15); ctx.lineTo(-11, by + 9); ctx.stroke();
 
     // 猎虎三股钢叉
     ctx.strokeStyle = '#95a5a6';
@@ -2899,10 +2953,6 @@ class CharacterRenderer {
     ctx.lineTo(11, by - 18);
     ctx.lineTo(14, by - 23);
     ctx.stroke();
-
-    ctx.fillStyle = '#4e342e';
-    ctx.fillRect(-6, by + 9, 4, 7);
-    ctx.fillRect(2, by + 9, 4, 7);
 
     ctx.restore();
   }
@@ -3401,6 +3451,162 @@ class CharacterRenderer {
     ctx.lineTo(18, by + 8);
     ctx.stroke();
 
+    ctx.restore();
+  }
+
+  // 白虎岭怨灵：骨甲、裂纹面甲与游离魂火，和白骨夫人保持明确的轮廓区别。
+  static drawBoneWraith(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    ctx.scale(direction === 'left' ? -1 : 1, 1);
+    const sway = Math.sin(animTimer * 0.15) * 1.4;
+    const step = isMoving ? Math.sin(animTimer * 0.36) * 2 : 0;
+    ctx.translate(0, sway);
+    const aura = ctx.createRadialGradient(0, by - 5, 2, 0, by - 5, 27);
+    aura.addColorStop(0, 'rgba(102,224,205,.36)');
+    aura.addColorStop(1, 'rgba(50,40,100,0)');
+    ctx.fillStyle = aura;
+    ctx.fillRect(-28, by - 31, 56, 56);
+    ctx.fillStyle = '#1b2336';
+    ctx.beginPath();
+    ctx.moveTo(-11, by - 5); ctx.quadraticCurveTo(-17, by + 14, -5, by + 14);
+    ctx.lineTo(5, by + 14); ctx.quadraticCurveTo(17, by + 12, 11, by - 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#d0d9cc'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-5, by + 7); ctx.lineTo(-6 - step, by + 15);
+    ctx.moveTo(5, by + 7); ctx.lineTo(6 + step, by + 15);
+    ctx.moveTo(-9, by - 4); ctx.lineTo(-15, by + 4);
+    ctx.moveTo(9, by - 4); ctx.lineTo(15, by + 4);
+    ctx.stroke();
+    ctx.fillStyle = '#d7dfd2';
+    ctx.beginPath(); ctx.moveTo(-8, by - 7); ctx.lineTo(8, by - 7);
+    ctx.lineTo(6, by + 6); ctx.lineTo(-6, by + 6); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#667c77'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-6, by - 3); ctx.lineTo(6, by - 3);
+    ctx.moveTo(-5, by + 1); ctx.lineTo(5, by + 1); ctx.stroke();
+    ctx.fillStyle = '#e7e2cc';
+    ctx.beginPath(); ctx.ellipse(0, by - 15, 8, 9, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#263042';
+    ctx.beginPath(); ctx.ellipse(-3.5, by - 16, 2, 2.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(3.5, by - 16, 2, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#68e7d6';
+    ctx.beginPath(); ctx.arc(-3.5, by - 16, .8, 0, Math.PI * 2);
+    ctx.arc(3.5, by - 16, .8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#829b8d'; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(1, by - 22); ctx.lineTo(0, by - 17); ctx.lineTo(3, by - 14); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 瑶池七仙女：桃绡披帛与双环云髻，区别于甲胄天将。
+  static drawQixianNv(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    ctx.scale(direction === 'left' ? -1 : 1, 1);
+    const float = Math.sin(animTimer * .13) * 1.2;
+    const step = isMoving ? Math.sin(animTimer * .31) * 1.5 : 0;
+    ctx.translate(0, float);
+    const silk = ctx.createLinearGradient(-15, by - 8, 15, by + 14);
+    silk.addColorStop(0, '#fbe1e6'); silk.addColorStop(.5, '#f28fa8'); silk.addColorStop(1, '#a54372');
+    ctx.fillStyle = silk;
+    ctx.beginPath(); ctx.moveTo(-7, by - 7); ctx.lineTo(7, by - 7);
+    ctx.quadraticCurveTo(12, by + 1, 13 + step, by + 14);
+    ctx.lineTo(-13 + step, by + 14);
+    ctx.quadraticCurveTo(-12, by + 1, -7, by - 7); ctx.fill();
+    ctx.strokeStyle = '#ffe9b8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, by - 6); ctx.lineTo(0, by + 11);
+    ctx.moveTo(-8, by + 10); ctx.quadraticCurveTo(0, by + 13, 8, by + 10); ctx.stroke();
+    ctx.strokeStyle = '#ffe1df'; ctx.lineWidth = 3.4;
+    ctx.beginPath(); ctx.moveTo(-7, by - 5);
+    ctx.quadraticCurveTo(-19, by - 1, -17, by + 8);
+    ctx.moveTo(7, by - 5); ctx.quadraticCurveTo(18, by - 12, 20, by + 5); ctx.stroke();
+    ctx.fillStyle = '#f6d5ba';
+    ctx.beginPath(); ctx.ellipse(0, by - 15, 5.6, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#292132';
+    ctx.beginPath(); ctx.arc(-5, by - 21, 3, 0, Math.PI * 2);
+    ctx.arc(5, by - 21, 3, 0, Math.PI * 2);
+    ctx.ellipse(0, by - 21, 6, 3, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f6d571';
+    ctx.beginPath(); ctx.arc(0, by - 23, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#b15887'; ctx.lineWidth = .9;
+    ctx.beginPath(); ctx.moveTo(-3, by - 15); ctx.lineTo(-1, by - 15);
+    ctx.moveTo(1, by - 15); ctx.lineTo(3, by - 15); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 刘太公：灰白鬓发、麻布褐袍与竹杖，保持凡间长者的朴素轮廓。
+  static drawLiuTaigong(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    ctx.scale(direction === 'left' ? -1 : 1, 1);
+    const step = isMoving ? Math.sin(animTimer * .28) * 1.7 : 0;
+    ctx.fillStyle = '#423d37';
+    ctx.beginPath(); ctx.moveTo(-6, by + 5); ctx.lineTo(-7 - step, by + 14);
+    ctx.lineTo(-2 - step, by + 14); ctx.lineTo(0, by + 6);
+    ctx.lineTo(4, by + 14); ctx.lineTo(9 + step, by + 14);
+    ctx.lineTo(7, by + 5); ctx.fill();
+    const robe = ctx.createLinearGradient(-10, by, 10, by);
+    robe.addColorStop(0, '#5d5140'); robe.addColorStop(.5, '#a99674'); robe.addColorStop(1, '#5c5145');
+    ctx.fillStyle = robe;
+    ctx.beginPath(); ctx.moveTo(-6, by - 8); ctx.lineTo(7, by - 8);
+    ctx.lineTo(11, by + 11); ctx.lineTo(-10, by + 11); ctx.fill();
+    ctx.strokeStyle = '#d7c6a0'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-4, by - 6); ctx.lineTo(5, by + 6); ctx.stroke();
+    ctx.fillStyle = '#c9a982';
+    ctx.beginPath(); ctx.ellipse(0, by - 14, 5.3, 6.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#d4d0bd';
+    ctx.beginPath(); ctx.arc(-5, by - 18, 3, 0, Math.PI * 2);
+    ctx.arc(5, by - 18, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#e5dfce'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(-2, by - 10);
+    ctx.quadraticCurveTo(0, by - 5, 3, by - 8); ctx.stroke();
+    ctx.strokeStyle = '#56432f'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(13, by - 5);
+    ctx.lineTo(16, by + 14); ctx.stroke();
+    ctx.fillStyle = '#bc9a61';
+    ctx.beginPath(); ctx.arc(13, by - 5, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // 奎木狼下凡后的星宿真身：狼首、黄袍、乌金甲与冷月宝刀。
+  static drawHuangpaoGuai(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    ctx.scale(direction === 'left' ? -1 : 1, 1);
+    const step = isMoving ? Math.sin(animTimer * .35) * 2 : 0;
+    const breath = Math.sin(animTimer * .12) * .8;
+    const halo = ctx.createRadialGradient(0, by - 11, 3, 0, by - 11, 31);
+    halo.addColorStop(0, 'rgba(238,185,67,.26)'); halo.addColorStop(1, 'rgba(238,185,67,0)');
+    ctx.fillStyle = halo; ctx.fillRect(-32, by - 40, 64, 65);
+    ctx.fillStyle = '#332619';
+    ctx.beginPath(); ctx.moveTo(-9, by + 4); ctx.lineTo(-10 - step, by + 15);
+    ctx.lineTo(-3 - step, by + 15); ctx.lineTo(0, by + 6);
+    ctx.lineTo(4, by + 15); ctx.lineTo(11 + step, by + 15);
+    ctx.lineTo(9, by + 3); ctx.closePath(); ctx.fill();
+    const robe = ctx.createLinearGradient(-12, by, 13, by);
+    robe.addColorStop(0, '#79531f'); robe.addColorStop(.5, '#e8bb56'); robe.addColorStop(1, '#61421d');
+    ctx.fillStyle = robe;
+    ctx.beginPath(); ctx.moveTo(-9, by - 8); ctx.lineTo(9, by - 8);
+    ctx.lineTo(13, by + 12); ctx.lineTo(-13, by + 12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#2b3037'; ctx.beginPath(); ctx.roundRect(-8, by - 7, 16, 11, 2); ctx.fill();
+    ctx.strokeStyle = '#e7be69'; ctx.lineWidth = 1;
+    ctx.strokeRect(-6, by - 5, 12, 8);
+    ctx.beginPath(); ctx.moveTo(-5, by - 1); ctx.lineTo(5, by - 1);
+    ctx.moveTo(0, by - 5); ctx.lineTo(0, by + 3); ctx.stroke();
+    ctx.fillStyle = '#615949';
+    ctx.beginPath(); ctx.moveTo(-8, by - 17); ctx.lineTo(-12, by - 27);
+    ctx.lineTo(-4, by - 23); ctx.lineTo(4, by - 23);
+    ctx.lineTo(12, by - 27); ctx.lineTo(8, by - 17);
+    ctx.lineTo(6, by - 10 + breath); ctx.lineTo(0, by - 7);
+    ctx.lineTo(-6, by - 10 + breath); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#d8ccab';
+    ctx.beginPath(); ctx.moveTo(-7, by - 16); ctx.lineTo(7, by - 16);
+    ctx.lineTo(3, by - 9); ctx.lineTo(-3, by - 9); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#b22720';
+    ctx.beginPath(); ctx.arc(-3.5, by - 17, 1.4, 0, Math.PI * 2);
+    ctx.arc(3.5, by - 17, 1.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#e8b95e'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-12, by - 5); ctx.lineTo(-18, by + 3);
+    ctx.moveTo(12, by - 5); ctx.lineTo(15, by + 3); ctx.stroke();
+    ctx.strokeStyle = '#bfcbd0'; ctx.lineWidth = 2.7;
+    ctx.beginPath(); ctx.moveTo(15, by + 3); ctx.quadraticCurveTo(25, by - 11, 22, by - 24); ctx.stroke();
+    ctx.strokeStyle = '#f7e2a6'; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(17, by + 1); ctx.quadraticCurveTo(25, by - 12, 22, by - 22); ctx.stroke();
     ctx.restore();
   }
 
@@ -6110,6 +6316,181 @@ class CharacterRenderer {
     ctx.restore();
   }
 
+
+  // =========================================================================
+  // 【专属仙相】太白金星 (鹤发星冠、太白朝服、玉简拂尘)
+  // =========================================================================
+  static drawTaibaiJinxing(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    const flip = direction === 'left' ? -1 : 1;
+    ctx.scale(flip, 1);
+    const breathe = Math.sin(animTimer * 0.12) * 0.55;
+    const step = isMoving ? Math.sin(animTimer * 0.4) * 1.8 : 0;
+    const silk = Math.sin(animTimer * 0.18) * 2.5;
+
+    // 云履与长袍下摆。
+    ctx.fillStyle = '#312e81';
+    ctx.fillRect(-7 + step, by + 10, 5, 5);
+    ctx.fillRect(2 - step, by + 10, 5, 5);
+    const robe = ctx.createLinearGradient(-10, by - 10, 10, by + 14);
+    robe.addColorStop(0, '#f8fafc'); robe.addColorStop(0.55, '#dbeafe'); robe.addColorStop(1, '#94a3b8');
+    ctx.fillStyle = robe;
+    ctx.beginPath();
+    ctx.moveTo(-7, by - 9 + breathe); ctx.lineTo(7, by - 9 + breathe);
+    ctx.lineTo(11, by + 14); ctx.quadraticCurveTo(0, by + 17, -11, by + 14); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c6a84a'; ctx.lineWidth = 1; ctx.stroke();
+
+    // 太白星纹与深青腰带。
+    ctx.fillStyle = '#1e3a5f'; ctx.fillRect(-8, by - 2 + breathe, 16, 3);
+    ctx.fillStyle = '#f6d365';
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      const rad = i % 2 ? 1.5 : 3.4;
+      const x = Math.cos(a) * rad, y = by + 5 + Math.sin(a) * rad;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath(); ctx.fill();
+
+    // 慈和面容、鹤眉与长须。
+    ctx.fillStyle = '#f2c89f';
+    ctx.beginPath(); ctx.ellipse(0, by - 15 + breathe, 6, 6.8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-5, by - 17 + breathe); ctx.lineTo(-1, by - 18 + breathe);
+    ctx.moveTo(1, by - 18 + breathe); ctx.lineTo(5, by - 17 + breathe); ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(-4, by - 12 + breathe); ctx.quadraticCurveTo(0, by + 3 + breathe, 3, by - 11 + breathe);
+    ctx.quadraticCurveTo(0, by - 8 + breathe, -4, by - 12 + breathe); ctx.fill();
+
+    // 银发、太白星冠。
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath(); ctx.arc(0, by - 18 + breathe, 6.5, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#d4af37';
+    ctx.beginPath(); ctx.moveTo(-4, by - 21 + breathe); ctx.lineTo(0, by - 28 + breathe);
+    ctx.lineTo(4, by - 21 + breathe); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#eff6ff';
+    ctx.beginPath(); ctx.arc(0, by - 25 + breathe, 1.8, 0, Math.PI * 2); ctx.fill();
+
+    // 左手玉简，右手拂尘，尘丝随步摆动。
+    ctx.fillStyle = '#c7e5e1';
+    ctx.beginPath(); ctx.roundRect(-14, by - 7 + breathe, 5, 14, 1.5); ctx.fill();
+    ctx.strokeStyle = '#8ebbb5'; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.strokeStyle = '#7c5a35'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(10, by - 7); ctx.lineTo(15, by + 7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo(15, by + 7 + i * 0.3);
+      ctx.quadraticCurveTo(21 + silk, by + 9 + i * 2, 18 + silk, by + 16 + i); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // =========================================================================
+  // 【专属月相】嫦娥仙子 (广寒月轮、素白云裳、玉兔佩与流云长绫)
+  // =========================================================================
+  static drawChangE(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    const flip = direction === 'left' ? -1 : 1;
+    ctx.scale(flip, 1);
+    const float = Math.sin(animTimer * 0.12) * 1.1;
+    const ribbon = Math.sin(animTimer * 0.2) * 4;
+
+    // 月华轮廓光。
+    ctx.fillStyle = 'rgba(225, 238, 255, 0.18)';
+    ctx.beginPath(); ctx.arc(0, by - 6 + float, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(191, 219, 254, 0.68)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(0, by - 6 + float, 16, -1.2, 1.2); ctx.stroke();
+
+    // 飘带先置于身后。
+    ctx.strokeStyle = 'rgba(147, 197, 253, 0.8)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-6, by - 8 + float);
+    ctx.bezierCurveTo(-18, by - 4 + ribbon, -19, by + 9, -11, by + 15); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6, by - 7 + float);
+    ctx.bezierCurveTo(17, by - 13 - ribbon, 20, by, 13, by + 8); ctx.stroke();
+
+    // 月白云裳与冰蓝裙摆。
+    const skirt = ctx.createLinearGradient(0, by - 9, 0, by + 16);
+    skirt.addColorStop(0, '#f8fafc'); skirt.addColorStop(0.6, '#dbeafe'); skirt.addColorStop(1, '#93c5fd');
+    ctx.fillStyle = skirt;
+    ctx.beginPath(); ctx.moveTo(-6, by - 8 + float); ctx.lineTo(6, by - 8 + float);
+    ctx.lineTo(11, by + 15 + float); ctx.quadraticCurveTo(0, by + 18 + float, -11, by + 15 + float); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#6d5a9c'; ctx.fillRect(-7, by - 3 + float, 14, 2.5);
+
+    // 面容与乌云高髻。
+    ctx.fillStyle = '#fde2cf';
+    ctx.beginPath(); ctx.ellipse(0, by - 15 + float, 5.6, 6.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#211c3b';
+    ctx.beginPath(); ctx.arc(0, by - 18 + float, 6.1, Math.PI, 0); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, by - 23 + float, 3.6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-5.5, by - 17 + float, 2.8, 0, Math.PI * 2); ctx.arc(5.5, by - 17 + float, 2.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#4338ca';
+    ctx.fillRect(-2.2, by - 16 + float, 1.2, 1.2); ctx.fillRect(1, by - 16 + float, 1.2, 1.2);
+
+    // 月桂金簪和玉兔腰佩。
+    ctx.strokeStyle = '#f7d774'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(2, by - 25 + float); ctx.lineTo(10, by - 28 + float); ctx.stroke();
+    ctx.fillStyle = '#f7d774';
+    ctx.beginPath(); ctx.ellipse(7, by - 27 + float, 2.7, 1.2, -0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath(); ctx.ellipse(0, by + 3 + float, 2.7, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(-1.2, by - 0.5 + float, 0.8, 2, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(1.2, by - 0.5 + float, 0.8, 2, 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // =========================================================================
+  // 【专属将相】卷帘大将 (御前玄金甲、卷云肩旗、镇殿降魔杖)
+  // =========================================================================
+  static drawJuanlianGeneral(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    const flip = direction === 'left' ? -1 : 1;
+    ctx.scale(flip, 1);
+    const step = isMoving ? Math.sin(animTimer * 0.42) * 2.4 : 0;
+    const tassel = Math.sin(animTimer * 0.22) * 2.5;
+
+    // 玄色战靴和深红披帛。
+    ctx.fillStyle = '#20232d';
+    ctx.fillRect(-7 + step, by + 7, 5, 8); ctx.fillRect(2 - step, by + 7, 5, 8);
+    ctx.fillStyle = '#7f1d1d';
+    ctx.beginPath(); ctx.moveTo(-8, by - 7); ctx.lineTo(8, by - 7);
+    ctx.lineTo(11 + tassel, by + 14); ctx.lineTo(-10 + tassel, by + 14); ctx.closePath(); ctx.fill();
+
+    // 乌金御前甲，胸前卷云纹区别于流沙河形态。
+    const armor = ctx.createLinearGradient(-9, by - 9, 9, by + 8);
+    armor.addColorStop(0, '#6b7280'); armor.addColorStop(0.5, '#262a35'); armor.addColorStop(1, '#111827');
+    ctx.fillStyle = armor;
+    ctx.beginPath(); ctx.roundRect(-9, by - 9, 18, 17, 3); ctx.fill();
+    ctx.strokeStyle = '#c59b45'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#c59b45';
+    ctx.beginPath(); ctx.arc(-9, by -6, 3.5, 0, Math.PI * 2); ctx.arc(9, by -6, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d8b867'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, by -1, 4, 0.3, 5.6); ctx.arc(2, by -1, 2.2, 2.5, 5.8); ctx.stroke();
+
+    // 沉稳面容、短须和御前金盔。
+    ctx.fillStyle = '#b97952';
+    ctx.beginPath(); ctx.arc(0, by - 15, 6.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#201a18';
+    ctx.fillRect(-4, by - 17, 3, 1.2); ctx.fillRect(1, by - 17, 3, 1.2);
+    ctx.beginPath(); ctx.moveTo(-3, by - 11); ctx.lineTo(0, by - 5); ctx.lineTo(3, by - 11); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#2d3140';
+    ctx.beginPath(); ctx.moveTo(-7, by -18); ctx.lineTo(-4, by -24); ctx.lineTo(4, by -24);
+    ctx.lineTo(7, by -18); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#b91c1c';
+    ctx.beginPath(); ctx.moveTo(0, by -24); ctx.quadraticCurveTo(5 + tassel, by -30, 8 + tassel, by -24);
+    ctx.lineTo(2, by -22); ctx.closePath(); ctx.fill();
+
+    // 镇殿降魔杖，月牙双刃与御前红穗。
+    ctx.strokeStyle = '#6b4f2f'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(13, by -27); ctx.lineTo(13, by + 16); ctx.stroke();
+    ctx.strokeStyle = '#d7dce3'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(13, by -25, 5, -1.2, 1.2); ctx.arc(13, by -25, 5, 1.95, 4.35); ctx.stroke();
+    ctx.fillStyle = '#dc2626'; ctx.fillRect(10 + tassel * 0.2, by - 20, 6, 3);
+    ctx.restore();
+  }
 
   // =========================================================================
   // 【专属神相】天蓬元帅·天河水师大统帅 (银甲白袍、紫金战盔、手握元帅神槊、英姿勃发)

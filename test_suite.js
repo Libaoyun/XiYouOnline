@@ -8,6 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// 固定测试随机序列，避免连击分支有时多一条断言、有时少一条。
+let testRandomSeed = 123456789;
+Math.random = () => ((testRandomSeed = (1664525 * testRandomSeed + 1013904223) >>> 0) / 4294967296);
+
 // 构造模拟浏览器全局环境
 global.window = global;
 const domMap = {};
@@ -574,11 +578,11 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
 
     const mapBaigu = { id: 'baihuling', width: 24, height: 18 };
     const tgt4 = mini.getCurrentQuestTarget('baihuling', 'wuzhuang_cleared', mapBaigu);
-    assert(tgt4 && tgt4.name.includes('白骨夫人'), `白虎岭成功指示目标: ${tgt4.name}`);
+    assert(tgt4 && tgt4.name.includes('村姑'), `白虎岭第一重画皮正确指示目标: ${tgt4.name}`);
 
     const mapBaoxiang = { id: 'baoxiangguo', width: 26, height: 20 };
     const tgt5 = mini.getCurrentQuestTarget('baoxiangguo', 'baihu_cleared', mapBaoxiang);
-    assert(tgt5 && tgt5.name.includes('奎木狼'), `宝象国成功指示目标: ${tgt5.name}`);
+    assert(tgt5 && tgt5.name.includes('国王'), `宝象国初入城正确指示目标: ${tgt5.name}`);
 
     const mapFangcun = { id: 'fangcunshan', width: 22, height: 16 };
     const tgt6 = mini.getCurrentQuestTarget('fangcunshan', 'baoxiang_cleared', mapFangcun);
@@ -1550,6 +1554,13 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     const tpNpc = tg.npcs.find(n => n.id === 'npc_tianpeng');
     assert(tpNpc && tpNpc.appearance === 'tianpeng_marshal', '天宫序章大地图天蓬元帅外观为【tianpeng_marshal】(绝非凡间猪八戒)');
 
+    const taibaiNpc = tg.npcs.find(n => n.id === 'npc_taibai');
+    const changeNpc = tg.npcs.find(n => n.id === 'npc_change');
+    const juanlianNpc = tg.npcs.find(n => n.id === 'npc_juanlian');
+    assert(taibaiNpc && taibaiNpc.appearance === 'taibai_jinxing', '太白金星使用独立星官模型，不再复用唐僧袈裟模型');
+    assert(changeNpc && changeNpc.appearance === 'change_fairy', '嫦娥仙子使用独立广寒月神模型，不再复用七仙女套型');
+    assert(juanlianNpc && juanlianNpc.appearance === 'juanlian_general', '卷帘大将使用天庭御前武将模型，不提前套用流沙河沙悟净形态');
+
     const sl = allMaps['huaguoshan_shuilien'];
     const jlNpc = sl.npcs.find(n => n.id === 'npc_juling_shen');
     assert(jlNpc && jlNpc.appearance === 'juling_shen', '水帘洞大地图巨灵神外观为【juling_shen】(绝非牛魔王)');
@@ -1562,6 +1573,9 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     assert(stoneMonkey && stoneMonkey.appearance === 'stone_monkey', '花果山小石猴外观为【stone_monkey】(绝非齐天大圣)');
 
     assert(typeof CharacterRenderer.drawTianpengMarshal === 'function', 'CharacterRenderer 挂载天蓬元帅神将绘制方法');
+    assert(typeof CharacterRenderer.drawTaibaiJinxing === 'function', 'CharacterRenderer 挂载太白金星星官绘制方法');
+    assert(typeof CharacterRenderer.drawChangE === 'function', 'CharacterRenderer 挂载嫦娥广寒月神绘制方法');
+    assert(typeof CharacterRenderer.drawJuanlianGeneral === 'function', 'CharacterRenderer 挂载卷帘大将御前甲绘制方法');
     assert(typeof CharacterRenderer.drawJuLingShen === 'function', 'CharacterRenderer 挂载巨灵神双斧神将绘制方法');
     assert(typeof CharacterRenderer.drawChiMaoMaHou === 'function', 'CharacterRenderer 挂载赤毛马猴战将绘制方法');
     assert(typeof CharacterRenderer.drawStoneMonkey === 'function', 'CharacterRenderer 挂载花果山小石猴绘制方法');
@@ -2687,6 +2701,84 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     app.shownChapterSet = new Set();
     app.loadAutoSavedProgress();
     assert(app.shownChapterSet.has('prologue'), '断点加载成功恢复已播放章节记录');
+  }
+
+  // 第三十二组：验证后段主线有真实三场战斗、存档阶段与地图模型一致。
+  {
+    console.log('\n▶️ [测试 32] 三打白骨精、后段剧情门禁与独立妖王模型');
+    const app = window.App2D;
+    const ridge = window.GAME_DATA.MAPS_2D.baihuling;
+    const kingdom = window.GAME_DATA.MAPS_2D.baoxiangguo;
+    assert(ridge.npcs.some(n => n.id === 'npc_baigujing'), '白虎岭存在三打白骨精的同一接引实体');
+    assert(kingdom.npcs.some(n => n.id === 'npc_huangpao_boss' && n.appearance === 'huangpao_guai'), '奎木狼地图实体使用专属模型');
+    assert(window.Character.inferMonsterType('黄袍怪 (奎木狼)', 'boss_huangpao') === 'huangpao_guai', '奎木狼不会误归类为普通野狼');
+    assert(window.Character.inferMonsterType('白骨岭怨灵骷髅', 'mob_bh_skel_1') === 'skeleton', '白虎岭骷髅有独立野怪类别');
+    const renderer = window.CharacterRenderer;
+    const originalDraws = new Map();
+    let drawHit = '';
+    try {
+      for (const key of Object.getOwnPropertyNames(renderer)) {
+        if (key.startsWith('draw') && key !== 'drawModel' && typeof renderer[key] === 'function') {
+          originalDraws.set(key, renderer[key]);
+          renderer[key] = () => { drawHit = key; };
+        }
+      }
+      const inertCanvas = new Proxy({}, { get: () => () => {} });
+      const appearances = new Set(Object.values(window.GAME_DATA.MAPS_2D)
+        .flatMap(m => [...(m.npcs || []), ...(m.monsters || [])].map(n => n.appearance).filter(Boolean)));
+      const fallbacks = [];
+      for (const appearance of appearances) {
+        drawHit = '';
+        renderer.drawModel(inertCanvas, 0, 0, appearance);
+        if (drawHit === 'drawHeavenGeneral' && appearance !== 'heaven_general') fallbacks.push(appearance);
+      }
+      assert(fallbacks.length === 0, `${appearances.size} 种地图实体外观均有独立模型分发，无意外回退天将：${fallbacks.join(', ')}`);
+    } finally {
+      for (const [key, original] of originalDraws) renderer[key] = original;
+    }
+    assert(!app.isNpcVisibleInStoryPhase('npc_baigujing', 'liusha_cleared', 'baihuling'), '五庄观之前白骨精不会提前出场');
+    assert(!app.isNpcVisibleInStoryPhase('npc_zhenyuanzi', 'wuzhuang_cleared', 'wuzhuangguan'), '五庄观完成后镇元大仙不会重刷决战');
+    assert(!app.isNpcVisibleInStoryPhase('npc_huangfeng_boss', 'huangfeng_cleared', 'huangfengling'), '黄风怪败后地图实体退场');
+    assert(app.isNpcVisibleInStoryPhase('npc_baigujing', 'baihu_second_cleared', 'baihuling'), '二打后仍可进行第三次交锋');
+    assert(!app.isNpcVisibleInStoryPhase('npc_baigujing', 'baihu_cleared', 'baihuling'), '三打后白骨精不会重刷');
+    assert(!app.isNpcVisibleInStoryPhase('npc_huangpao_boss', 'baoxiang_cleared', 'baoxiangguo'), '降伏奎木狼后妖王不会重刷');
+
+    const stages = [];
+    const fake = {
+      storyPhase: 'wuzhuang_cleared',
+      npcs: [{ id: 'npc_baigujing', questStatus: null }],
+      interactedNpcSet: new Set(['npc_baigujing']),
+      playerData: { silver: 0, gainExp() {} },
+      inventory: { addItem() {} },
+      start2DBattle(enemies, onVictory) { stages.push(enemies[0]); onVictory(); },
+      saveAutoProgress() {}, updatePlayerHud() {}
+    };
+    const originalTimeout = global.setTimeout;
+    global.setTimeout = () => 0; // 对话演出异步部分不属于此同步状态机测试
+    try {
+      app.triggerBaigujingBattle.call(fake);
+      assert(fake.storyPhase === 'baihu_first_cleared', '第一重画皮战胜后推进至老妪段');
+      assert(fake.npcs[0].questStatus === 'available', '第一战后同一接引人重新亮起任务标记');
+      app.triggerBaigujingBattle.call(fake);
+      assert(fake.storyPhase === 'baihu_second_cleared', '第二重画皮战胜后推进至老翁段');
+      app.triggerBaigujingBattle.call(fake);
+      assert(fake.storyPhase === 'baihu_cleared' && fake.npcs.length === 0, '第三战才完成白虎岭并移除妖王');
+      assert(stages.length === 3 && stages[0].maxHp < stages[1].maxHp && stages[1].maxHp < stages[2].maxHp,
+        '三场战斗逐段增强且真身为最终阶段');
+      const baoxiang = {
+        storyPhase: 'baihu_cleared',
+        npcs: [{ id: 'npc_baoxiang_king' }, { id: 'npc_baihuaxiu' }, { id: 'npc_huangpao_boss' }],
+        interactedNpcSet: new Set(), saveAutoProgress() {}
+      };
+      app.advanceBaoxiangStory.call(baoxiang, 'baoxiang_boss_ready', 'npc_huangpao_boss');
+      assert(baoxiang.storyPhase === 'baihu_cleared', '未见国王与公主前不能越级直闯妖王');
+      app.advanceBaoxiangStory.call(baoxiang, 'baoxiang_seek_princess', 'npc_baihuaxiu');
+      assert(baoxiang.storyPhase === 'baoxiang_seek_princess' && baoxiang.npcs[1].questStatus === 'available', '国王委托后任务目标转至百花羞');
+      app.advanceBaoxiangStory.call(baoxiang, 'baoxiang_boss_ready', 'npc_huangpao_boss');
+      assert(baoxiang.storyPhase === 'baoxiang_boss_ready' && baoxiang.npcs[2].questStatus === 'available', '找到公主后任务目标才转至奎木狼');
+    } finally {
+      global.setTimeout = originalTimeout;
+    }
   }
 
   console.log('\n======================================================');

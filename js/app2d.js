@@ -220,8 +220,13 @@ class GameApp2D {
         this.playerChar.x = parseInt(urlParams.get('px'));
         this.playerChar.y = parseInt(urlParams.get('py'));
         if (this.camera) {
-          this.camera.follow(this.playerChar.x, this.playerChar.y);
-          this.camera.update(window.GAME_DATA.MAPS_2D[this.currentMapId]);
+          const map = window.GAME_DATA.MAPS_2D[this.currentMapId];
+          this.camera.follow(
+            this.playerChar.x,
+            this.playerChar.y,
+            map.width * this.tilemap.tileSize,
+            map.height * this.tilemap.tileSize
+          );
         }
       }
     }
@@ -824,7 +829,11 @@ class GameApp2D {
       huangfeng_cleared: 80,
       liusha_cleared: 90,
       wuzhuang_cleared: 100,
+      baihu_first_cleared: 104,
+      baihu_second_cleared: 107,
       baihu_cleared: 110,
+      baoxiang_seek_princess: 112,
+      baoxiang_boss_ready: 115,
       baoxiang_cleared: 120,
       pingding_cleared: 130,
       huoyun_cleared: 140,
@@ -854,32 +863,44 @@ class GameApp2D {
     }
 
     // 3. 高老庄剧情 NPC：必须在收服白龙马之后 (yingchou_cleared 及之后) 才会出现
-    if (npcId === 'npc_gao_taigong' || npcId === 'npc_zhubajie') {
+    if (npcId === 'npc_gaotaigong' || npcId === 'npc_gaocuilan') {
       return currentWeight >= phaseWeights.yingchou_cleared;
+    }
+    if (npcId === 'npc_zhubajie') {
+      return currentWeight >= phaseWeights.yingchou_cleared && currentWeight < phaseWeights.gaolao_cleared;
     }
 
     // 4. 黄风岭剧情 NPC：必须在高老庄收猪八戒之后 (gaolao_cleared 及之后) 出现
-    if (npcId === 'npc_lingji_pusa' || npcId === 'boss_huangfeng') {
-      return currentWeight >= phaseWeights.gaolao_cleared;
+    if (npcId === 'npc_lingji' || npcId === 'npc_huangfeng_boss') {
+      return currentWeight >= phaseWeights.gaolao_cleared && currentWeight < phaseWeights.huangfeng_cleared;
     }
 
     // 5. 浮屠山与流沙河剧情 NPC：必须在黄风岭平息之后 (huangfeng_cleared 及之后) 出现
-    if (npcId === 'npc_wuchao_master' || npcId === 'npc_muzha' || npcId === 'npc_shawujing') {
+    if (npcId === 'npc_shawujing') {
+      return currentWeight >= phaseWeights.huangfeng_cleared && currentWeight < phaseWeights.liusha_cleared;
+    }
+    if (npcId === 'npc_wuchao_master' || npcId === 'npc_muzhaxingzhe') {
       return currentWeight >= phaseWeights.huangfeng_cleared;
     }
 
     // 6. 五庄观：必须在流沙河平息之后 (liusha_cleared 及之后) 出现
-    if (npcId === 'npc_zhenyuan_daxian' || npcId === 'npc_qingfeng_mingyue') {
+    if (npcId === 'npc_zhenyuanzi') {
+      return currentWeight >= phaseWeights.liusha_cleared && currentWeight < phaseWeights.wuzhuang_cleared;
+    }
+    if (npcId === 'npc_qingfeng' || npcId === 'npc_mingyue') {
       return currentWeight >= phaseWeights.liusha_cleared;
     }
 
     // 7. 白虎岭白骨夫人：必须在五庄观之后 (wuzhuang_cleared 及之后) 出现
-    if (npcId === 'npc_baigu_furen') {
-      return currentWeight >= phaseWeights.wuzhuang_cleared;
+    if (npcId === 'npc_baigujing' || npcId === 'npc_baigu_furen') {
+      return currentWeight >= phaseWeights.wuzhuang_cleared && currentWeight < phaseWeights.baihu_cleared;
     }
 
     // 8. 宝象国黄袍怪与公主：必须在三打白骨精之后 (baihu_cleared 及之后) 出现
-    if (npcId === 'npc_huangpao_guai' || npcId === 'npc_baihuaxiu') {
+    if (npcId === 'npc_huangpao_guai' || npcId === 'npc_huangpao_boss') {
+      return currentWeight >= phaseWeights.baihu_cleared && currentWeight < phaseWeights.baoxiang_cleared;
+    }
+    if (npcId === 'npc_baihuaxiu' || npcId === 'npc_baoxiang_king') {
       return currentWeight >= phaseWeights.baihu_cleared;
     }
 
@@ -1090,8 +1111,15 @@ class GameApp2D {
       'wuxingshan_ready': 'npc_wukong_sealed',
       'wuxing_freed': 'npc_wukong_sealed',
       'yingchou_cleared': 'npc_zhubajie',
-      'gaolao_cleared': 'npc_lingji_pusa',
-      'huangfeng_cleared': 'npc_shawujing'
+      'gaolao_cleared': 'npc_lingji',
+      'huangfeng_cleared': 'npc_shawujing',
+      'liusha_cleared': 'npc_zhenyuanzi',
+      'wuzhuang_cleared': 'npc_baigujing',
+      'baihu_first_cleared': 'npc_baigujing',
+      'baihu_second_cleared': 'npc_baigujing',
+      'baihu_cleared': 'npc_baoxiang_king',
+      'baoxiang_seek_princess': 'npc_baihuaxiu',
+      'baoxiang_boss_ready': 'npc_huangpao_boss'
     };
 
     const shouldShowQuestExclamation = (n) => {
@@ -1125,12 +1153,16 @@ class GameApp2D {
     const visibleNpcList = (mapData.npcs || []).filter(n => this.isNpcVisibleInStoryPhase(n.id, this.storyPhase, mapId));
     this.npcs = visibleNpcList.map(n => new window.Character({
       id: n.id,
-      name: n.name,
-      title: n.title,
+      name: n.id === 'npc_baigujing' ?
+        (this.storyPhase === 'wuzhuang_cleared' ? '送斋饭的村姑' :
+          this.storyPhase === 'baihu_first_cleared' ? '寻女的老妪' : '拄杖的老翁') : n.name,
+      title: n.id === 'npc_baigujing' ? '【白虎岭行路人】' : n.title,
       type: 'npc',
       x: n.x,
       y: n.y,
-      appearance: n.appearance,
+      appearance: n.id === 'npc_baigujing' ?
+        (this.storyPhase === 'wuzhuang_cleared' ? 'changan_girl' :
+          this.storyPhase === 'baihu_first_cleared' ? 'tea_granny' : 'tudi_gong') : n.appearance,
       dialogueKey: n.dialogueKey,
       questStatus: shouldShowQuestExclamation(n) ? 'available' : null
     }));
@@ -1616,6 +1648,24 @@ class GameApp2D {
       this.interactedNpcSet = new Set();
     }
     this.interactedNpcSet.add(npc.id);
+
+    if (npc.id === 'npc_baigujing') {
+      npc.dialogueKey = this.storyPhase === 'baihu_first_cleared' ? 'baigujing_second_encounter' :
+        this.storyPhase === 'baihu_second_cleared' ? 'baigujing_third_encounter' : 'baigujing_encounter';
+    }
+    if (this.storyPhase === 'baoxiang_cleared' && npc.id === 'npc_baihuaxiu') {
+      npc.dialogueKey = 'baihuaxiu_homecoming';
+    }
+    if (this.storyPhase === 'baoxiang_cleared' && npc.id === 'npc_baoxiang_king') {
+      npc.dialogueKey = 'baoxiang_king_reunion';
+    }
+    if (npc.id === 'npc_huangpao_boss' && this.storyPhase !== 'baoxiang_boss_ready') {
+      window.Dialogue.start({ steps: [{
+        speaker: '波月洞洞门', speakerTitle: '【妖雾锁关】',
+        text: '洞中妖风与星光交错。先去王宫问明来龙去脉，再找到百花羞公主，才能直面奎木狼。'
+      }] });
+      return;
+    }
 
     // 依据当前最新 storyPhase 动态匹配李靖总兵的剧情对话
     if (npc.id === 'npc_li_jing') {
@@ -3832,12 +3882,14 @@ class GameApp2D {
   }
 
   joinBailongma() {
+    if (this.storyPhase === 'wuxing_freed') this.storyPhase = 'yingchou_cleared';
     this.mountSystem.addMount('bailongma', '西海玉龙·白龙马');
     this.mountSystem.isRiding = true;
     this.playerChar.isRiding = true;
     this.playerData.recalculateStats(true);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
+    this.saveAutoProgress();
     window.showGameMessage('🎉【小白龙敖烈】化为龙马神驹加入！气血大幅增加，坐骑奔驰如电！', 'success', 4500);
   }
 
@@ -3911,6 +3963,8 @@ class GameApp2D {
   }
 
   joinBajieToParty() {
+    if (this.storyPhase === 'yingchou_cleared') this.storyPhase = 'gaolao_cleared';
+    if (this.companions.some(p => p.id === 'companion_bajie')) return;
     const bajiePet = {
       id: 'companion_bajie',
       name: '天蓬元帅猪八戒',
@@ -3930,6 +3984,7 @@ class GameApp2D {
     this.companions.push(bajiePet);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
+    this.saveAutoProgress();
     window.showGameMessage('🎉【天蓬元帅猪八戒】扛起九齿钉耙，正式加入护法神队！', 'success', 4500);
   }
 
@@ -3976,6 +4031,8 @@ class GameApp2D {
     };
     this.start2DBattle([boss], () => {
       this.npcs = this.npcs.filter(n => n.id !== 'npc_huangfeng_boss');
+      this.storyPhase = 'huangfeng_cleared';
+      this.saveAutoProgress();
       window.showGameMessage('🎉【灵宝止风】定风神丹止住三昧神风！黄风大圣现回黄毛貂鼠原形伏罪！', 'success', 4500);
     });
   }
@@ -4006,6 +4063,8 @@ class GameApp2D {
   }
 
   joinShasengToParty() {
+    if (this.storyPhase === 'huangfeng_cleared') this.storyPhase = 'liusha_cleared';
+    if (this.companions.some(p => p.id === 'companion_shaseng')) return;
     const shasengPet = {
       id: 'companion_shaseng',
       name: '卷帘大将沙和尚',
@@ -4025,6 +4084,7 @@ class GameApp2D {
     this.companions.push(shasengPet);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
+    this.saveAutoProgress();
     window.showGameMessage('🎉【卷帘大将沙和尚】挑担入队！师徒四人同心圆满，飞渡八百里流沙河！', 'success', 4500);
   }
 
@@ -4067,23 +4127,45 @@ class GameApp2D {
   }
 
   grantZhenyuanziGift() {
+    if (this.storyPhase === 'wuzhuang_cleared' || this.storyPhase === 'baihu_first_cleared' ||
+        this.storyPhase === 'baihu_second_cleared' || this.storyPhase === 'baihu_cleared') return;
+    this.storyPhase = 'wuzhuang_cleared';
+    this.npcs = this.npcs.filter(n => n.id !== 'npc_zhenyuanzi');
     this.playerData.exp += 60000;
     this.playerData.silver += 50000;
     this.playerData.recalculateStats(false);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
+    this.saveAutoProgress();
     window.showGameMessage('🎉 获赠万寿山【草还丹人参果】仙果！修为经验暴增60000，境界大幅突破！', 'success', 4500);
+  }
+
+  advanceBaoxiangStory(nextPhase, targetNpcId) {
+    if (!['baoxiang_seek_princess', 'baoxiang_boss_ready'].includes(nextPhase)) return;
+    const allowed = nextPhase === 'baoxiang_seek_princess' ? this.storyPhase === 'baihu_cleared' :
+      this.storyPhase === 'baoxiang_seek_princess';
+    if (!allowed) return;
+    this.storyPhase = nextPhase;
+    const target = this.npcs.find(n => n.id === targetNpcId);
+    if (target) target.questStatus = 'available';
+    this.interactedNpcSet.delete(targetNpcId);
+    this.saveAutoProgress();
   }
 
   // === 第十章：白虎岭白骨夫人战 ===
   triggerBaigujingBattle() {
     if (window.Dialogue) window.Dialogue.close();
+    if (this.storyPhase === 'baihu_cleared' || this.storyPhase === 'baoxiang_cleared') return;
+    const stage = this.storyPhase === 'baihu_first_cleared' ? 2 :
+      this.storyPhase === 'baihu_second_cleared' ? 3 : 1;
     const boss = {
       id: 'boss_baigujing',
-      name: '白骨夫人 (幽冥尸魔)',
+      name: stage === 1 ? '白骨精·村姑幻身' : stage === 2 ? '白骨精·老妪幻身' : '白骨夫人·幽冥真身',
+      appearance: 'baigu_jing',
+      modelId: 'baigu_jing',
       level: 42,
-      hp: 15000,
-      maxHp: 15000,
+      hp: stage === 1 ? 6800 : stage === 2 ? 9600 : 15000,
+      maxHp: stage === 1 ? 6800 : stage === 2 ? 9600 : 15000,
       mp: 3500,
       maxMp: 3500,
       atk: 250,
@@ -4091,9 +4173,25 @@ class GameApp2D {
       matk: 260,
       mdef: 140,
       spd: 45,
-      skills: ['隐身咒', '三昧真火', '连击']
+      skills: stage === 1 ? ['隐身咒', '连击'] :
+        stage === 2 ? ['隐身咒', '三昧真火', '连击'] : ['隐身咒', '三昧真火', '连击', '白骨噬魂']
     };
     this.start2DBattle([boss], () => {
+      if (stage < 3) {
+        this.storyPhase = stage === 1 ? 'baihu_first_cleared' : 'baihu_second_cleared';
+        const guide = this.npcs.find(n => n.id === 'npc_baigujing');
+        if (guide) {
+          guide.appearance = stage === 1 ? 'tea_granny' : 'tudi_gong';
+          guide.name = stage === 1 ? '寻女的老妪' : '拄杖的老翁';
+          guide.questStatus = 'available';
+        }
+        this.interactedNpcSet.delete('npc_baigujing');
+        this.saveAutoProgress();
+        setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES[
+          stage === 1 ? 'baigujing_first_aftermath' : 'baigujing_second_aftermath'
+        ]), 500);
+        return;
+      }
       this.npcs = this.npcs.filter(n => n.id !== 'npc_baigujing');
       this.storyPhase = 'baihu_cleared';
       this.playerData.gainExp(45000);
@@ -4103,8 +4201,10 @@ class GameApp2D {
         this.inventory.addItem('jin_liu_lu', 2);
       }
       this.updatePlayerHud();
+      this.saveAutoProgress();
       window.Sound.playLevelUp();
-      window.showGameMessage('🎉【火眼金睛破尸魔】三打白骨夫人大获全胜！获赠【千年白骨幽魂戒】与【金柳露】*2！', 'success', 5000);
+      setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.baigujing_final_aftermath), 500);
+      window.showGameMessage('🎉【三打白骨精】幽冥真身已破！获赠【千年白骨幽魂戒】与【金柳露】*2！', 'success', 5000);
     });
   }
 
@@ -4114,6 +4214,8 @@ class GameApp2D {
     const boss = {
       id: 'boss_huangpao',
       name: '黄袍怪 (奎木狼)',
+      appearance: 'huangpao_guai',
+      modelId: 'huangpao_guai',
       level: 48,
       hp: 19500,
       maxHp: 19500,
@@ -4136,7 +4238,9 @@ class GameApp2D {
         this.inventory.addItem('book_high_critical', 1);
       }
       this.updatePlayerHud();
+      this.saveAutoProgress();
       window.Sound.playLevelUp();
+      setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.huangpao_aftermath), 500);
       window.showGameMessage('🎉【大破波月洞】降伏奎木狼还朝！救出百花羞公主，获赠神兵【冷月追魂宝刀】与【高级必杀兽诀】！', 'success', 5000);
     });
   }
@@ -6752,7 +6856,9 @@ class GameApp2D {
       huangfeng_cleared: { mapId: 'liushahe', name: '八百里·流沙河' },
       liusha_cleared: { mapId: 'futushan', name: '浮屠山·乌巢禅院' },
       wuzhuang_cleared: { mapId: 'baihuling', name: '白虎岭' },
-      baihu_cleared: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
+      baihu_cleared: { mapId: 'baoxiangguo', name: '宝象国王都' },
+      baoxiang_seek_princess: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
+      baoxiang_boss_ready: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
       baoxiang_cleared: { mapId: 'fangcunshan', name: '灵台方寸山' }
     };
 

@@ -258,22 +258,27 @@ class MiniMapEngine {
     }
 
     // 16. 白虎岭 -> 目标：白骨夫人 (幽冥尸魔)
-    if (mapId === 'baihuling') {
+    if (mapId === 'baihuling' && ['wuzhuang_cleared', 'baihu_first_cleared', 'baihu_second_cleared'].includes(storyPhase)) {
       return {
-        x: 14 * 32,
-        y: 10 * 32,
-        name: '白骨夫人 (尸魔)',
-        desc: '火眼金睛破幻象，三打白骨精'
+        x: 608,
+        y: 352,
+        name: storyPhase === 'wuzhuang_cleared' ? '送斋饭的村姑' :
+          storyPhase === 'baihu_first_cleared' ? '寻女的老妪' : '拄杖的老翁',
+        desc: storyPhase === 'wuzhuang_cleared' ? '查验山道上的素斋与无影行人' :
+          storyPhase === 'baihu_first_cleared' ? '辨认第二重画皮留下的踪迹' : '护住师父，识破第三重画皮'
       };
     }
 
     // 17. 宝象国 -> 目标：黄袍怪 (波月洞奎木狼) 与百花羞
     if (mapId === 'baoxiangguo') {
-      return {
-        x: 20 * 32,
-        y: 17 * 32,
-        name: '黄袍怪 (奎木狼)',
-        desc: '大破波月洞，解救百花羞公主'
+      if (storyPhase === 'baihu_cleared') return {
+        x: 288, y: 256, name: '宝象国国王', desc: '入王宫听国王讲述百花羞失踪的始末'
+      };
+      if (storyPhase === 'baoxiang_seek_princess') return {
+        x: 480, y: 96, name: '百花羞公主', desc: '寻得公主，问明奎木狼的旧缘与罪行'
+      };
+      if (storyPhase === 'baoxiang_boss_ready') return {
+        x: 928, y: 672, name: '黄袍怪 (奎木狼)', desc: '大破波月洞，护公主重返宝象国'
       };
     }
 

@@ -1980,6 +1980,14 @@ body.modern-mode #game-canvas {
   image-rendering: auto; /* 移除强制粗暴pixelated，保证中文字体与立绘的高清锐利平滑 */
 }
 
+/* 窄窗口维持 760:580 画布比例，避免地图上下出现大块空黑边。 */
+@media (max-width: 720px) {
+  body.modern-mode .game-viewport {
+    height: auto;
+    aspect-ratio: 760 / 580;
+  }
+}
+
 /* 全局高清文字抗锯齿 */
 body, input, button, select, textarea {
   -webkit-font-smoothing: antialiased;

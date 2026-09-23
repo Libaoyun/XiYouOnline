@@ -97,13 +97,17 @@ function startServer(port) {
     console.log(`     • 蟠桃采摘: [按键 1] 蟠桃胜境每日吃桃升级`);
     console.log('======================================================\n');
 
-    // 自动在默认浏览器中打开
-    const openCmd = process.platform === 'win32' ? `start ${url}` : (process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url}`);
-    exec(openCmd, (error) => {
-      if (error) {
-        console.log(`💡 请在浏览器中手动打开地址: ${url}`);
+    // 桌面端或受限环境可能禁止拉起浏览器；服务本身应始终可用。
+    if (process.env.XIYOU_OPEN_BROWSER === '1') {
+      const openCmd = process.platform === 'win32' ? `start ${url}` : (process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url}`);
+      try {
+        exec(openCmd, (error) => {
+          if (error) console.log(`💡 请在浏览器中手动打开地址: ${url}`);
+        });
+      } catch (error) {
+        console.log(`💡 当前环境不允许自动打开浏览器，请访问: ${url}`);
       }
-    });
+    }
   });
 }
 

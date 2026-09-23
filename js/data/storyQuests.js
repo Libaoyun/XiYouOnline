@@ -154,13 +154,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '太白金星',
         speakerTitle: '【天庭老仙】',
         speakerIcon: '👴',
-        text: '威灵显赫大将军！今日乃西王母娘娘瑶池蟠桃胜会，三界真仙毕集于九重天阙！'
+        text: '将军来得正好。今日瑶池开蟠桃宴，三界仙官都到了——连平日称病不上朝的也一个不缺。'
       },
       {
         speaker: '太白金星',
         speakerTitle: '【天庭老仙】',
         speakerIcon: '👴',
-        text: '大将军奉玉帝敕令值守南天门与瑶池仙宴。将军且移步瑶池水阁巡视，莫让宵小之徒惊扰了仙家胜会！'
+        text: '玉帝命你巡守南天门与瑶池水阁。桃子丢了尚能再种，人出了事可没法向王母交代。先去水阁看看吧。'
       }
     ]
   },
@@ -218,7 +218,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '嫦娥仙子',
         speakerTitle: '【广寒月神】',
         speakerIcon: '🧚‍♀️',
-        text: '多谢威灵大将军仗义出手相护！若非将军神力制伏天蓬，奴家今日危矣，大恩永志不忘！凌霄殿前琼浆大宴已启，将军速速前往值守吧。',
+        text: '多谢将军及时赶到。我已安然无事，今日之事也不该被一句“醉了”轻轻带过。凌霄殿前尚需值守，将军请去吧。',
         action: () => {
           if (window.App2D) {
             window.App2D.storyPhase = 'heaven_saved_change';
@@ -236,7 +236,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '嫦娥仙子',
         speakerTitle: '【广寒月神】',
         speakerIcon: '🧚‍♀️',
-        text: '威灵大将军浩气凛然，小仙铭感五内。愿将军福寿齐天！'
+        text: '将军，今日多谢。广寒宫清冷，却也记得人间冷暖；若你日后遇到难处，可别只会替别人出头。'
       }
     ]
   },
@@ -248,13 +248,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '碎玉鸣响',
         speakerTitle: '【殿前惊变】',
         speakerIcon: '💥',
-        text: '【喀嚓——！】一声清脆巨响，卷帘大将奉酒失手，将一只温润剔透的九曲玉琉璃宝盏跌得粉碎，玉琼四溢！'
+        text: '【喀嚓——】满殿仙乐骤然停住。卷帘大将手中的九曲琉璃盏落在御阶前，碎玉与酒液溅了一地。'
       },
       {
         speaker: '卷帘大将',
         speakerTitle: '【御前侍卫】',
         speakerIcon: '🧔',
-        text: '陛下饶命！小臣心神恍惚一时失手跌碎御盏，小臣知罪，伏乞天恩赦免！'
+        text: '臣失手毁了御盏，甘领责罚。只求陛下念臣多年守殿之功，留臣一命。'
       },
       {
         speaker: '玉皇大天尊',
@@ -266,7 +266,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '威灵大将军 (玩家)',
         speakerTitle: '【出列力保】',
         speakerIcon: '🧙‍♂️',
-        text: '启奏陛下！卷帘大将素日南征北战、侍卫御前忠谨无双，此番实属无心之过！万望陛下念其往昔赤胆忠心，从轻发落，留其一命！'
+        text: '陛下，御盏虽贵，终究是物；卷帘多年守殿，从未有二心。臣愿为他担保，请陛下留其性命。'
       },
       {
         speaker: '玉皇大天尊',
@@ -278,7 +278,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '太白金星',
         speakerTitle: '【天庭老仙】',
         speakerIcon: '👴',
-        text: '大将军！出天大的祸事了！那花果山齐天大圣孙悟空因未被请入蟠桃胜会，一怒之下反出天庭，偷吃了老君金丹与仙桃！陛下降旨命李天王、哪吒为帅，请威灵将军速速率部下界围剿东胜神洲花果山！',
+        text: '将军，花果山急报：孙悟空反出天庭，仙桃与金丹也少了许多——兜率宫的账房还在数。陛下命李天王、哪吒领兵，请你即刻下界。',
         options: [
           {
             text: '【☁️ 奉旨领兵，下界征讨东胜神洲·花果山】',
@@ -303,13 +303,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '天庭前锋营神将',
         speakerTitle: '【前线神将】',
         speakerIcon: '⚔️',
-        text: '末将参见威灵显赫大将军！李天王大军正于花果山漫山遍野合围群妖！'
+        text: '将军，李天王的兵马已围住花果山。山上猴群四散，前锋还没摸清洞里的情形。'
       },
       {
         speaker: '天庭前锋营神将',
         speakerTitle: '【军情紧急】',
         speakerIcon: '⚔️',
-        text: '但方才探得有一支凶悍猴妖精锐退守进入瀑布后的【水帘洞天】！李天王传下军令：请大将军速速穿过瀑布进入水帘洞探查虚实，切莫让妖邪暗藏杀机！',
+        text: '有一队猴将退入瀑布后的【水帘洞天】。李天王命将军进洞探查。水声盖得住脚步，也盖得住呼救，务必留神。',
         options: [
           {
             text: '【🌊 领帅令，穿过飞瀑进入水帘洞天探查】',
@@ -333,7 +333,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '赤毛马猴',
         speakerTitle: '【守山健将】',
         speakerIcon: '🐒',
-        text: '站住！何方天将竟敢擅闯俺花果山水帘洞禁地！俺老马乃大圣麾下守山健将，吃俺一拳！',
+        text: '站住！水帘洞不是天兵借道的地方！俺赤毛马猴守山多年，认得路，也认得拳头——你先认哪个？',
         options: [
           {
             text: '【⚔️ 亮枪交手，与赤毛马猴切磋一番】',
@@ -354,13 +354,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '赤毛马猴',
         speakerTitle: '【花果山健将】',
         speakerIcon: '🐒',
-        text: '好厉害的金甲枪法……大将军且慢动手！洞府深处出天大祸事了！'
+        text: '好枪法……且住！我方才当你是来杀猴的。内洞出事了，先救孩子，咱俩的账以后再算。'
       },
       {
         speaker: '赤毛马猴',
         speakerTitle: '【悲愤恳求】',
         speakerIcon: '🐒',
-        text: '那天庭前锋巨灵神趁大圣外出，杀入水帘洞深处，对手无寸铁的幼小猴儿赶尽杀绝！大将军一身正气，求求您快去内洞阻止巨灵神，救救那些孩儿们吧！',
+        text: '巨灵神趁大圣不在，闯进内洞追杀没拿兵器的小猴。我拦不住他。将军，求你快去，孩子们等不了。',
         options: [
           {
             text: '【🔥 岂有此理！速去水帘洞深处阻止巨灵神行凶】',
@@ -423,7 +423,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '花果山小猴',
         speakerTitle: '【花果仙眷】',
         speakerIcon: '🐒',
-        text: '多谢金甲大将军救命之恩！大将军是天底下最好的神仙！大圣爷爷马上就回来收拾恶天兵啦！'
+        text: '谢谢你，金甲将军。我们藏的桃子还在，等大圣回来，分你最大的那个。'
       }
     ]
   },
@@ -434,7 +434,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '通臂猿猴',
         speakerTitle: '【水帘洞总管】',
         speakerIcon: '🐒',
-        text: '水帘洞天宛若仙境，大将军仗义护我花果山一脉，水帘洞上下万载感念！'
+        text: '孩子们已经躲进后洞。你救的是他们的命，水帘洞记着。大圣归来，我会把经过原原本本告诉他。'
       }
     ]
   },
@@ -483,13 +483,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '齐天大圣孙悟空',
         speakerTitle: '【满怀敬重】',
         speakerIcon: '🐒',
-        text: '威灵大将军！俺老孙适才在云端全看在眼里！天庭那帮脓包赶尽杀绝，唯独你金甲大将竟肯为了我花果山无辜孩儿拔枪大战巨灵神！'
+        text: '金甲将军，俺老孙在云上看见了。你穿天庭的甲，却替我洞里的小猴挡了斧子。这份人情，俺记下。'
       },
       {
         speaker: '齐天大圣孙悟空',
         speakerTitle: '【豪义万丈】',
         speakerIcon: '🐒',
-        text: '俺老孙平生最重英雄好汉！这份天大恩义，俺老孙记在心坎上了！看在大将军大义面上，此番合围，俺老孙最后才出棒迎你！来战吧！'
+        text: '只是这身甲还得各为其主。你若要打，俺老孙奉陪；待会儿输赢落定，有空再请你吃桃。放心，不是宴会上那种要排队领的。'
       },
       {
         speaker: '托塔李天王',
@@ -610,25 +610,25 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '喂！这位壮士，快醒醒！你怎生一身单薄布衣倒在双叉岭山涧旁？'
+        text: '喂，醒醒！这山涧不是客栈，夜里还有狼替你“守门”呢。能坐起来吗？'
       },
       {
         speaker: '失忆玩家',
         speakerTitle: '【茫然不知】',
         speakerIcon: '🧙‍♂️',
-        text: '我……我是谁？我胸口仿佛被神雷击碎，过往前世之事竟一丝一毫都记不得了……'
+        text: '我……不记得名字了。只记得一道雷，落下来时像把整片天都压在胸口。'
       },
       {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '定是遭了猛兽或强人洗劫！在下刘伯钦，以打猎为生。看你虚弱饥寒，我家中正要开火做饭，但少些菜肴下锅。'
+        text: '先别费劲想。我叫刘伯钦，村里打猎的。你手脚冰凉，先跟我回去喝口热汤，名字可以慢慢找。'
       },
       {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '刘家村草地上正长着不少野蕈，烦请少侠在村中草地上采摘 2 朵【野生青蘑菇】回来，我好生火做饭为你接风暖身！这把短剑与皮靴你先拿去防身！',
+        text: '灶里还有火，锅里却缺菜。村中草地有青蘑菇，认准青伞白柄，采 2 朵【野生青蘑菇】回来。短剑和皮靴先拿着，别光脚去跟荆棘讲道理。',
         action: () => {
           window.App2D.grantStarterItems();
           window.App2D.storyPhase = 'liujiacun_find_mushrooms';
@@ -669,13 +669,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '哈哈！少侠好利落的身手！这 2 朵青蘑菇肥美鲜嫩，正是做羹汤的上等好料！'
+        text: '嗯，正是这 2 朵。眼力不错，没把灶边那顶旧草帽也当蘑菇采回来。'
       },
       {
         speaker: '刘伯钦',
         speakerTitle: '【缺少柴火】',
         speakerIcon: '🏹',
-        text: '只是不巧，家中灶台下的干柴刚好用尽。西边五行山脚下，有许多成了精的枯树精拦路。少侠且与我同去五行山，伐倒 4 株【百年枯树精】，收集坚韧柴木回来生火！',
+        text: '灶里的柴也快烧尽了。五行山脚的【百年枯树精】挡了采樵路，村民不敢过去。咱们除掉 4 株，取柴回来，也把路还给乡亲。',
         action: () => {
           window.App2D.storyPhase = 'liujiacun_go_cut_wood';
           window.showGameMessage('🪓 前往两界山·五行山脚下，击败 4 株百年枯树精收集坚韧柴木！', 'info', 4000);
@@ -691,7 +691,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【生火做饭】',
         speakerIcon: '🏹',
-        text: '太好了！4 捆坚韧柴木带回来了！火旺汤滚，香菇野味浓香扑鼻，少侠快快请进屋趁热饱餐一顿！'
+        text: '4 捆柴，够烧一锅好汤了。快坐下，汤趁热喝；我熬的汤凉了，连我自己都不敢夸。'
       },
       {
         speaker: '饱餐一顿',
@@ -709,7 +709,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【粮仓鼠患】',
         speakerIcon: '🏹',
-        text: '实不相瞒，最近村中粮仓周围出了不少成精的硕鼠，四处偷啃庄稼谷物，祸害乡邻！少侠若已恢复气力，可否帮村里除灭 4 只【偷粮硕鼠】？',
+        text: '还有桩正事：粮仓被【偷粮硕鼠】钻了洞。它们偷的是乡亲们过冬的粮，请你帮忙除掉 4 只。吃饱了再去，别让鼠比人更有力气。',
         action: () => {
           window.App2D.storyPhase = 'liujiacun_rat_hunting';
           window.showGameMessage('🐀 请在刘家村田垄粮仓周围，消灭 4 只偷粮硕鼠除害安民！', 'warn', 4000);
@@ -725,7 +725,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【除害大吉】',
         speakerIcon: '🏹',
-        text: '痛快！少侠果然武艺超群，4 只祸害庄稼的硕鼠被你一网打尽，村中老少皆感激不尽！'
+        text: '4 只硕鼠都清了！乡亲终于能睡个安稳觉，粮仓也不用再请猫当夜班守卫。'
       },
       {
         speaker: '除害犒赏',
@@ -743,7 +743,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【同赴长安】',
         speakerIcon: '🏹',
-        text: '听闻向东百里的大唐王都【长安城】近来热闹非凡，当朝圣僧玄奘法师正开坛讲法，集市百戏盛会游人如织。在下正要送山货入京，少侠若想探寻身世，你我正好一同前往长安城！',
+        text: '我正要往【长安城】送山货。城里人多消息广，玄奘法师也在讲经。你要找身世的线索，就跟我同行；我认路，你认蘑菇，正好。',
         action: () => {
           window.App2D.storyPhase = 'liujiacun_go_changan';
           window.showGameMessage('🏮 东门官道已开！与刘伯钦一同前往大唐王都·长安城！', 'success', 4000);
@@ -759,7 +759,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘太公',
         speakerTitle: '【刘家村宿老】',
         speakerIcon: '👴',
-        text: '年轻人，向西过了两界山，便是塞外番邦了。那两界山峰峦如五指插天，相传五百年前天降神山镇压了只神猴呢！'
+        text: '向西过了两界山，就出了大唐地界。那山峰像五根手指，老人们说下面压着只神猴。信不信随你，反正夜里真有人听见它喊“谁把桃核扔下来”。'
       }
     ]
   },
@@ -771,13 +771,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '茶肆阿婆',
         speakerTitle: '【市井百晓】',
         speakerIcon: '🍵',
-        text: '客官请坐！尝尝老身刚沏的雨前香茗！客官也是来长安瞻仰玄奘圣僧开坛讲法的吧？'
+        text: '客官请坐。听玄奘法师讲经的、赶集的、问路的都来我这儿喝茶。你像是三样都沾了点？'
       },
       {
         speaker: '茶肆阿婆',
         speakerTitle: '【东海风波】',
         speakerIcon: '🌊',
-        text: '不过听说东南海疆【陈塘关】近来可不太平！东海深处妖气滚滚，海妖夜叉阻绝航路，渔民死伤惨重，贡品海鲜更是进不得京！李总兵正张贴榜文悬赏勇士前往陈塘关除妖呢！',
+        text: '说件正经的：东南的【陈塘关】海路被妖物截住，渔船回不来，岸上家人天天等。李总兵贴了榜文招人相助。你若有本事，去看看吧。',
         action: () => {
           window.App2D.storyPhase = 'chentang_investigate';
           window.showGameMessage('🌊 探得东海陈塘关海妖作祟！请由长安东南门前往【陈塘关】！', 'info', 4000);
@@ -794,13 +794,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '李靖总兵',
         speakerTitle: '【陈塘总兵】',
         speakerIcon: '👑',
-        text: '壮士远道而来，本帅有礼了！实不相瞒，近日陈塘关街市多有恶霸地痞纠集作恶，混混猖獗，欺凌商贾百姓，扰乱东南海疆安宁！'
+        text: '壮士来得正好。海上有夜叉，城里也不安生：几个地痞趁守军忙于海防，勒索商贩，连渔民的修船钱都抢。'
       },
       {
         speaker: '李靖总兵',
         speakerTitle: '【陈塘总兵】',
         speakerIcon: '👑',
-        text: '本帅坐镇总兵府守备要塞，兵力吃紧。观壮士气宇轩昂、武艺高强，可否替本帅走一趟关内街头，教训惩戒 4 名作恶混混，煞煞这帮歹徒的嚣张气焰？',
+        text: '关防不能空，我暂时抽不开兵。请你先到街市制伏 4 名【作恶混混】，让百姓能安心做生意。此事有报酬，也有后续线索。',
         options: [
           {
             text: '【🥋 义不容辞，前往街头惩戒4名作恶混混！】',
@@ -826,19 +826,19 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '李靖总兵',
         speakerTitle: '【大喜过望】',
         speakerIcon: '👑',
-        text: '哈哈！打得痛快！探子来报，关内百姓对壮士交口称赞，那帮地痞被打得抱头鼠窜！壮士果然身手不凡！'
+        text: '四名地痞已伏法，摊贩终于敢摆摊了。你这趟替我守住的，是一条街的人心。'
       },
       {
         speaker: '前哨校尉',
         speakerTitle: '【疾步来报】',
         speakerIcon: '🛡️',
-        text: '报——！总兵大人，城东码头路口突然跳出一个【混混头目·雷震彪】，正纠集了混混精锐随从，扬言要替被教训的弟兄报仇，直冲总兵府杀来了！'
+        text: '报！【雷震彪】带着两个跟班堵在城东码头，自称“陈塘关半边天”，正朝帅府来。另一半边天大概还没问过李总兵。'
       },
       {
         speaker: '李靖总兵',
         speakerTitle: '【怒拍帅案】',
         speakerIcon: '👑',
-        text: '放肆！这帮贼首好大的狗胆！壮士，那雷震彪纠集恶徒随从，来者不善。还请壮士即刻前往陈塘关东市截住贼寇，将其一网打尽！',
+        text: '玩笑归玩笑，雷震彪带着兵器，百姓不能再受牵连。请你到东市截住他们，我派人疏散街口。',
         options: [
           {
             text: '【⚔️ 截击贼首！前往东市迎战混混头目！】',
@@ -862,13 +862,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '混混头目·雷震彪',
         speakerTitle: '【横肉满面】',
         speakerIcon: '🥋',
-        text: '呔！你这外乡人好大的胆子，就是你打伤了我雷震彪手下的弟兄？！也不打听打听陈塘关这一片谁说了算！'
+        text: '就是你坏了我的买卖？雷震彪三个字，你没听过？没听过也罢，今日给你补上一课。'
       },
       {
         speaker: '混混头目·雷震彪',
         speakerTitle: '【挥棒叫嚣】',
         speakerIcon: '🥋',
-        text: '小的们，抄家伙一起上！今天就让这爱管闲事的家伙横着滚出陈塘关！',
+        text: '小的们，抄家伙！说好了一起上，谁也别躲后面装路人！',
         options: [
           {
             text: '【⚔️ 挺身出战！以一敌三决战混混头目与随从！】',
@@ -890,13 +890,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '李靖总兵',
         speakerTitle: '【由衷赞叹】',
         speakerIcon: '👑',
-        text: '好！壮士以一敌三，不仅将那猖狂头目彻底制伏，更将贼众彻底荡平，当真神勇盖世！关内商贾无不欢欣鼓舞！'
+        text: '雷震彪已被拿下，码头的商贩今早重新开了张。这一仗打得干净，没让百姓再吃苦。'
       },
       {
         speaker: '李靖总兵',
         speakerTitle: '【重赏勇将】',
         speakerIcon: '👑',
-        text: '李某身为总兵，言出必行！来人，奉上【纹银五千两】与【修真灵元 (2500 EXP)】，请壮士笑纳！'
+        text: '军令有赏，李某说到做到：纹银五千两，另有修为奖励 2500。账房若想少写一个零，你让他来找我。'
       },
       {
         speaker: '李靖总兵',
@@ -971,7 +971,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '海滨老渔翁',
         speakerTitle: '【东海老渔】',
         speakerIcon: '🎣',
-        text: '那东海之滨的夜叉凶神恶煞，手提钢叉驱使巨蟹虾兵，少侠去时千万要小心啊！'
+        text: '那夜叉带着巨蟹虾兵拦船，我的老伙计至今没回来。少侠若往东海去，请替我们留意失踪的渔船，也千万护好自己。'
       }
     ]
   },
@@ -1023,13 +1023,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '东海龙王敖广',
         speakerTitle: '【惊骇赔罪】',
         speakerIcon: '🐉',
-        text: '哎呀呀！大水冲了龙王庙！犬奴有眼无珠，竟没认出您是当年在天庭威名赫赫的【威灵显赫大将军】！'
+        text: '且慢！这气息……您是当年天庭的【威灵显赫大将军】？老龙今日才真懂了什么叫“大水冲了龙王庙”。'
       },
       {
         speaker: '东海龙王敖广',
         speakerTitle: '【诚惶诚恐】',
         speakerIcon: '🐉',
-        text: '昔日将军在南天门威震三界，老龙深为敬佩！今日夜叉冲撞尊驾，是老龙治下不严！快请将军移步东海龙宫，老龙已开启龙宫宝库，特备一套初级龙神套装，任将军随意穿戴挑选，权当老龙为大将赔罪接风！',
+        text: '夜叉害了渔民，是我治下失察；认不认得将军，这笔账都算在东海头上。我先派水族疏通航路，再请将军移步龙宫，收下一套初级龙神战装，助你前行。',
         options: [
           {
             text: '【🐉 随龙王移步东海龙宫大殿，挑选神装】',
@@ -1150,13 +1150,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '玄奘法师',
         speakerTitle: '【金山寺高僧】',
         speakerIcon: '🧘‍♂️',
-        text: '阿弥陀佛！贫僧适才忽见紫气东来，施主眉宇间浩气冲霄、龙神宝甲护体，菩萨曾托梦于贫僧，施主便是贫僧西行取经命中注定的护法贵人！'
+        text: '阿弥陀佛。菩萨曾托梦，说会有一位失去旧名、仍不失善念的人前来。施主一路救人而至，想来就是你了。'
       },
       {
         speaker: '玄奘法师',
         speakerTitle: '【金蝉发愿】',
         speakerIcon: '🧘‍♂️',
-        text: '大唐圣天子李世民陛下正在金銮宝殿高阶御前，欲为我等赐封御弟法号并颁发通关文牒！施主请随贫僧移步殿前，觐见太宗陛下！',
+        text: '陛下正在金銮殿等候，要授通关文牒。西行路长，贫僧有经愿，你有护人之志；请随我一同面圣。',
         action: () => {
           window.App2D.storyPhase = 'changan_meet_taizong';
           window.showGameMessage('👑 请登上长安城顶部金銮宝殿，觐见唐太宗李世民陛下！', 'info', 4000);
@@ -1173,13 +1173,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '唐太宗·李世民',
         speakerTitle: '【大唐圣天子】',
         speakerIcon: '👑',
-        text: '朕的大唐好男儿！朕已听玄奘御弟与观音菩萨赞叹将军英烈大义！'
+        text: '朕听玄奘说过你的来意，也听陈塘关奏报你所做之事。护送取经人，靠的不只是一身武艺，更要守住一路初心。'
       },
       {
         speaker: '唐太宗·李世民',
         speakerTitle: '【御赐文牒】',
         speakerIcon: '📜',
-        text: '西行十万八千里路途艰险、妖魔遍野，朕特赐下【大唐西域通关文牒】与【紫金钵盂】，更将御弟玄奘托付于将军！愿将军一路披荆斩棘，早日求取大乘真经造福苍生！',
+        text: '朕赐【大唐西域通关文牒】与【紫金钵盂】，将玄奘托付于你。十万八千里走的是山河，也走人心；愿你们平安取得真经。',
         options: [
           {
             text: '【📜 领旨谢恩，誓保玄奘西天求得真经！】',
@@ -1206,13 +1206,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '刘伯钦',
         speakerTitle: '【镇山太保】',
         speakerIcon: '🏹',
-        text: '哈哈！少侠！伯钦在长安集市听闻少侠受太宗敕封护持圣僧西天取经，特在城门口备了些山野干粮盘缠为你送行！'
+        text: '少侠！我听说你要护送圣僧西行，特地赶来送些干粮。都是能放的饼，路上再硬，也比饿肚子强。'
       },
       {
         speaker: '刘伯钦',
         speakerTitle: '【依依惜别】',
         speakerIcon: '🏹',
-        text: '想当初在两界山涧救起少侠，便知少侠是顶天立地的英雄！此番西去山高水长，第一站便是那压着神猴的五行山，少侠千万保重！伯钦祝少侠功德圆满、早载真经归唐！',
+        text: '那日在山涧捡到你时，你连名字都没有；今日已有自己要走的路了。前面先到五行山，山高路险，照顾好法师，也照顾好自己。回来时，家里给你留碗热汤。',
         options: [
           {
             text: '【🌅 拜别刘兄，西行大业正式启程！】',
@@ -1275,13 +1275,13 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '李铁匠',
         speakerTitle: '【大唐名匠】',
         speakerIcon: '🔨',
-        text: '这位少侠气宇轩昂！我李家祖传玄铁淬火之法，专为西行降魔勇士锻造强化神兵利器与坚厚宝甲！'
+        text: '少侠，把兵器给我瞧瞧。刃口有缺，护手也松了。妖怪未必讲规矩，兵器可得讲。'
       },
       {
         speaker: '李铁匠',
         speakerTitle: '【大唐名匠】',
         speakerIcon: '🔨',
-        text: '工欲善其事，必先利其器。少侠行走江湖切记时常检视兵刃，打磨淬火方能在对战妖王时不落下风！',
+        text: '我能替你锻造、强化和精炼。先说在前头：好钢经得住锤，好价钱经不住乱砍；材料不够，我也不能把铁锤舞成仙术。',
         options: [
           {
             text: '【🔨 打开神兵天成 · 装备打造与强化精炼面板】',
@@ -1757,19 +1757,60 @@ window.GAME_DATA.STORY_DIALOGUES = {
   baigujing_encounter: {
     steps: [
       {
-        speaker: '白骨夫人',
-        speakerTitle: '【白虎岭幽魂尸魔】',
-        speakerIcon: '💀',
-        text: '造化！造化！都说吃了唐僧一块肉，延寿长生不老！今朝你们踏入我白虎岭，休想活着离去！',
+        speaker: '送斋饭的村姑',
+        speakerTitle: '【白虎岭山道】',
+        text: '几位长老远来辛苦。家里蒸了素米饭，我特地送到岭上。山风凉，趁热用些吧。'
+      },
+      {
+        speaker: '孙悟空',
+        speakerTitle: '【火眼金睛】',
+        text: '师父且慢！篮里哪有米香？这女子脚下没有影子，衣袖里却藏着一缕尸气。将军，看她身后的白骨印！',
         options: [
           {
-            text: '【火眼金睛破伪装！合力诛杀白骨夫人！】',
+            text: '【护住师父，破第一重画皮】',
             action: () => {
               window.App2D.triggerBaigujingBattle();
             }
           }
         ]
       }
+    ]
+  },
+
+  baigujing_first_aftermath: {
+    steps: [
+      { speaker: '唐三藏', speakerTitle: '【慈悲难断】', text: '人影倏忽散了，只剩一具枯骨。悟空，你说她是妖，我却只见一位求救的姑娘。若看错了，岂不害了无辜？' },
+      { speaker: '孙悟空', speakerTitle: '【火眼金睛】', text: '妖精舍了皮囊逃去，必会换张脸回来。师父若疑俺老孙，便请将军盯着那道入林的阴风。' }
+    ]
+  },
+  baigujing_second_encounter: {
+    steps: [
+      { speaker: '寻女的老妪', speakerTitle: '【白虎岭山道】', text: '我的闺女送饭上山，至今未归。几位可曾见过一个挎竹篮的姑娘？她若有个闪失，老婆子可怎么活？' },
+      { speaker: '威灵大将', speakerTitle: '【故人相护】', text: '她竹篮上的结绳，与先前那姑娘一模一样。可是这老妪来得太快，山路上连半个脚印都没有。' },
+      { speaker: '孙悟空', speakerTitle: '【火眼金睛】', text: '又是她！这回俺老孙先挡在师父身前。将军，莫让妖风近了师父！',
+        options: [{ text: '【拦下老妪，破第二重画皮】', action: () => window.App2D.triggerBaigujingBattle() }] }
+    ]
+  },
+  baigujing_second_aftermath: {
+    steps: [
+      { speaker: '唐三藏', speakerTitle: '【紧箍咒】', text: '一连两条人命，贫僧怎能无动于衷？悟空，若你仍执意行凶，便暂且离开取经队伍吧。' },
+      { speaker: '孙悟空', speakerTitle: '【不忍辞师】', text: '师父念咒，俺老孙受得住。只怕妖精还有第三张面孔。将军，烦你替俺护他这一程。' },
+      { speaker: '威灵大将', speakerTitle: '【护法之誓】', text: '我既见了两道同源妖气，绝不让师父独自面对。真相未明之前，也绝不任由误会断了师徒情分。' }
+    ]
+  },
+  baigujing_third_encounter: {
+    steps: [
+      { speaker: '拄杖的老翁', speakerTitle: '【白虎岭深处】', text: '老汉的妻女都上山寻人。长老们可见着她们了？这岭上妖风重，我心里怕得很。' },
+      { speaker: '威灵大将', speakerTitle: '【识破连环计】', text: '姑娘、老妪、老翁，都说着同一句「寻人」。你杖头的朱砂，正是先前竹篮上的印记。' },
+      { speaker: '白骨夫人', speakerTitle: '【幽冥真身】', text: '好眼力！三重人皮都瞒不过你。可那和尚已赶走猴头，白虎岭的阴兵也该收网了！',
+        options: [{ text: '【唤回大圣，决战白骨夫人真身】', action: () => window.App2D.triggerBaigujingBattle() }] }
+    ]
+  },
+  baigujing_final_aftermath: {
+    steps: [
+      { speaker: '唐三藏', speakerTitle: '【悔悟】', text: '三具画皮皆出同一妖身。悟空，贫僧错怪了你，也险些害了同行众人。' },
+      { speaker: '孙悟空', speakerTitle: '【再赴西行】', text: '师父认得真相便好。俺老孙纵有委屈，也舍不得丢下你们。将军，今日亏你守住了这条路。' },
+      { speaker: '威灵大将', speakerTitle: '【西行再启】', text: '白虎岭妖雾已散。前方宝象国传来求援国书，奎木狼的旧事，恐怕还牵着天上的星宿。' }
     ]
   },
 
@@ -1782,7 +1823,8 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '宝象国国王',
         speakerTitle: '【异域国君】',
         speakerIcon: '👑',
-        text: '大唐高僧与大将军！十三年前小女百花羞被妖风卷走，近日方知被碗子山波月洞黄袍怪掳去做了压寨夫人！求大将军救我王儿归国啊！'
+        text: '大唐高僧与大将军！十三年前小女百花羞被妖风卷走，近日方知被碗子山波月洞黄袍怪掳去做了压寨夫人！求大将军救我王儿归国啊！',
+        action: () => window.App2D.advanceBaoxiangStory('baoxiang_seek_princess', 'npc_baihuaxiu')
       }
     ]
   },
@@ -1793,7 +1835,8 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '百花羞公主',
         speakerTitle: '【被困深山】',
         speakerIcon: '👸',
-        text: '大将军！黄袍郎本是天上星宿，因思凡下界霸占奴家。他凶残无比，喜吞食活人，求将军快快救我离开魔窟！'
+        text: '大将军！黄袍郎本是天上星宿，因思凡下界霸占奴家。他凶残无比，喜吞食活人，求将军快快救我离开魔窟！',
+        action: () => window.App2D.advanceBaoxiangStory('baoxiang_boss_ready', 'npc_huangpao_boss')
       }
     ]
   },
@@ -1814,6 +1857,24 @@ window.GAME_DATA.STORY_DIALOGUES = {
           }
         ]
       }
+    ]
+  },
+
+  huangpao_aftermath: {
+    steps: [
+      { speaker: '黄袍怪 (奎木狼)', speakerTitle: '【奎宿归天】', text: '宝刀既折，星命也瞒不住了。百花羞本是披香殿侍香玉女；我因旧情私自下界，十三年却把情分活成了囚笼。' },
+      { speaker: '百花羞公主', speakerTitle: '【重见天日】', text: '前世如何，我如今已是宝象国的女儿。请让我自己选择归路，不必再以星宿旧盟替我作主。' },
+      { speaker: '威灵大将', speakerTitle: '【护法之道】', text: '你既知错，便归天庭领罪。公主随我们回国，宝象王城的灯火还等着她。西行人也该继续上路了。' }
+    ]
+  },
+  baihuaxiu_homecoming: {
+    steps: [
+      { speaker: '百花羞公主', speakerTitle: '【宝象国金枝】', text: '多年不见父王，连宫门石阶都陌生了。多谢大将军肯听我自己说话；往后我愿留在故国，把失去的岁月慢慢找回来。' }
+    ]
+  },
+  baoxiang_king_reunion: {
+    steps: [
+      { speaker: '宝象国国王', speakerTitle: '【父女重逢】', text: '王儿平安归来，满城百姓皆为她点灯。大将军与西行圣僧的大恩，宝象国会代代记得。西去关门已开，请带上这一程的祝福。' }
     ]
   },
 
@@ -2205,7 +2266,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '苏绣娘',
         speakerTitle: '【长安织造】',
         speakerIcon: '🧵',
-        text: '“长安一片月，万户捣衣声。” 少侠好英武的气概！大唐盛世太平，妾身刚绣成一批江南云锦蜀袍与香囊荷包，少侠游历三界风尘仆仆，可要挑一件称心的衣袍护体？'
+        text: '少侠，这件衣袍针脚密，赶路不易开线。上回那位客官非要试剑，袖子破了还说是“江湖风”。我做衣服，可不负责取名字。'
       }
     ]
   },
@@ -2217,7 +2278,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '杜子美',
         speakerTitle: '【游方书生】',
         speakerIcon: '📜',
-        text: '“忆昔开元全盛日，小邑犹藏万家室。稻米流脂粟米白，公私仓廪俱丰实。” 少侠请看，朱雀大街四海通商，百姓安居乐业，此乃千古未有之盛景也！愿少侠西行之途，亦能如大唐般光明坦荡！'
+        text: '我在写长安：街上有诗，也有讨价还价和卖糕的吆喝。若只写金殿，不写百姓，诗就只剩半首了。少侠，你一路走来，可有好故事？'
       }
     ]
   },
@@ -2229,7 +2290,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '货郎阿福',
         speakerTitle: '【百味挑担】',
         speakerIcon: '🍡',
-        text: '刚出炉的桂花芡实糕、三原蓼花糖、五仁素饼嘞！香甜软糯，走过路过不要错过！少侠闯荡江湖劳累，来两块甜糕垫垫肚子吧，祝少侠一路顺风顺水！'
+        text: '桂花糕、蓼花糖、五仁素饼！五仁真是五仁，我阿福不玩“数不清算你输”的把戏。少侠赶路，带块糕，饿了比空喊豪言管用。'
       }
     ]
   },
@@ -2241,7 +2302,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '小虎',
         speakerTitle: '【坊间顽童】',
         speakerIcon: '🍭',
-        text: '哇！少侠大哥哥好威风！听说化生寺的玄奘法师要讲佛经，我正要拉着小伙伴去听呢！少侠大哥哥，外面的世界真的有腾云驾雾的神仙和会变身的齐天大圣吗？'
+        text: '你见过齐天大圣吗？听说他会七十二变！我要学第七十三变：在先生点名时变成已经做完功课的小虎。'
       }
     ]
   },
@@ -2253,7 +2314,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '金甲校尉',
         speakerTitle: '【御林巡卒】',
         speakerIcon: '🛡️',
-        text: '金吾不禁，长安盛世！圣天子抚育四方，京都内外一片祥和。少侠既入皇城，还请归刀入鞘，若有恶霸地痞或暗潜妖邪作祟，我巡城禁军定当雷霆荡除！'
+        text: '城里人多，兵刃请收好。路边杂耍可以看，摊贩的钱袋也要看好；有纠纷找巡城校尉，别自己把半条街拆了。'
       }
     ]
   },
@@ -2265,7 +2326,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '茶肆阿婆',
         speakerTitle: '【长安茶肆】',
         speakerIcon: '🍵',
-        text: '贵客请歇脚！这雨前龙井乃今春自江南八百里快马送达京师的头采嫩芽，以城外甘露灵泉烹煮，清香四溢！看少侠风尘仆仆，快来饮上一大碗，润润心肺！',
+        text: '歇口气吧。茶是新沏的，座是旧的，两个都靠得住。你气色不大好，喝碗茶再赶路，身子骨可不能赊账。',
         options: [
           {
             text: '【🍵 品尝一碗清甜灵泉龙井茶 (气血法力充盈)】',
@@ -2284,7 +2345,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
             text: '【🏮 闲话大唐盛世】',
             action: () => {
               if (window.Dialogue) window.Dialogue.close();
-              window.showGameMessage('🏮 阿婆笑呵呵道：“如今大唐海晏河清，四海胡商云集朱雀大街，少侠只管放宽心历练游历！”', 'info', 4000);
+              window.showGameMessage('🏮 阿婆道：“朱雀街上卖什么的都有，唯独近来海货少了。陈塘关的船还没平安回来呢。”', 'info', 4000);
             }
           }
         ]

@@ -50,6 +50,12 @@ class MasterPortraitEngine {
       // 太白
       'taibai_jinxing': 'taibai',
       'npc_taibai': 'taibai',
+      'taibai_jinxing': 'taibai',
+      'npc_change': 'change',
+      'change_fairy': 'change',
+      'chang_e': 'change',
+      'npc_juanlian': 'juanlian',
+      'juanlian_general': 'juanlian',
       // 玄奘
       'tang_seng': 'xuanzang',
       'tangseng': 'xuanzang',
@@ -86,6 +92,8 @@ class MasterPortraitEngine {
       'wild_wolf': 'wolf',
       'baigujing': 'baigu_jing',
       'skeleton': 'baigu_jing',
+      'huangpao': 'huangpao_guai',
+      'kuimulang': 'huangpao_guai',
       'heixiong': 'bear',
       'shuo_shu': 'rat',
       'giant_rat': 'rat',
@@ -108,9 +116,11 @@ class MasterPortraitEngine {
     if (s.includes('哪吒') || s.includes('太子') || t.includes('哪吒')) return 'nezha';
     if (s.includes('李靖') || s.includes('托塔') || s.includes('天王') || t.includes('总兵')) return 'lijing';
     if (s.includes('太白') || s.includes('金星') || t.includes('金星')) return 'taibai';
+    if (s.includes('嫦娥') || s.includes('广寒') || t.includes('广寒')) return 'change';
     if (s.includes('玄奘') || s.includes('唐僧') || s.includes('三藏')) return 'xuanzang';
     if (s.includes('八戒') || s.includes('悟能') || s.includes('天蓬') || s.includes('猪刚鬣')) return 'zhu_bajie';
-    if (s.includes('沙僧') || s.includes('悟净') || s.includes('卷帘')) return 'sha_wujing';
+    if (s.includes('卷帘') || t.includes('御前侍卫')) return 'juanlian';
+    if (s.includes('沙僧') || s.includes('悟净')) return 'sha_wujing';
     if (s.includes('刘伯钦') || s.includes('猎户') || s.includes('太保')) return 'liuboqin';
     if (s.includes('铁匠') || s.includes('锻打') || s.includes('神兵')) return 'blacksmith';
     if (s.includes('茶肆') || s.includes('阿婆') || s.includes('老婆婆')) return 'cha_apo';
@@ -122,6 +132,7 @@ class MasterPortraitEngine {
     if (s.includes('蚌') || s.includes('珍珠')) return 'clam';
     if (s.includes('蟹') || s.includes('金蟹')) return 'crab';
     if (s.includes('龙虾') || s.includes('虾兵') || s.includes('虾')) return 'shrimp';
+    if (s.includes('黄袍') || s.includes('奎木狼')) return 'huangpao_guai';
     if (s.includes('狼') || s.includes('野狼') || s.includes('郊狼')) return 'wolf';
     if (s.includes('骨') || s.includes('尸') || s.includes('白骨')) return 'baigu_jing';
     if (s.includes('熊') || s.includes('黑风')) return 'bear';
@@ -247,7 +258,7 @@ class MasterPortraitEngine {
       bgGrad.addColorStop(0.45, '#0284c7');
       bgGrad.addColorStop(0.8, '#075985');
       bgGrad.addColorStop(1, '#082f49');
-    } else if (roleId === 'baigu_jing' || roleId === 'wolf' || roleId === 'bear') {
+    } else if (roleId === 'baigu_jing' || roleId === 'wolf' || roleId === 'bear' || roleId === 'huangpao_guai') {
       // 妖魔九幽：幽冥冷翠与紫黑煞气
       bgGrad.addColorStop(0, '#a7f3d0');
       bgGrad.addColorStop(0.4, '#059669');
@@ -1343,6 +1354,78 @@ class MasterPortraitEngine {
       }
 
       // =========================================================================
+      // 嫦娥仙子 (广寒月轮、云髻金簪、月白云裳)
+      // =========================================================================
+      case 'change': {
+        ctx.fillStyle = 'rgba(219,234,254,0.35)';
+        ctx.beginPath(); ctx.arc(cx + 8 * s, cy - 7 * s, 21 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath(); ctx.moveTo(cx - 18 * s, cy + 31 * s); ctx.quadraticCurveTo(cx, cy + 4 * s, cx + 18 * s, cy + 31 * s); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 1.2 * s; ctx.stroke();
+        ctx.fillStyle = '#7c6aa6'; ctx.fillRect(cx - 15 * s, cy + 15 * s, 30 * s, 3 * s);
+
+        const moonFace = ctx.createRadialGradient(cx - 3 * s, cy - 5 * s, 1 * s, cx, cy, 12 * s);
+        moonFace.addColorStop(0, '#fff7ed'); moonFace.addColorStop(1, '#f2cbb7');
+        ctx.fillStyle = moonFace;
+        ctx.beginPath(); ctx.ellipse(cx, cy - 2 * s, 10 * s, 11.5 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#31264d';
+        ctx.beginPath(); ctx.arc(cx, cy - 9 * s, 11 * s, Math.PI, 0); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx, cy - 18 * s, 5 * s, 7 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - 9 * s, cy - 6 * s, 4 * s, 0, Math.PI * 2); ctx.arc(cx + 9 * s, cy - 6 * s, 4 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#3f3561'; ctx.lineWidth = 1.2 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy - 5 * s); ctx.lineTo(cx - 2 * s, cy - 6 * s);
+        ctx.moveTo(cx + 2 * s, cy - 6 * s); ctx.lineTo(cx + 7 * s, cy - 5 * s); ctx.stroke();
+        ctx.fillStyle = '#4338ca';
+        ctx.beginPath(); ctx.arc(cx - 4 * s, cy - 2 * s, 1.5 * s, 0, Math.PI * 2); ctx.arc(cx + 4 * s, cy - 2 * s, 1.5 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#cc7f83'; ctx.lineWidth = 1 * s;
+        ctx.beginPath(); ctx.arc(cx, cy + 4 * s, 3 * s, 0.35, Math.PI - 0.35); ctx.stroke();
+        ctx.strokeStyle = '#f2c94c'; ctx.lineWidth = 1.4 * s;
+        ctx.beginPath(); ctx.moveTo(cx + 2 * s, cy - 21 * s); ctx.lineTo(cx + 14 * s, cy - 26 * s); ctx.stroke();
+        ctx.fillStyle = '#f2c94c';
+        ctx.beginPath(); ctx.ellipse(cx + 10 * s, cy - 24 * s, 4 * s, 1.8 * s, -0.4, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+
+      // =========================================================================
+      // 卷帘大将 (乌金御甲、沉毅短须、镇殿月牙杖)
+      // =========================================================================
+      case 'juanlian': {
+        const guardArmor = ctx.createLinearGradient(cx, cy + 7 * s, cx, cy + 32 * s);
+        guardArmor.addColorStop(0, '#64748b'); guardArmor.addColorStop(0.45, '#252936'); guardArmor.addColorStop(1, '#111827');
+        ctx.fillStyle = guardArmor;
+        ctx.beginPath(); ctx.roundRect(cx - 18 * s, cy + 8 * s, 36 * s, 25 * s, 5 * s); ctx.fill();
+        ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 1.4 * s; ctx.stroke();
+        ctx.fillStyle = '#b98a36';
+        ctx.beginPath(); ctx.arc(cx - 18 * s, cy + 14 * s, 6 * s, 0, Math.PI * 2);
+        ctx.arc(cx + 18 * s, cy + 14 * s, 6 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#e3c26b'; ctx.lineWidth = 1.2 * s;
+        ctx.beginPath(); ctx.arc(cx, cy + 19 * s, 7 * s, 0.2, 5.8); ctx.stroke();
+
+        ctx.fillStyle = '#b97952';
+        ctx.beginPath(); ctx.ellipse(cx, cy - 1 * s, 10.5 * s, 11 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#211b19';
+        ctx.beginPath(); ctx.moveTo(cx - 6 * s, cy + 4 * s); ctx.lineTo(cx, cy + 16 * s); ctx.lineTo(cx + 6 * s, cy + 4 * s); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#211b19'; ctx.lineWidth = 1.7 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy - 4 * s); ctx.lineTo(cx - 2 * s, cy - 5 * s);
+        ctx.moveTo(cx + 2 * s, cy - 5 * s); ctx.lineTo(cx + 7 * s, cy - 4 * s); ctx.stroke();
+        ctx.fillStyle = '#111827';
+        ctx.beginPath(); ctx.arc(cx - 4 * s, cy, 1.5 * s, 0, Math.PI * 2); ctx.arc(cx + 4 * s, cy, 1.5 * s, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#303442';
+        ctx.beginPath(); ctx.moveTo(cx - 11 * s, cy - 8 * s); ctx.lineTo(cx - 7 * s, cy - 20 * s);
+        ctx.lineTo(cx + 7 * s, cy - 20 * s); ctx.lineTo(cx + 11 * s, cy - 8 * s); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 1.2 * s; ctx.stroke();
+        ctx.fillStyle = '#9f1239';
+        ctx.beginPath(); ctx.moveTo(cx, cy - 20 * s); ctx.quadraticCurveTo(cx + 10 * s, cy - 30 * s, cx + 16 * s, cy - 20 * s);
+        ctx.lineTo(cx + 4 * s, cy - 17 * s); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#d7dce3'; ctx.lineWidth = 2.2 * s;
+        ctx.beginPath(); ctx.arc(cx + 21 * s, cy + 3 * s, 8 * s, -1.3, 1.3); ctx.stroke();
+        ctx.strokeStyle = '#6b4f2f'; ctx.lineWidth = 2.2 * s;
+        ctx.beginPath(); ctx.moveTo(cx + 21 * s, cy - 5 * s); ctx.lineTo(cx + 21 * s, cy + 32 * s); ctx.stroke();
+        break;
+      }
+
+      // =========================================================================
       // 16. 太白金星 (鹤发童颜、飘逸白须、道冠拂尘)
       // =========================================================================
       case 'taibai': {
@@ -1607,6 +1690,41 @@ class MasterPortraitEngine {
         ctx.moveTo(cx - 8 * s, cy - 14 * s);
         ctx.lineTo(cx + 8 * s, cy - 14 * s);
         ctx.stroke();
+        break;
+      }
+
+      case 'huangpao_guai': {
+        // 奎宿星君：星纹锦袍、狼面与金翎冠，区别于普通野狼头像。
+        const robe = ctx.createLinearGradient(cx - 18 * s, cy, cx + 18 * s, cy);
+        robe.addColorStop(0, '#70461c'); robe.addColorStop(.5, '#e8bc5b'); robe.addColorStop(1, '#5c391c');
+        ctx.fillStyle = robe;
+        ctx.beginPath(); ctx.moveTo(cx - 18 * s, cy + 25 * s);
+        ctx.quadraticCurveTo(cx - 18 * s, cy + 9 * s, cx - 8 * s, cy + 10 * s);
+        ctx.lineTo(cx + 8 * s, cy + 10 * s);
+        ctx.quadraticCurveTo(cx + 18 * s, cy + 9 * s, cx + 18 * s, cy + 25 * s);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#33323a';
+        ctx.beginPath(); ctx.moveTo(cx - 10 * s, cy - 3 * s);
+        ctx.lineTo(cx - 14 * s, cy - 18 * s);
+        ctx.lineTo(cx - 5 * s, cy - 12 * s);
+        ctx.lineTo(cx + 5 * s, cy - 12 * s);
+        ctx.lineTo(cx + 14 * s, cy - 18 * s);
+        ctx.lineTo(cx + 10 * s, cy - 3 * s);
+        ctx.quadraticCurveTo(cx, cy + 12 * s, cx - 10 * s, cy - 3 * s); ctx.fill();
+        ctx.fillStyle = '#d9c9a8';
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy + 1 * s);
+        ctx.lineTo(cx + 7 * s, cy + 1 * s);
+        ctx.lineTo(cx + 3 * s, cy + 8 * s);
+        ctx.lineTo(cx - 3 * s, cy + 8 * s); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath(); ctx.arc(cx - 4 * s, cy - 3 * s, 1.8 * s, 0, Math.PI * 2);
+        ctx.arc(cx + 4 * s, cy - 3 * s, 1.8 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#efcd78';
+        ctx.beginPath(); ctx.moveTo(cx - 8 * s, cy - 13 * s);
+        ctx.lineTo(cx, cy - 21 * s); ctx.lineTo(cx + 8 * s, cy - 13 * s);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#fff1bf'; ctx.lineWidth = 1.1 * s;
+        ctx.beginPath(); ctx.moveTo(cx, cy - 21 * s); ctx.lineTo(cx, cy - 28 * s); ctx.stroke();
         break;
       }
 

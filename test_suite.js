@@ -76,6 +76,10 @@ window.location = { search: '', href: 'http://localhost/', pathname: '/', origin
 
 // 依次加载游戏数据与核心逻辑
 const filesToLoad = [
+  'js/engine/visualIdentity.js',
+  'js/engine/creatureArt.js',
+  'js/engine/playerArt.js',
+  'js/engine/npcArt.js',
   'js/core/skills.js',
   'js/data/classes.js',
   'js/data/pets.js',
@@ -797,7 +801,7 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
       { name: '巡海虾兵', expected: 'shrimp' },
       { name: '狂暴郊狼', expected: 'wolf' },
       { name: '黑风山黑熊精', expected: 'bear' },
-      { name: '白骨夫人', expected: 'skeleton' },
+      { name: '白骨夫人', expected: 'baigu_jing' },
       { name: '花果山神猿', expected: 'ape' }
     ];
     for (const tc of testCases) {
@@ -2425,7 +2429,8 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
       roundRect() {}, scale() {}, translate() {}, rotate() {},
       measureText() { return { width: 40 }; },
       fillText() {}, strokeText() {},
-      createLinearGradient() { return { addColorStop() {} }; }
+      createLinearGradient() { return { addColorStop() {} }; },
+      createRadialGradient() { return { addColorStop() {} }; }
     };
 
     assert(typeof window.CharacterRenderer.drawMountKnight === 'function', '提供白龙神驹骑乘绘制引擎 drawMountKnight');
@@ -2881,8 +2886,204 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     assert(retriggeredWuxing === false, '再次进入五行山绝不再重复弹出开幕帷幕');
   }
 
+  // 测试 34：对白中的转场、选项和新对白必须只结算当前控制路径。
+  {
+    console.log('\n▶️ [测试 34] 对白流程重入与跳过路径回归');
+    const engine = window.Dialogue;
+    let rewards = 0;
+    let transfers = 0;
+    let completions = 0;
+    engine.start({ steps: [{ text: '领赏', action: () => rewards++, options: [
+      { text: '出发', action: () => transfers++ }
+    ] }, { text: '旧流程尾声', action: () => transfers++ }] });
+    engine.completeAllAndClose();
+    assert(rewards === 0 && transfers === 1, '单选跳过与手动选择一致：仅执行选项，终止后不再结算旧尾声');
+    engine.chooseOption(0);
+    assert(transfers === 1, '对白关闭后迟到的选项点击不会报错或重复执行');
+
+    engine.start({ steps: [
+      { text: '分支', options: [{ text: '跳到结尾', nextStep: 2, action: () => rewards++ }] },
+      { text: '未选路线', action: () => rewards += 100 },
+      { text: '结尾', action: () => rewards++ }
+    ] });
+    engine.completeAllAndClose();
+    assert(rewards === 2, '跳过遵循 nextStep，未选路线不发奖励');
+
+    const followup = { steps: [{ text: '新对白第一句' }, { text: '新对白第二句' }] };
+    engine.start({ steps: [{ text: '转场', action: () => engine.start(followup) }] });
+    engine.next(); // 显示全文。
+    engine.next(); // 执行转场。
+    assert(engine.currentDialogue === followup && engine.currentStep === 0, '步骤动作开启新对白后，旧 next 不跳过或关闭新对白');
+    engine.close();
+
+    engine.start({ steps: [{ text: '跳过转场', action: () => engine.start(followup) },
+      { text: '旧奖励', action: () => rewards += 100 }] }, () => completions++);
+    engine.completeAllAndClose();
+    assert(engine.currentDialogue === followup && rewards === 2 && completions === 0,
+      '跳过中开启新对白后，不执行旧奖励和旧完成回调');
+    engine.close();
+
+    let reentries = 0;
+    engine.start({ steps: [{ text: '不可重入', action: () => { reentries++; engine.next(); } }] });
+    engine.next();
+    engine.next();
+    assert(reentries === 1 && engine.currentDialogue === null, '步骤动作重入 next 时只结算一次');
+
+    engine.start({ steps: [{ text: '循环分支', options: [{ text: '再说一遍', nextStep: 0, action: () => rewards++ }] }] });
+    engine.completeAllAndClose();
+    assert(rewards === 3, '循环 nextStep 跳过有终止保护，不无限发奖或卡死');
+
+    const originalBanishment = window.App2D.executeBanishment;
+    let banishments = 0;
+    try {
+      window.App2D.executeBanishment = () => banishments++;
+      engine.start(window.GAME_DATA.STORY_DIALOGUES.tiangong_banishment_scene);
+      engine.completeAllAndClose();
+      assert(banishments === 1, '真实天宫贬谪剧本跳过只执行一次下凡，不同时执行步骤与选项');
+    } finally {
+      window.App2D.executeBanishment = originalBanishment;
+      engine.close();
+    }
+  }
+
+  // 测试 35：真实头像 ID 链、市井分支和可选洞窟连通性。
+  {
+    console.log('\n▶️ [测试 35] 前世头像、市井趣谈与白骨洞探索');
+    const engine = window.Dialogue;
+    const oldPortraits = window.Portraits;
+    eval(fs.readFileSync(path.join(__dirname, 'js/engine/portraits.js'), 'utf8'));
+    const portraits = window.Portraits;
+    window.Portraits = oldPortraits; // 节点环境不绘制离屏 Canvas。
+    for (const [speaker, title, expected] of [
+      ['嫦娥仙子', '广寒月神', 'change'], ['卷帘大将', '御前侍卫', 'juanlian'],
+      ['天蓬元帅', '天河水军统帅', 'heaven_general'], ['猪八戒', '天蓬转世', 'zhu_bajie'],
+      ['沙悟净', '流沙行者', 'sha_wujing'], ['茶肆阿婆', '长安茶肆', 'cha_apo'],
+      ['玄奘法师', '金山寺高僧', 'xuanzang'], ['菩提老祖', '万法之宗', 'puti_zushi'],
+      ['刘伯钦', '镇山太保', 'liuboqin'], ['七仙女', '瑶池侍女', 'qixiannv'],
+      ['货郎阿福', '挑担货郎', 'changan_hawker'], ['小虎', '坊间顽童', 'changan_child']
+    ]) {
+      assert(portraits.normalizeRoleId(engine.inferRoleId(speaker, title)) === expected,
+        `${speaker} 经过对白识别和头像规范化后仍使用正确角色`);
+    }
+    for (const role of ['change', 'juanlian']) {
+      assert(engine.getRoleBadge(role).includes('seal-immortal'), `${role} 使用天界仙印`);
+    }
+    assert(portraits.normalizeRoleId('天蓬元帅') === 'heaven_general', '直接请求天蓬头像保持前世人形');
+    assert(window.GAME_DATA.MAPS_2D.changan_city.npcs.find(n => n.id === 'npc_changan_tea').appearance === 'changan_tea_granny',
+      '实际长安 NPC 接入阿婆模型，而非旧绣娘模型');
+
+    const app = window.App2D;
+    const before = JSON.stringify({ phase: app.storyPhase, silver: app.playerData.silver, inventory: app.inventory });
+    for (const key of ['changan_hawker_talk', 'changan_child_talk', 'baigu_lampkeeper_talk']) {
+      const data = window.GAME_DATA.STORY_DIALOGUES[key];
+      // 按真实选择逐一走过每条选项边，验证所有目标合法、终止可正常退出。
+      for (let i = 0; i < data.steps.length; i++) {
+        for (let j = 0; j < data.steps[i].options.length; j++) {
+          engine.start(data); engine.showStep(i); engine.chooseOption(j);
+          const target = data.steps[i].options[j].nextStep;
+          assert(target === undefined ? engine.currentDialogue === null :
+            engine.currentDialogue === data && engine.currentStep === target && !!data.steps[target],
+            `${key} 第${i + 1}句选项${j + 1}有合法出口`);
+          engine.close();
+        }
+      }
+      engine.start(data); engine.completeAllAndClose();
+      assert(engine.currentDialogue === null, `${key} 跳过分支后可退出，不替玩家选择`);
+    }
+    assert(JSON.stringify({ phase: app.storyPhase, silver: app.playerData.silver, inventory: app.inventory }) === before,
+      '反复闲聊、猜谜及守灯人见闻不推进主线、不累积银两或物品');
+
+    const cave = window.GAME_DATA.MAPS_2D.baigudong;
+    const ridge = window.GAME_DATA.MAPS_2D.baihuling;
+    const tilemap = app.tilemap;
+    const flood = (map, start) => {
+      const queue = [[Math.floor(start.x / 32), Math.floor(start.y / 32)]];
+      const seen = new Set([queue[0].join(',')]);
+      for (let i = 0; i < queue.length; i++) {
+        const [c, r] = queue[i];
+        for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const next = [c + dc, r + dr]; const key = next.join(',');
+          if (!seen.has(key) && tilemap.isWalkable(map, ...next)) { seen.add(key); queue.push(next); }
+        }
+      }
+      return p => seen.has(`${Math.floor(p.x / 32)},${Math.floor(p.y / 32)}`);
+    };
+    assert(cave.width === 38 && cave.height === 28 && cave.tiles.every(row => row.length === 38), '白骨洞网格尺寸完整');
+    const reachable = flood(cave, cave.playerSpawn);
+    assert(tilemap.isWalkable(cave, 19, 23), '白骨洞出生点安全可行走');
+    assert([...cave.npcs, ...cave.monsters, ...cave.portals].every(reachable), '白骨洞全部 NPC、野怪与出口从出生点可达');
+    const entrance = ridge.portals.find(p => p.targetMap === cave.id);
+    assert(!!entrance && flood(ridge, ridge.playerSpawn)(entrance), '白虎岭旧出生点可达新增洞口');
+    assert(cave.portals[0].targetMap === ridge.id && flood(ridge, ridge.playerSpawn)({ x: cave.portals[0].targetX, y: cave.portals[0].targetY }),
+      '白骨洞双向传送返回白虎岭安全区域');
+    assert(app.minimap.getCurrentQuestTarget('baigudong', 'baihu_cleared', cave) === null,
+      '可选洞窟不产生新主线目标');
+    assert(cave.monsters.every(m => reachable(m) && tilemap.isWalkable(cave, Math.floor((m.x - 24) / 32), Math.floor(m.y / 32)) &&
+      tilemap.isWalkable(cave, Math.floor((m.x + 24) / 32), Math.floor(m.y / 32))), '新骷髅巡逻范围位于开阔骨厅');
+  }
+
+  {
+    console.log('\n▶️ [测试 36] 物种身份、模型头像一致性与绘制安全');
+    const oldPortraits = window.Portraits;
+    eval(fs.readFileSync(path.join(__dirname, 'js/engine/portraits.js'), 'utf8'));
+    const portraits = window.Portraits;
+    window.Portraits = oldPortraits;
+    for (const [name, borrowed, expected] of [
+      ['八百里流沙巨蝎', 'crab', 'scorpion'], ['濯垢泉毒丝蛛魔', 'crab', 'spider'],
+      ['黄花观千眼蜈蚣', 'snake', 'centipede'], ['烈焰熔岩巨蜥', 'snake', 'lizard'],
+      ['乌巢栖林蝠', 'fox', 'bat'], ['仙山守山灵鹤', 'fox', 'crane'],
+      ['五雷法殿金雕怪', 'fox', 'eagle'], ['镇山青玉狮', 'bull_demon', 'lion'],
+      ['狮驼岭骷髅狂象妖', 'bull_demon', 'elephant'], ['浮屠山顽石精', 'tree', 'stone_spirit'],
+      ['翠云山狂暴炎魔', 'bull_demon', 'fire_spirit'], ['弱水吸髓水妖', 'snake', 'water_wraith'],
+      ['观音禅院恶僧', 'bandit', 'demon_monk'], ['三清观假道士', 'bandit', 'demon_taoist'],
+      ['阴风化血厉鬼', 'skeleton', 'ghost'], ['云栈洞黑风小猪妖', 'pig', 'pig']
+    ]) {
+      const mob = new window.Character({ type: 'monster', name, appearance: borrowed });
+      assert(mob.appearance === expected && portraits.normalizeRoleId(mob.appearance) === expected,
+        `${name} 修复旧借模，实体和头像都保持 ${expected}`);
+    }
+    assert(portraits.normalizeRoleId('skeleton') !== portraits.normalizeRoleId('baigu_jing'), '普通骷髅不再使用白骨夫人头像');
+    assert(portraits.normalizeRoleId('pig') !== portraits.normalizeRoleId('zhu_bajie'), '野猪不再使用八戒头像');
+    assert(window.Dialogue.inferRoleId('沙悟净 (卷帘大将)', '') === 'sha_wujing', '沙悟净带前世称谓仍保持凡间身份');
+    assert(portraits.normalizeRoleId('bandit') === 'hooligan' && portraits.normalizeRoleId('pet_snake') === 'snake', '旧盗匪和灵蛇 ID 保持兼容');
+    let depth = 0;
+    const ctx = new Proxy({
+      save() { depth++; }, restore() { depth--; if (depth < 0) throw new Error('Canvas restore 越界'); },
+      createLinearGradient() { return { addColorStop() {} }; },
+      createRadialGradient() { return { addColorStop() {} }; }
+    }, { get(target, key) { return key in target ? target[key] : (...args) => {
+      if (args.some(x => typeof x === 'number' && !Number.isFinite(x))) throw new Error(`非有限坐标 ${key}`);
+    }; } });
+    let safe = true;
+    try {
+      for (const id of [...window.CreatureArt.ids, ...window.NpcArt.ids, 'martial_hero', 'heaven_general']) {
+        for (const direction of ['left', 'right', 'up', 'down']) {
+          window.CharacterRenderer.drawModel(ctx, 0, 0, id, { direction, animTimer: 1, isMoving: true });
+        }
+        portraits.drawCharacterBust(ctx, portraits.normalizeRoleId(id), 30, 30, 28);
+      }
+      for (const rider of ['martial_hero', 'heaven_general']) {
+        window.CharacterRenderer.drawModel(ctx, 0, 0, 'mount_knight', { direction: 'left', riderAppearance: rider, animTimer: 1 });
+      }
+    } catch (error) { safe = false; console.error(error); }
+    assert(safe && depth === 0, '新模型四向、头像和双骑手绘制坐标有限且 Canvas 状态平衡');
+    const originalCreatureDraw = window.CreatureArt.draw;
+    try {
+      for (const id of window.CreatureArt.ids) {
+        const calls = []; window.CreatureArt.draw = (canvas, species) => calls.push(species);
+        window.CharacterRenderer.drawModel(ctx, 0, 0, id, { animTimer: 1 });
+        portraits.drawCharacterBust(ctx, portraits.normalizeRoleId(id), 30, 30, 28);
+        assert(calls.length === 2 && calls.every(species => species === id), `${id} 全身与头像进入同一物种绘制，无通用天将回退`);
+      }
+    } finally { window.CreatureArt.draw = originalCreatureDraw; }
+    const maps = window.GAME_DATA.MAPS_2D;
+    assert(Object.values(maps).flatMap(m => m.monsters || []).every(m => portraits.normalizeRoleId(m.appearance) !== 'heaven_general'),
+      '全部地图野怪头像均不会意外回退天将');
+    assert(maps.baoxiangguo.npcs.find(n => n.id === 'npc_baihuaxiu').appearance === 'baihuaxiu', '百花羞不再借用铁扇造型');
+  }
+
   console.log('\n======================================================');
-  console.log(`🎉 全部自动化测试执行完毕！通过率: ${passedTests}/${totalTests} (100%)`);
+  console.log(`🎉 全部自动化测试执行完毕！通过率: ${passedTests}/${totalTests} (${totalTests ? (passedTests / totalTests * 100).toFixed(1) : 0}%)`);
   console.log('======================================================\n');
 })();
 

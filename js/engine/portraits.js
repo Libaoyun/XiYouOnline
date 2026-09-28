@@ -50,7 +50,6 @@ class MasterPortraitEngine {
       // 太白
       'taibai_jinxing': 'taibai',
       'npc_taibai': 'taibai',
-      'taibai_jinxing': 'taibai',
       'npc_change': 'change',
       'change_fairy': 'change',
       'chang_e': 'change',
@@ -61,6 +60,7 @@ class MasterPortraitEngine {
       'tangseng': 'xuanzang',
       // 猎户
       'hunter': 'liuboqin',
+      'liu_boqin': 'liuboqin',
       'npc_fisherman': 'fisherman',
       'fisherman_talk': 'fisherman',
       // 市井
@@ -72,6 +72,8 @@ class MasterPortraitEngine {
       'npc_blacksmith': 'blacksmith',
       'tiejiang': 'blacksmith',
       'npc_cha_apo': 'cha_apo',
+      'teashop_granny': 'cha_apo',
+      'shaoxia': 'martial_hero',
       'cha_apo': 'cha_apo',
       'apo': 'cha_apo',
       // 混混
@@ -91,7 +93,7 @@ class MasterPortraitEngine {
       'yelang': 'wolf',
       'wild_wolf': 'wolf',
       'baigujing': 'baigu_jing',
-      'skeleton': 'baigu_jing',
+      'skeleton': 'skeleton',
       'huangpao': 'huangpao_guai',
       'kuimulang': 'huangpao_guai',
       'heixiong': 'bear',
@@ -99,6 +101,11 @@ class MasterPortraitEngine {
       'giant_rat': 'rat',
       'pet_snake': 'snake'
     };
+    this.modelPortraits = { dragon_king: 'aoguang', xiaobailong: 'xiaobailong',
+      hu_xianfeng: 'hu_xianfeng', bull_demon: 'bull_demon', honghaier: 'honghaier',
+      jinchi_elder: 'jinchi_elder', jinjiao: 'jinjiao', yinjiao: 'yinjiao',
+      wuchao_chanshi: 'wuchao_chanshi', tieshan: 'tieshan', turtle: 'turtle' };
+    Object.assign(this.roleIdAliases, { aoguang: 'dragon_king', longwang: 'dragon_king' });
   }
 
   // 规范化角色标识
@@ -106,6 +113,19 @@ class MasterPortraitEngine {
     if (!rawId) return 'heaven_general';
     const s = String(rawId).toLowerCase();
     const t = String(title).toLowerCase();
+    if (this.modelPortraits[s]) return s;
+    if (window.NpcArt?.ids.has(s)) return s;
+    const creature = window.VisualIdentity?.aliases[s] || window.VisualIdentity?.resolveMonster(s);
+    if (window.VisualIdentity?.aliases[s]) return creature;
+    if (window.CreatureArt?.ids.has(creature)) return creature;
+
+    // 已有绘制分支的规范 ID 必须直接保留，否则英文 ID 会被再次推断成天将。
+    if (['heaven_general', 'martial_hero', 'sun_wukong', 'guanyin', 'hooligan',
+      'clam', 'crab', 'shrimp', 'dangpu_boss', 'yaopu_boss', 'blacksmith',
+      'cha_apo', 'fisherman', 'nezha', 'lijing', 'change', 'juanlian', 'taibai',
+      'zhu_bajie', 'sha_wujing', 'panda_hero', 'baigu_jing', 'huangpao_guai',
+      'wolf', 'rat', 'changan_hawker', 'changan_child', 'xuanzang', 'puti_zushi',
+      'qixiannv', 'liuboqin'].includes(s)) return s;
 
     // 优先映射表匹配
     if (this.roleIdAliases[s]) return this.roleIdAliases[s];
@@ -113,14 +133,16 @@ class MasterPortraitEngine {
     // 名称与称号语义智能推断
     if (s.includes('观音') || s.includes('菩萨') || t.includes('观音')) return 'guanyin';
     if (s.includes('悟空') || s.includes('大圣') || s.includes('弼马温') || t.includes('齐天')) return 'sun_wukong';
-    if (s.includes('哪吒') || s.includes('太子') || t.includes('哪吒')) return 'nezha';
+    if (s.includes('哪吒') || t.includes('哪吒')) return 'nezha';
     if (s.includes('李靖') || s.includes('托塔') || s.includes('天王') || t.includes('总兵')) return 'lijing';
     if (s.includes('太白') || s.includes('金星') || t.includes('金星')) return 'taibai';
     if (s.includes('嫦娥') || s.includes('广寒') || t.includes('广寒')) return 'change';
     if (s.includes('玄奘') || s.includes('唐僧') || s.includes('三藏')) return 'xuanzang';
-    if (s.includes('八戒') || s.includes('悟能') || s.includes('天蓬') || s.includes('猪刚鬣')) return 'zhu_bajie';
-    if (s.includes('卷帘') || t.includes('御前侍卫')) return 'juanlian';
+    if (s.includes('八戒') || s.includes('悟能') || s.includes('猪刚鬣')) return 'zhu_bajie';
+    if (s.includes('天蓬')) return 'heaven_general';
     if (s.includes('沙僧') || s.includes('悟净')) return 'sha_wujing';
+    if (s.includes('卷帘') || t.includes('御前侍卫')) return 'juanlian';
+    if (s.includes('仙女') || s.includes('侍女') || s.includes('瑶池')) return 'qixiannv';
     if (s.includes('刘伯钦') || s.includes('猎户') || s.includes('太保')) return 'liuboqin';
     if (s.includes('铁匠') || s.includes('锻打') || s.includes('神兵')) return 'blacksmith';
     if (s.includes('茶肆') || s.includes('阿婆') || s.includes('老婆婆')) return 'cha_apo';
@@ -288,6 +310,23 @@ class MasterPortraitEngine {
   // 绘制各个角色的高精度半身立绘
   drawCharacterBust(ctx, roleId, cx, cy, r) {
     const s = r / 30; // 基准缩放单位
+    if (window.CreatureArt?.ids.has(roleId)) {
+      ctx.save(); ctx.translate(cx, cy + 2 * s); ctx.scale(s * 1.05, s * 1.05);
+      window.CreatureArt.draw(ctx, roleId, 0, 0, 'right'); ctx.restore();
+      return;
+    }
+    if (window.PlayerArt && ['heaven_general', 'martial_hero'].includes(roleId)) {
+      window.PlayerArt.portrait(ctx, roleId, cx, cy, r);
+      return;
+    }
+    if (window.NpcArt?.ids.has(roleId)) {
+      window.NpcArt.portrait(ctx, roleId, cx, cy, r); return;
+    }
+    if (this.modelPortraits[roleId] && window.CharacterRenderer) {
+      window.CharacterRenderer.drawModel(ctx, cx, cy + 13 * s, this.modelPortraits[roleId],
+        { scale: s * 0.9, direction: 'right', animTimer: 1 });
+      return;
+    }
 
     switch (roleId) {
       // =========================================================================
@@ -1356,13 +1395,15 @@ class MasterPortraitEngine {
       // =========================================================================
       // 嫦娥仙子 (广寒月轮、云髻金簪、月白云裳)
       // =========================================================================
+      case 'qixiannv':
       case 'change': {
-        ctx.fillStyle = 'rgba(219,234,254,0.35)';
+        const moonFairy = roleId === 'change';
+        ctx.fillStyle = moonFairy ? 'rgba(219,234,254,0.35)' : 'rgba(251,207,232,0.18)';
         ctx.beginPath(); ctx.arc(cx + 8 * s, cy - 7 * s, 21 * s, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#f8fafc';
+        ctx.fillStyle = moonFairy ? '#f8fafc' : '#f6b6ca';
         ctx.beginPath(); ctx.moveTo(cx - 18 * s, cy + 31 * s); ctx.quadraticCurveTo(cx, cy + 4 * s, cx + 18 * s, cy + 31 * s); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 1.2 * s; ctx.stroke();
-        ctx.fillStyle = '#7c6aa6'; ctx.fillRect(cx - 15 * s, cy + 15 * s, 30 * s, 3 * s);
+        ctx.strokeStyle = moonFairy ? '#93c5fd' : '#c57992'; ctx.lineWidth = 1.2 * s; ctx.stroke();
+        ctx.fillStyle = moonFairy ? '#7c6aa6' : '#538f83'; ctx.fillRect(cx - 15 * s, cy + 15 * s, 30 * s, 3 * s);
 
         const moonFace = ctx.createRadialGradient(cx - 3 * s, cy - 5 * s, 1 * s, cx, cy, 12 * s);
         moonFace.addColorStop(0, '#fff7ed'); moonFace.addColorStop(1, '#f2cbb7');
@@ -1383,12 +1424,173 @@ class MasterPortraitEngine {
         ctx.beginPath(); ctx.moveTo(cx + 2 * s, cy - 21 * s); ctx.lineTo(cx + 14 * s, cy - 26 * s); ctx.stroke();
         ctx.fillStyle = '#f2c94c';
         ctx.beginPath(); ctx.ellipse(cx + 10 * s, cy - 24 * s, 4 * s, 1.8 * s, -0.4, 0, Math.PI * 2); ctx.fill();
+        if (!moonFairy) {
+          ctx.strokeStyle = '#4d9187'; ctx.lineWidth = 2 * s;
+          ctx.beginPath(); ctx.moveTo(cx - 10 * s, cy + 10 * s); ctx.quadraticCurveTo(cx - 26 * s, cy + 17 * s, cx - 15 * s, cy + 30 * s);
+          ctx.moveTo(cx + 10 * s, cy + 10 * s); ctx.quadraticCurveTo(cx + 26 * s, cy + 17 * s, cx + 15 * s, cy + 30 * s); ctx.stroke();
+          ctx.fillStyle = '#fff1c1'; ctx.beginPath(); ctx.arc(cx - 9 * s, cy - 12 * s, 3 * s, 0, Math.PI * 2); ctx.fill();
+        }
+        break;
+      }
+
+      case 'xuanzang':
+      case 'puti_zushi':
+      case 'liuboqin': {
+        const monk = roleId === 'xuanzang';
+        const sage = roleId === 'puti_zushi';
+        const robe = ctx.createLinearGradient(cx - 18 * s, cy + 9 * s, cx + 18 * s, cy + 34 * s);
+        robe.addColorStop(0, monk ? '#bb493a' : sage ? '#ece7d4' : '#9c7754');
+        robe.addColorStop(1, monk ? '#712f30' : sage ? '#7d998e' : '#4d4339');
+        ctx.fillStyle = robe; ctx.beginPath(); ctx.roundRect(cx - 18 * s, cy + 9 * s, 36 * s, 25 * s, 5 * s); ctx.fill();
+        ctx.strokeStyle = monk ? '#e8bc64' : sage ? '#d8cc94' : '#dec8a2'; ctx.lineWidth = 1.6 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 8 * s, cy + 9 * s); ctx.lineTo(cx + 6 * s, cy + 26 * s); ctx.stroke();
+        if (monk) {
+          ctx.strokeStyle = 'rgba(234,189,106,.65)'; ctx.lineWidth = 0.7 * s;
+          for (let y = 14; y < 34; y += 6) {
+            ctx.beginPath(); ctx.moveTo(cx - 17 * s, cy + y * s); ctx.lineTo(cx + 17 * s, cy + y * s); ctx.stroke();
+          }
+          for (let x = -12; x <= 12; x += 8) {
+            ctx.beginPath(); ctx.moveTo(cx + x * s, cy + 11 * s); ctx.lineTo(cx + x * s, cy + 33 * s); ctx.stroke();
+          }
+        } else if (!sage) {
+          ctx.strokeStyle = '#d4c6ab'; ctx.lineWidth = 4 * s;
+          ctx.beginPath(); ctx.moveTo(cx - 14 * s, cy + 12 * s); ctx.lineTo(cx - 4 * s, cy + 18 * s);
+          ctx.lineTo(cx + 12 * s, cy + 12 * s); ctx.stroke();
+        }
+        const face = ctx.createRadialGradient(cx - 3 * s, cy - 4 * s, s, cx, cy, 12 * s);
+        face.addColorStop(0, sage ? '#f5e0c5' : monk ? '#ffe5cd' : '#e3b58b');
+        face.addColorStop(1, sage ? '#ccb18d' : monk ? '#d8ab86' : '#ac7951');
+        ctx.fillStyle = face; ctx.beginPath(); ctx.ellipse(cx, cy - s, 10 * s, 12 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = sage ? '#eee7d8' : '#4d332a'; ctx.lineWidth = sage ? 2 * s : 1.2 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy - 5 * s); ctx.quadraticCurveTo(cx - 4 * s, cy - 7 * s, cx - 2 * s, cy - 5 * s);
+        ctx.moveTo(cx + 2 * s, cy - 5 * s); ctx.quadraticCurveTo(cx + 4 * s, cy - 7 * s, cx + 7 * s, cy - 5 * s); ctx.stroke();
+        ctx.fillStyle = '#3b2f2a'; ctx.beginPath(); ctx.ellipse(cx - 4 * s, cy - 2 * s, 1.5 * s, s, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + 4 * s, cy - 2 * s, 1.5 * s, s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#ba8069'; ctx.lineWidth = s;
+        ctx.beginPath(); ctx.moveTo(cx - 2.5 * s, cy + 5 * s); ctx.quadraticCurveTo(cx, cy + 6 * s, cx + 2.5 * s, cy + 5 * s); ctx.stroke();
+        if (monk) {
+          // 五瓣佛冠与袈裟金线，面部保持温和。
+          ctx.fillStyle = '#dab976';
+          ctx.beginPath(); ctx.moveTo(cx - 11 * s, cy - 9 * s); ctx.lineTo(cx - 12 * s, cy - 20 * s);
+          ctx.lineTo(cx - 6 * s, cy - 16 * s); ctx.lineTo(cx, cy - 24 * s); ctx.lineTo(cx + 6 * s, cy - 16 * s);
+          ctx.lineTo(cx + 12 * s, cy - 20 * s); ctx.lineTo(cx + 11 * s, cy - 9 * s); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = '#8c5931'; ctx.lineWidth = s; ctx.stroke();
+          ctx.fillStyle = '#ac3937'; ctx.beginPath(); ctx.arc(cx, cy - 14 * s, 2.6 * s, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#d9b269'; ctx.lineWidth = 1.5 * s;
+          ctx.beginPath(); ctx.moveTo(cx + 21 * s, cy - 5 * s); ctx.lineTo(cx + 21 * s, cy + 34 * s); ctx.stroke();
+          ctx.beginPath(); ctx.arc(cx + 21 * s, cy - 6 * s, 5 * s, 0, Math.PI * 2); ctx.stroke();
+        } else if (sage) {
+          // 道冠、白须、拂尘区别于佛门僧人。
+          ctx.fillStyle = '#e7e7da'; ctx.beginPath(); ctx.arc(cx, cy - 8 * s, 11 * s, Math.PI, 0); ctx.fill();
+          ctx.fillStyle = '#557769'; ctx.beginPath(); ctx.roundRect(cx - 5 * s, cy - 24 * s, 10 * s, 13 * s, 3 * s); ctx.fill();
+          ctx.strokeStyle = '#e1cf8f'; ctx.lineWidth = s; ctx.stroke();
+          ctx.fillStyle = '#f4efdf'; ctx.beginPath(); ctx.moveTo(cx - 6 * s, cy + 4 * s);
+          ctx.quadraticCurveTo(cx, cy + 13 * s, cx + 6 * s, cy + 4 * s); ctx.quadraticCurveTo(cx + 6 * s, cy + 19 * s, cx, cy + 27 * s);
+          ctx.quadraticCurveTo(cx - 6 * s, cy + 19 * s, cx - 6 * s, cy + 4 * s); ctx.fill();
+          ctx.strokeStyle = '#ede5ce'; ctx.lineWidth = s;
+          for (let i = 0; i < 5; i++) {
+            ctx.beginPath(); ctx.moveTo(cx + 16 * s, cy + 9 * s); ctx.quadraticCurveTo(cx + (13 + i) * s, cy + 19 * s, cx + (20 + i) * s, cy + 30 * s); ctx.stroke();
+          }
+        } else {
+          // 刘伯钦的皮帽、胡茬和猎弓，与少侠头像分开。
+          ctx.fillStyle = '#584131'; ctx.beginPath(); ctx.roundRect(cx - 11 * s, cy - 18 * s, 22 * s, 10 * s, 4 * s); ctx.fill();
+          ctx.strokeStyle = '#b69c77'; ctx.lineWidth = 3 * s;
+          ctx.beginPath(); ctx.moveTo(cx - 10 * s, cy - 9 * s); ctx.lineTo(cx + 10 * s, cy - 9 * s); ctx.stroke();
+          ctx.strokeStyle = '#76553c'; ctx.lineWidth = s;
+          for (let x = -5; x <= 5; x += 2) {ctx.beginPath(); ctx.moveTo(cx + x * s, cy + 6 * s); ctx.lineTo(cx + x * s, cy + 8 * s); ctx.stroke();}
+          ctx.strokeStyle = '#c59861'; ctx.lineWidth = 2 * s;
+          ctx.beginPath(); ctx.moveTo(cx + 19 * s, cy - 13 * s); ctx.quadraticCurveTo(cx + 32 * s, cy + 9 * s, cx + 19 * s, cy + 31 * s); ctx.stroke();
+          ctx.strokeStyle = '#d8caae'; ctx.lineWidth = 0.6 * s;
+          ctx.beginPath(); ctx.moveTo(cx + 19 * s, cy - 13 * s); ctx.lineTo(cx + 19 * s, cy + 31 * s); ctx.stroke();
+        }
         break;
       }
 
       // =========================================================================
       // 卷帘大将 (乌金御甲、沉毅短须、镇殿月牙杖)
       // =========================================================================
+      case 'sha_wujing': {
+        // 受贬后的布衣行者与御前卷帘分开：赤发、蓝袍、念珠。
+        const robe = ctx.createLinearGradient(cx, cy + 8 * s, cx, cy + 32 * s);
+        robe.addColorStop(0, '#447d91'); robe.addColorStop(1, '#193b50');
+        ctx.fillStyle = robe;
+        ctx.beginPath(); ctx.roundRect(cx - 19 * s, cy + 9 * s, 38 * s, 25 * s, 5 * s); ctx.fill();
+        ctx.strokeStyle = '#95bac2'; ctx.lineWidth = 2 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 9 * s, cy + 9 * s); ctx.lineTo(cx, cy + 20 * s); ctx.lineTo(cx + 9 * s, cy + 9 * s); ctx.stroke();
+        ctx.fillStyle = '#743a28';
+        ctx.beginPath(); ctx.ellipse(cx, cy - 5 * s, 13 * s, 16 * s, 0, 0, Math.PI * 2); ctx.fill();
+        const face = ctx.createRadialGradient(cx - 3 * s, cy - 5 * s, s, cx, cy, 12 * s);
+        face.addColorStop(0, '#d79c73'); face.addColorStop(1, '#986043');
+        ctx.fillStyle = face;
+        ctx.beginPath(); ctx.ellipse(cx, cy, 10 * s, 12 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#8d482d';
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy + 3 * s); ctx.quadraticCurveTo(cx, cy + 7 * s, cx + 7 * s, cy + 3 * s);
+        ctx.lineTo(cx + 4 * s, cy + 17 * s); ctx.lineTo(cx, cy + 21 * s); ctx.lineTo(cx - 4 * s, cy + 17 * s); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#422c24'; ctx.lineWidth = 1.5 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy - 4 * s); ctx.lineTo(cx - 2 * s, cy - 5 * s);
+        ctx.moveTo(cx + 2 * s, cy - 5 * s); ctx.lineTo(cx + 7 * s, cy - 4 * s); ctx.stroke();
+        ctx.fillStyle = '#251e1b';
+        ctx.beginPath(); ctx.ellipse(cx - 4 * s, cy - s, 1.6 * s, s, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + 4 * s, cy - s, 1.6 * s, s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5b3c2c'; ctx.fillRect(cx - 11 * s, cy - 11 * s, 22 * s, 3 * s);
+        ctx.fillStyle = '#e0b96c';
+        ctx.beginPath(); ctx.arc(cx, cy - 9.5 * s, 2.5 * s, 0, Math.PI * 2); ctx.fill();
+        for (let i = 0; i < 9; i++) {
+          const a = Math.PI * (0.08 + i * 0.105);
+          ctx.fillStyle = i % 2 ? '#795335' : '#c3a16a';
+          ctx.beginPath(); ctx.arc(cx + Math.cos(a) * 14 * s, cy + 11 * s + Math.sin(a) * 14 * s, 2.2 * s, 0, Math.PI * 2); ctx.fill();
+        }
+        break;
+      }
+
+      case 'changan_hawker':
+      case 'changan_child': {
+        const child = roleId === 'changan_child';
+        const coat = ctx.createLinearGradient(cx - 16 * s, cy + 10 * s, cx + 16 * s, cy + 31 * s);
+        coat.addColorStop(0, child ? '#ed7660' : '#d6a054'); coat.addColorStop(1, child ? '#9f3437' : '#775132');
+        ctx.fillStyle = coat;
+        ctx.beginPath(); ctx.roundRect(cx - 16 * s, cy + 10 * s, 32 * s, 23 * s, 6 * s); ctx.fill();
+        ctx.strokeStyle = '#f1dfbe'; ctx.lineWidth = 2 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy + 10 * s); ctx.lineTo(cx, cy + 20 * s); ctx.lineTo(cx + 7 * s, cy + 10 * s); ctx.stroke();
+        const face = ctx.createRadialGradient(cx - 3 * s, cy - 3 * s, s, cx, cy, 12 * s);
+        face.addColorStop(0, '#ffe5c4'); face.addColorStop(1, child ? '#e8ad82' : '#c38a5b');
+        ctx.fillStyle = face;
+        ctx.beginPath(); ctx.ellipse(cx, cy, child ? 11 * s : 10 * s, 11 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#34231c';
+        ctx.beginPath(); ctx.arc(cx, cy - 7 * s, 10 * s, Math.PI, 0); ctx.fill();
+        ctx.strokeStyle = '#4d3025'; ctx.lineWidth = 1.3 * s;
+        ctx.beginPath(); ctx.moveTo(cx - 7 * s, cy - 3 * s); ctx.quadraticCurveTo(cx - 4 * s, cy - 6 * s, cx - 2 * s, cy - 3 * s);
+        ctx.moveTo(cx + 2 * s, cy - 3 * s); ctx.quadraticCurveTo(cx + 4 * s, cy - 6 * s, cx + 7 * s, cy - 3 * s); ctx.stroke();
+        ctx.fillStyle = '#2c221e';
+        ctx.beginPath(); ctx.arc(cx - 4 * s, cy, 1.4 * s, 0, Math.PI * 2); ctx.arc(cx + 4 * s, cy, 1.4 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#944d40'; ctx.lineWidth = 1.2 * s;
+        ctx.beginPath(); ctx.arc(cx, cy + 3 * s, 4 * s, 0.25, Math.PI - 0.25); ctx.stroke();
+        if (child) {
+          ctx.fillStyle = '#34231c'; ctx.beginPath(); ctx.arc(cx, cy - 17 * s, 4 * s, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#de5b50'; ctx.fillRect(cx - 4 * s, cy - 15 * s, 8 * s, 2 * s);
+          ctx.strokeStyle = '#b98b49'; ctx.lineWidth = 1.4 * s;
+          ctx.beginPath(); ctx.moveTo(cx + 17 * s, cy + 30 * s); ctx.lineTo(cx + 17 * s, cy + 5 * s); ctx.stroke();
+          for (let i = 0; i < 4; i++) {
+            ctx.save(); ctx.translate(cx + 17 * s, cy + 5 * s); ctx.rotate(i * Math.PI / 2 + 0.3);
+            ctx.fillStyle = ['#de5b50', '#e7c26a', '#629baf', '#7eac83'][i];
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(7 * s, -4 * s); ctx.lineTo(6 * s, 3 * s); ctx.closePath(); ctx.fill(); ctx.restore();
+          }
+        } else {
+          ctx.fillStyle = '#bc914c';
+          ctx.beginPath(); ctx.moveTo(cx - 19 * s, cy - 9 * s); ctx.quadraticCurveTo(cx - 4 * s, cy - 12 * s, cx, cy - 24 * s);
+          ctx.quadraticCurveTo(cx + 6 * s, cy - 12 * s, cx + 19 * s, cy - 9 * s); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = '#785630'; ctx.lineWidth = 1.2 * s;
+          ctx.beginPath(); ctx.moveTo(cx - 19 * s, cy - 9 * s); ctx.quadraticCurveTo(cx, cy - 5 * s, cx + 19 * s, cy - 9 * s); ctx.stroke();
+          ctx.strokeStyle = '#ddbd79'; ctx.lineWidth = 0.8 * s;
+          for (let i = -2; i <= 2; i++) {
+            ctx.beginPath(); ctx.moveTo(cx, cy - 23 * s); ctx.lineTo(cx + i * 7 * s, cy - 9 * s); ctx.stroke();
+          }
+          ctx.strokeStyle = '#65442b'; ctx.lineWidth = 3 * s;
+          ctx.beginPath(); ctx.moveTo(cx - 25 * s, cy + 14 * s); ctx.quadraticCurveTo(cx, cy + 9 * s, cx + 25 * s, cy + 14 * s); ctx.stroke();
+        }
+        break;
+      }
+
       case 'juanlian': {
         const guardArmor = ctx.createLinearGradient(cx, cy + 7 * s, cx, cy + 32 * s);
         guardArmor.addColorStop(0, '#64748b'); guardArmor.addColorStop(0.45, '#252936'); guardArmor.addColorStop(1, '#111827');

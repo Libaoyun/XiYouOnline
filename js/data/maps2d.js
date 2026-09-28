@@ -6724,12 +6724,12 @@ window.GAME_DATA.MAPS_2D = {
         "dialogueKey": "changan_guard_talk"
       },
       {
-        "id": "npc_changan_tea",
+      "id": "npc_changan_tea",
         "name": "茶肆阿婆",
         "title": "【长安茶肆】",
         "x": 576,
         "y": 608,
-        "appearance": "changan_girl",
+      "appearance": "changan_tea_granny",
         "icon": "🍵",
         "dialogueKey": "changan_tea_talk"
       },
@@ -24144,22 +24144,22 @@ window.GAME_DATA.MAPS_2D = {
     },
     "npcs": [
       {
-        "id": "npc_baoxiang_king",
+      "id": "npc_baoxiang_king",
         "name": "宝象国国王",
         "title": "【异域国君】",
         "x": 288,
         "y": 256,
-        "appearance": "tang_seng",
+      "appearance": "baoxiang_king",
         "icon": "👑",
         "dialogueKey": "baoxiang_king_talk"
       },
       {
-        "id": "npc_baihuaxiu",
+      "id": "npc_baihuaxiu",
         "name": "百花羞公主",
         "title": "【被掳金枝】",
         "x": 480,
         "y": 96,
-        "appearance": "tieshan",
+      "appearance": "baihuaxiu",
         "icon": "👸",
         "dialogueKey": "baihuaxiu_talk"
       },
@@ -45010,3 +45010,52 @@ window.GAME_DATA.MAPS_2D = {
     ]
   }
 };
+
+// 白骨洞独立探索区：确定性地形只生成一次，不改写旧主线 NPC 或存档。
+(() => {
+  const tiles = Array.from({ length: 28 }, () => Array(38).fill('demon_cave_wall'));
+  const carve = (left, top, right, bottom) => {
+    for (let r = top; r <= bottom; r++) {
+      for (let c = left; c <= right; c++) tiles[r][c] = 'cave_floor';
+    }
+  };
+  carve(15, 19, 23, 25); // 入口休息区。
+  carve(17, 8, 21, 22);  // 五格宽主通路。
+  carve(10, 4, 28, 11);  // 深处骨厅。
+  carve(21, 14, 31, 16); // 三格宽支路。
+  carve(29, 12, 34, 18); // 守灯人的避风石室。
+  for (const [c, r] of [[16, 21], [22, 21], [18, 17], [20, 12], [30, 14], [33, 16]]) {
+    tiles[r][c] = 'cave_lantern';
+  }
+  const ridge = window.GAME_DATA.MAPS_2D.baihuling;
+  for (let r = 6; r <= 8; r++) {
+    for (let c = 24; c <= 26; c++) ridge.tiles[r][c] = 'cave_floor';
+  }
+  ridge.portals.push({ x: 800, y: 240, targetMap: 'baigudong', targetX: 608, targetY: 736,
+    name: '白骨洞·可选探索', minLevel: 35 });
+  const skeleton = ridge.monsters[0];
+  window.GAME_DATA.MAPS_2D.baigudong = {
+    id: 'baigudong', name: '白骨洞·残灯旧影', region: '白虎岭洞窟', width: 38, height: 28, tiles,
+    playerSpawn: { x: 608, y: 736, direction: 'up' },
+    npcs: [{ id: 'npc_baigu_lampkeeper', name: '守灯老人', title: '【为归人留灯】',
+      x: 1024, y: 480, appearance: 'fisherman', icon: '🏮', dialogueKey: 'baigu_lampkeeper_talk' }],
+    monsters: [
+      { ...skeleton, id: 'mob_bg_skel_west', name: '残骨怨灵 (旧骨厅)', x: 416, y: 224, patrolRadius: 24 },
+      { ...skeleton, id: 'mob_bg_skel_east', name: '残骨怨灵 (石壁下)', x: 800, y: 224, patrolRadius: 24 }
+    ],
+    portals: [{ x: 608, y: 800, targetMap: 'baihuling', targetX: 800, targetY: 320, name: '返回白虎岭' }]
+  };
+  // 旧地图若借用其他物种，按具名生态修正。战斗属性与位置不变。
+  if (window.VisualIdentity) {
+    for (const map of Object.values(window.GAME_DATA.MAPS_2D)) {
+      for (const monster of map.monsters || []) {
+        monster.appearance = window.VisualIdentity.resolveMonster(monster.appearance, monster.name, monster.id);
+      }
+      for (const npc of map.npcs || []) {
+        if (npc.name.includes('受困小猴')) npc.appearance = 'stone_monkey';
+        if (npc.name.includes('东海龙王')) npc.appearance = 'aoguang';
+        if (npc.name.includes('巡海夜叉')) npc.appearance = 'yecha';
+      }
+    }
+  }
+})();

@@ -11,6 +11,14 @@ class TilemapEngine {
   constructor(tileSize = 32) {
     this.tileSize = tileSize;
     this.waterAnimTime = 0;
+    this.biomes = {
+      huangfengling: { kind: 'sand', base: '#8b7857', detail: '#b7a078', path: '#8c7453' },
+      liushahe: { kind: 'sand', base: '#786d50', detail: '#a29670', path: '#77634b' },
+      huoyanshan: { kind: 'ash', base: '#453b3b', detail: '#b47752', path: '#57433c' },
+      huoyundong: { kind: 'ash', base: '#4e403a', detail: '#bc8358', path: '#62483a' },
+      heifengshan: { kind: 'forest', base: '#304a40', detail: '#77937a', path: '#63594a' },
+      pansidong: { kind: 'forest', base: '#464955', detail: '#93818c', path: '#66515a' }
+    };
   }
 
   // 更新水流与仙气动画时序
@@ -247,6 +255,37 @@ class TilemapEngine {
 
       // === 4. 凡间·葱郁仙林草地 (自然风吹草尖与杂花生树) ===
       case 'grass': {
+        const biome = this.biomes[mapData?.id];
+        if (biome) {
+          ctx.fillStyle = biome.base; ctx.fillRect(screenX, screenY, s, s);
+          const seed = (c * 43 + r * 29) % 13;
+          ctx.strokeStyle = biome.detail; ctx.lineWidth = 0.6;
+          if (biome.kind === 'sand') {
+            // 全球坐标决定风纹，跨瓦片连续且无需随机数。
+            ctx.globalAlpha = 0.35;
+            for (let i = 0; i < 2; i++) {
+              ctx.beginPath();
+              for (let x = 0; x <= s; x += 4) {
+                const y = 8 + i * 16 + Math.sin((c * s + x) * 0.04 + r * 0.2) * 3;
+                if (x === 0) ctx.moveTo(screenX + x, screenY + y); else ctx.lineTo(screenX + x, screenY + y);
+              }
+              ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            if (seed < 2) {ctx.fillStyle='#625b48';ctx.beginPath();ctx.ellipse(screenX+12,screenY+19,3,1.5,0.4,0,Math.PI*2);ctx.fill();}
+          } else if (biome.kind === 'ash') {
+            if (seed < 4) {
+              ctx.beginPath();ctx.moveTo(screenX+3,screenY+6);ctx.lineTo(screenX+15,screenY+13);ctx.lineTo(screenX+11,screenY+26);ctx.stroke();
+              ctx.fillStyle='rgba(221,154,89,0.25)';ctx.beginPath();ctx.arc(screenX+15,screenY+13,1.5,0,Math.PI*2);ctx.fill();
+            }
+            ctx.fillStyle='rgba(24,26,31,0.3)';ctx.beginPath();ctx.ellipse(screenX+21,screenY+19,4,1.5,-0.4,0,Math.PI*2);ctx.fill();
+          } else {
+            const wind=Math.sin(this.waterAnimTime+seed)*0.6;
+            for(let i=0;i<3;i++){const x=5+(seed+i*7)%23,y=7+i*8;ctx.beginPath();ctx.moveTo(screenX+x,screenY+y+3);ctx.quadraticCurveTo(screenX+x-2,screenY+y,screenX+x+wind,screenY+y-3);ctx.stroke();}
+            if(seed<3){ctx.fillStyle=biome.detail;ctx.beginPath();ctx.ellipse(screenX+18,screenY+22,3,1.2,0.5,0,Math.PI*2);ctx.fill();}
+          }
+          break;
+        }
         const hash = (c * 43 + r * 29) % 5;
         const isBoneRidge = mapData && mapData.id === 'baihuling';
         const isBaoxiang = mapData && mapData.id === 'baoxiangguo';
@@ -262,9 +301,11 @@ class TilemapEngine {
         // 风拂草浪
         const wind = Math.sin(this.waterAnimTime * 2 + c * 0.6) * 1.5;
         ctx.fillStyle = isBoneRidge ? '#626952' : isBaoxiang ? '#8b8c4c' : isLiuVillage ? '#78a756' : isHuaguo ? '#55a77a' : '#3d7e3e';
-        ctx.fillRect(screenX + 6 + wind, screenY + 8, 2, 6);
-        ctx.fillRect(screenX + 18 - wind, screenY + 16, 2, 5);
-        ctx.fillRect(screenX + 24 + wind, screenY + 6, 2, 6);
+        ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.8;
+        for (const [x, y, bend] of [[6, 14, wind], [18, 21, -wind], [24, 12, wind]]) {
+          ctx.beginPath(); ctx.moveTo(screenX + x, screenY + y);
+          ctx.quadraticCurveTo(screenX + x - 1, screenY + y - 3, screenX + x + bend, screenY + y - 6); ctx.stroke();
+        }
 
         // 随机散落野花/三叶草
         if (isBoneRidge && hash === 1) {
@@ -310,6 +351,13 @@ class TilemapEngine {
       // === 5. 凡间·青石古道泥土小径 (细腻泥土肌理与凹凸鹅卵石) ===
       case 'dirt_road':
       case 'dirt_path': {
+        const biome = this.biomes[mapData?.id];
+        if (biome) {
+          ctx.fillStyle = biome.path; ctx.fillRect(screenX, screenY, s, s);
+          ctx.strokeStyle = 'rgba(216,200,164,0.16)'; ctx.lineWidth = 0.8;
+          for(let i=0;i<2;i++){ctx.beginPath();ctx.moveTo(screenX,screenY+9+i*14);ctx.quadraticCurveTo(screenX+s/2,screenY+10+i*14,screenX+s,screenY+9+i*14);ctx.stroke();}
+          break;
+        }
         const villagePath = mapData && mapData.id === 'liujiacun';
         const peachPath = mapData && mapData.id === 'huaguoshan';
         const g = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
@@ -1316,7 +1364,33 @@ class TilemapEngine {
 
       // === 11. 五行山·巍峨五指岩壁 (阻挡) ===
       case 'demon_cave_wall': {
-        const boneCave = mapData && mapData.id === 'baihuling';
+        if (mapData && mapData.id === 'baigudong') {
+          // 洞内山体连成整体：仅沿暴露岩沿描边，避免每格重复亮斜纹。
+          const isOpen = (x, y) => ['cave_floor', 'cave_lantern'].includes(mapData.tiles[y]?.[x]);
+          ctx.fillStyle = '#23232d'; ctx.fillRect(screenX, screenY, s, s);
+          const seed = (c * 17 + r * 31) % 11;
+          ctx.fillStyle = 'rgba(82,73,91,0.18)';
+          if (seed < 4) {
+            ctx.beginPath(); ctx.moveTo(screenX, screenY + s * 0.8); ctx.lineTo(screenX + s, screenY + s * 0.2);
+            ctx.lineTo(screenX + s, screenY + s); ctx.lineTo(screenX, screenY + s); ctx.closePath(); ctx.fill();
+          }
+          ctx.strokeStyle = 'rgba(127,110,143,0.18)'; ctx.lineWidth = 0.7;
+          if (seed === 2 || seed === 7) {
+            ctx.beginPath(); ctx.moveTo(screenX + 3, screenY + 9); ctx.lineTo(screenX + 14, screenY + 15);
+            ctx.lineTo(screenX + 19, screenY + 28); ctx.stroke();
+          }
+          ctx.fillStyle = '#514858';
+          if (isOpen(c, r + 1)) ctx.fillRect(screenX, screenY + s - 4, s, 4);
+          if (isOpen(c, r - 1)) ctx.fillRect(screenX, screenY, s, 2);
+          if (isOpen(c - 1, r)) ctx.fillRect(screenX, screenY, 3, s);
+          if (isOpen(c + 1, r)) ctx.fillRect(screenX + s - 3, screenY, 3, s);
+          if (isOpen(c, r + 1) && seed % 3 === 0) {
+            ctx.fillStyle = '#7f7388'; ctx.beginPath(); ctx.moveTo(screenX + 11, screenY + s - 5);
+            ctx.lineTo(screenX + 17, screenY + s - 5); ctx.lineTo(screenX + 13, screenY + s + 4); ctx.closePath(); ctx.fill();
+          }
+          break;
+        }
+        const boneCave = mapData && ['baihuling', 'baigudong'].includes(mapData.id);
         const stone = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
         stone.addColorStop(0, boneCave ? '#575060' : '#5b5147');
         stone.addColorStop(.53, boneCave ? '#353542' : '#383a3d');
@@ -1463,15 +1537,24 @@ class TilemapEngine {
       }
 
       // === 水帘洞天·钟乳奇石溶洞灵地 ===
+      case 'cave_lantern':
       case 'cave_floor': {
         const isAlt = (c + r) % 2 === 0;
-        const isBoneCave = mapData && mapData.id === 'baihuling';
-        ctx.fillStyle = isBoneCave ? (isAlt ? '#343138' : '#272930') : (isAlt ? '#262626' : '#1f1f1f');
+        const isBoneCave = mapData && ['baihuling', 'baigudong'].includes(mapData.id);
+        const interior = mapData && mapData.id === 'baigudong';
+        ctx.fillStyle = interior ? (isAlt ? '#34313a' : '#323039') : isBoneCave ? (isAlt ? '#343138' : '#272930') : (isAlt ? '#262626' : '#1f1f1f');
         ctx.fillRect(screenX, screenY, s, s);
 
         // 湿润水汽反光微光
         ctx.fillStyle = isBoneCave ? 'rgba(179, 138, 206, 0.07)' : 'rgba(56, 189, 248, 0.06)';
-        ctx.fillRect(screenX + 2, screenY + 2, s - 4, s - 4);
+        if (interior) {
+          ctx.beginPath(); ctx.ellipse(screenX + s * 0.5, screenY + s * 0.7, 9, 3, -0.2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(9,10,18,0.28)';
+          if (mapData.tiles[r - 1]?.[c] === 'demon_cave_wall') ctx.fillRect(screenX, screenY, s, 5);
+          if (mapData.tiles[r + 1]?.[c] === 'demon_cave_wall') ctx.fillRect(screenX, screenY + s - 3, s, 3);
+          if (mapData.tiles[r]?.[c - 1] === 'demon_cave_wall') ctx.fillRect(screenX, screenY, 4, s);
+          if (mapData.tiles[r]?.[c + 1] === 'demon_cave_wall') ctx.fillRect(screenX + s - 4, screenY, 4, s);
+        } else ctx.fillRect(screenX + 2, screenY + 2, s - 4, s - 4);
 
         // 钟乳石滴水水滴涟漪
         if ((c * 13 + r * 29) % 7 === 0) {
@@ -1487,6 +1570,16 @@ class TilemapEngine {
         if ((c * 7 + r * 17) % 5 === 0) {
           ctx.fillStyle = isBoneCave ? 'rgba(170, 114, 186, 0.25)' : 'rgba(52, 211, 153, 0.35)';
           ctx.fillRect(screenX + (c * 11) % 20 + 4, screenY + (r * 19) % 20 + 4, 2.5, 2.5);
+        }
+        if (tileType === 'cave_lantern') {
+          // 地面灯盏提供通路方向，灯座不阻挡人物行走。
+          const glow = ctx.createRadialGradient(screenX + s / 2, screenY + s / 2, 1, screenX + s / 2, screenY + s / 2, s * 0.7);
+          glow.addColorStop(0, 'rgba(249,194,108,0.3)'); glow.addColorStop(1, 'rgba(249,194,108,0)');
+          ctx.fillStyle = glow; ctx.fillRect(screenX - s * 0.2, screenY - s * 0.2, s * 1.4, s * 1.4);
+          ctx.fillStyle = '#79583c'; ctx.beginPath(); ctx.ellipse(screenX + s / 2, screenY + s * 0.62, 5, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#f4c57d'; ctx.beginPath(); ctx.moveTo(screenX + s / 2 - 2, screenY + s * 0.58);
+          ctx.quadraticCurveTo(screenX + s / 2 - 4, screenY + s * 0.4, screenX + s / 2 + Math.sin(this.waterAnimTime * 3 + c), screenY + s * 0.3);
+          ctx.quadraticCurveTo(screenX + s / 2 + 4, screenY + s * 0.5, screenX + s / 2 + 2, screenY + s * 0.58); ctx.closePath(); ctx.fill();
         }
         break;
       }

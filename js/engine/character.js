@@ -6,6 +6,8 @@
 class Character {
 
   static inferMonsterType(name, id) {
+    const identity = window.VisualIdentity?.resolveMonster(null, name, id);
+    if (identity) return identity;
     const s = `${name || ''}_${id || ''}`.toLowerCase();
     if (s.includes('黄袍') || s.includes('奎木狼') || s.includes('huangpao') || s.includes('kuimu')) return 'huangpao_guai';
     if (s.includes('白骨夫人') || s.includes('白骨精') || s.includes('baigujing')) return 'skeleton';
@@ -67,6 +69,10 @@ class Character {
 
     // 怪物专属类型识别 (彻底消除怪物默认回退成天将形象的缺陷)
     this.monsterType = options.monsterType || (this.type === 'monster' ? Character.inferMonsterType(this.name, this.id) : null);
+    if (this.type === 'monster' && window.VisualIdentity) {
+      this.appearance = window.VisualIdentity.resolveMonster(this.appearance, this.name, this.id);
+      this.monsterType = this.appearance;
+    }
 
     // 仙宠与怪物自然生态巡逻状态机 (idle 歇息驻足 / walk 缓慢漫步)
     this.patrolState = options.patrolState || 'idle';
@@ -296,7 +302,8 @@ class Character {
     ctx.textBaseline = 'middle';
 
     // 根据是否骑乘动态抬高头顶基准点
-    const headTopY = screenY - (this.isRiding ? 34 : 24);
+    const newFigure = this.type === 'player' || window.CreatureArt?.ids.has(this.appearance) || window.NpcArt?.ids.has(this.appearance);
+    const headTopY = screenY - (this.isRiding ? 52 : newFigure ? 43 : 24);
 
     // 4.1 任务金色感叹号指引 (悬浮于头顶最高空，带有呼吸浮动)
     if (this.questStatus === 'available') {
@@ -396,6 +403,7 @@ class Character {
       if (!modelToDraw) modelToDraw = 'martial_hero';
 
       window.CharacterRenderer.drawModel(ctx, sx, sy, modelToDraw, {
+        riderAppearance: this.appearance,
         direction: this.direction,
         isMoving: this.isMoving,
         isRiding: this.isRiding,
@@ -480,6 +488,13 @@ class CharacterRenderer {
     ctx.restore();
   }
 
+  static drawCreature(ctx, id, by, time, direction, moving) {
+    window.CreatureArt.draw(ctx, id, by, time, direction, moving);
+  }
+  static drawIdentityNpc(ctx, id, by, time, direction) {
+    window.NpcArt.draw(ctx, id, by, time, direction);
+  }
+
   // 绘制真实全身模型（供大地图和回合制战场通用渲染）
   static drawModel(ctx, x, y, modelId, options = {}) {
     ctx.save();
@@ -510,10 +525,21 @@ class CharacterRenderer {
     const breath = Math.sin(animTimer * 0.18) * 1.5;
     const by = breath;
 
-    const mId = (modelId || 'martial_hero').toLowerCase();
+    const rawId = (modelId || 'martial_hero').toLowerCase();
+    const alias = window.VisualIdentity?.aliases[rawId];
+    const mId = window.CreatureArt?.ids.has(alias) ? alias : rawId;
 
     // 模型派发分支
     // 0. 特别绝密优先：野生青灵芝与鲜菇植物 (彻底独立，绝对不走任何人形逻辑！)
+    if (window.CreatureArt?.ids.has(mId)) {
+      CharacterRenderer.drawCreature(ctx, mId, by, animTimer, direction, isMoving);
+      ctx.restore();
+      return;
+    }
+    if (window.NpcArt?.ids.has(mId)) {
+      CharacterRenderer.drawIdentityNpc(ctx, mId, by, animTimer, direction);
+      ctx.restore(); return;
+    }
     if (mId.includes('mushroom') || mId.includes('mogu') || mId.includes('lingzhi') || mId.includes('蕈') || mId.includes('菇')) {
       CharacterRenderer.drawMushroom(ctx, by, animTimer);
       ctx.restore();
@@ -586,10 +612,12 @@ class CharacterRenderer {
       CharacterRenderer.drawBullDemon(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('jinchi') || mId.includes('jinchi_elder') || mId.includes('金池')) {
       CharacterRenderer.drawJinchiElder(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('hu_xianfeng') || mId.includes('huxianfeng')) {
+      CharacterRenderer.drawHuXianfeng(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('tiger') || mId.includes('hu_') || mId.includes('diaojing')) {
       CharacterRenderer.drawTiger(ctx, by, animTimer, direction, isMoving);
     } else if (isRiding || mId.includes('mount') || mId.includes('riding') || mId.includes('bailongma') || mId.includes('xuelong')) {
-      CharacterRenderer.drawMountKnight(ctx, by, animTimer, direction, isMoving);
+      CharacterRenderer.drawMountKnight(ctx, by, animTimer, direction, isMoving, options.riderAppearance);
     } else if (mId.includes('panda') || mId.includes('xiong_mao') || mId.includes('xiongmao')) {
       CharacterRenderer.drawPandaHero(ctx, by, animTimer, direction, isActing, isMoving);
     } else if (mId.includes('hooligan') || mId.includes('hun_hun') || mId.includes('hunhun') || mId.includes('bandit') || mId.includes('tyrant')) {
@@ -1058,215 +1086,9 @@ class CharacterRenderer {
   // 3. 武学宗师 / "无敌黄飞鸿" (完美复刻图3玩家：扎马步、抱拳推掌、蓝白灵耳头巾、赤金飞龙战褂)
   // =========================================================================
   static drawMartialHero(ctx, by, animTimer, direction, isActing, isMoving) {
-    ctx.save();
-    const flip = direction === 'left' ? -1 : 1;
-    ctx.scale(flip, 1);
-
-    const walkCycle = animTimer * 0.22;
-    // 沉稳大侠步态：双腿平稳自然前后迈步，双臂自然随步伐前后轻摇，身躯绝无上下颠簸抽搐
-    const legSwing = isMoving ? Math.sin(walkCycle) * 3.2 : 0;
-    const armSwing = isMoving ? Math.sin(walkCycle) * 3.5 : 0;
-    const hairFlutter = Math.sin(animTimer * 0.18) * 2.5;
-
-    // ── 0. 阴影 ──
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
-    ctx.beginPath();
-    ctx.ellipse(0, 16, 13, 4.8, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // ── 1. 背后飘逸长发与高束马尾 (随风轻扬，仙侠神采) ──
-    ctx.save();
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.moveTo(-4, -16);
-    ctx.quadraticCurveTo(-14 + hairFlutter, -12, -13 + hairFlutter, -1);
-    ctx.quadraticCurveTo(-11 + hairFlutter, 5, -8, 2);
-    ctx.quadraticCurveTo(-4, -8, -4, -16);
-    ctx.closePath();
-    ctx.fill();
-    // 天青色发带
-    ctx.strokeStyle = '#0284c7';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(-5, -15);
-    ctx.quadraticCurveTo(-12 + hairFlutter, -8, -11 + hairFlutter, 4);
-    ctx.stroke();
-    ctx.restore();
-
-    // ── 2. 下肢：修长挺拔的侠客身姿与沉稳步态 ──
-    // 后腿
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(1 + legSwing * 0.4, 6, 6.5, 10, 2);
-    ctx.fill();
-    // 后靴（玄黑金丝长靴）
-    ctx.fillStyle = '#09090b';
-    ctx.fillRect(0 + legSwing * 0.4, 13, 7.5, 3.5);
-    ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(0 + legSwing * 0.4, 13, 7.5, 1.0);
-
-    // 前腿
-    ctx.fillStyle = '#334155';
-    ctx.beginPath();
-    ctx.roundRect(-7 - legSwing * 0.4, 6, 6.5, 10, 2);
-    ctx.fill();
-    // 前靴
-    ctx.fillStyle = '#09090b';
-    ctx.fillRect(-8 - legSwing * 0.4, 13, 7.5, 3.5);
-    ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(-8 - legSwing * 0.4, 13, 7.5, 1.0);
-
-    // ── 3. 太清玄剑道袍：雪白交领内衬 + 天青水墨流云外褂 ──
-    const torsoY = -10;
-
-    // 内衬纯白交领
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(-5, torsoY);
-    ctx.lineTo(0, torsoY + 7);
-    ctx.lineTo(5, torsoY);
-    ctx.closePath();
-    ctx.fill();
-
-    // 天青云水流云长袍
-    const robeGrad = ctx.createLinearGradient(-8, torsoY, 8, torsoY + 16);
-    robeGrad.addColorStop(0, '#0284c7');
-    robeGrad.addColorStop(0.5, '#0ea5e9');
-    robeGrad.addColorStop(1, '#0369a1');
-    ctx.fillStyle = robeGrad;
-    ctx.beginPath();
-    ctx.roundRect(-8, torsoY, 16, 16, [3, 3, 2, 2]);
-    ctx.fill();
-    ctx.strokeStyle = '#075985';
-    ctx.lineWidth = 0.9;
-    ctx.stroke();
-
-    // 锦带与羊脂玉佩
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-8, torsoY + 10, 16, 3.5);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-2, torsoY + 9.5, 4, 4.5);
-    // 垂下朱红丝绦与白玉佩
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(-1, torsoY + 14, 2, 5.5);
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.arc(-1, torsoY + 16, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#059669';
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
-
-    // ── 4. 左腰佩挂【龙泉七星古剑】(古朴典雅，剑穗微拂) ──
-    ctx.save();
-    ctx.translate(-7, torsoY + 4);
-    ctx.rotate(0.25);
-    // 剑鞘
-    ctx.fillStyle = '#1e1b4b';
-    ctx.fillRect(-2, -6, 4, 22);
-    ctx.strokeStyle = '#312e81';
-    ctx.lineWidth = 0.6;
-    ctx.strokeRect(-2, -6, 4, 22);
-    // 剑首剑格黄金装具
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-4, -7, 8, 2.5);
-    ctx.fillRect(-1.5, -12, 3, 5); // 剑柄
-    ctx.arc(0, -12.5, 2, 0, Math.PI * 2); ctx.fill();
-    // 明黄剑穗
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.moveTo(0, -12.5);
-    ctx.lineTo(-3, -17 + hairFlutter);
-    ctx.lineTo(0, -16 + hairFlutter);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    // ── 5. 自然垂落与从容摆动的手臂 (彻底根治怪异平伸举手！) ──
-    // 后手（左臂自然微曲，手虚扶剑首，随移动从容摆动）
-    ctx.save();
-    ctx.fillStyle = '#0284c7';
-    ctx.beginPath();
-    ctx.roundRect(-8 - armSwing * 0.4, torsoY + 2, 4.5, 9, 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffedd5'; // 肤色手掌
-    ctx.beginPath();
-    ctx.arc(-6 - armSwing * 0.4, torsoY + 12, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // 前手（右臂自然下垂于身侧，随移动自然前后微摆，绝不平举伸出！）
-    ctx.save();
-    ctx.fillStyle = '#0369a1';
-    ctx.beginPath();
-    ctx.roundRect(4.5 + armSwing * 0.5, torsoY + 2, 4.5, 10, 2);
-    ctx.fill();
-    // 素银护腕
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillRect(4.5 + armSwing * 0.5, torsoY + 8.5, 4.5, 2);
-    // 自然微垂的手掌
-    ctx.fillStyle = '#ffedd5';
-    ctx.beginPath();
-    ctx.arc(6.8 + armSwing * 0.5, torsoY + 13, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // ── 6. 俊朗英武的少年剑侠面庞与束发紫金冠 ──
-    // 颈部
-    ctx.fillStyle = '#ffedd5';
-    ctx.fillRect(-2.5, torsoY - 4, 5, 5);
-
-    // 脸部轮廓
-    ctx.fillStyle = '#ffedd5';
-    ctx.beginPath();
-    ctx.ellipse(0, torsoY - 8, 6.2, 7.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 乌黑剑眉、清澈星目与坚毅薄唇
-    ctx.fillStyle = '#0f172a';
-    // 剑眉
-    ctx.fillRect(-4, torsoY - 10.5, 3.2, 1.0);
-    ctx.fillRect(1, torsoY - 10.5, 3.2, 1.0);
-    // 灵动黑瞳
-    ctx.beginPath();
-    ctx.arc(-2.5, torsoY - 8.5, 1.4, 0, Math.PI * 2);
-    ctx.arc(2.5, torsoY - 8.5, 1.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.arc(-2.2, torsoY - 8.8, 0.5, 0, Math.PI * 2);
-    ctx.arc(2.8, torsoY - 8.8, 0.5, 0, Math.PI * 2);
-    ctx.fill();
-    // 浅笑薄唇
-    ctx.strokeStyle = '#dc2626';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-1.5, torsoY - 5);
-    ctx.lineTo(1.5, torsoY - 5);
-    ctx.stroke();
-
-    // 束发紫金冠与白玉簪
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.roundRect(-4, torsoY - 16, 8, 5, [2, 2, 0, 0]);
-    ctx.fill();
-    ctx.strokeStyle = '#b45309';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    // 白玉簪横插
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-6, torsoY - 14, 12, 1.4);
-
-    // 额前微拂的两缕飘逸墨发
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.moveTo(-4, torsoY - 12);
-    ctx.quadraticCurveTo(-6, torsoY - 7, -5, torsoY - 4);
-    ctx.lineTo(-4, torsoY - 10);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
+    window.PlayerArt.draw(ctx, by, animTimer, direction, isMoving, false);
   }
+
   static drawPandaHero(ctx, by, animTimer, direction, isActing, isMoving) {
     ctx.save();
     const flip = direction === 'left' ? -1 : 1;
@@ -1939,7 +1761,7 @@ class CharacterRenderer {
     ctx.restore();
   }
 
-  static drawMountKnight(ctx, by, animTimer, direction, isMoving) {
+  static drawMountKnight(ctx, by, animTimer, direction, isMoving, riderAppearance = 'martial_hero') {
     ctx.save();
     const flip = direction === 'left' ? -1 : 1;
     ctx.scale(flip, 1);
@@ -2253,158 +2075,11 @@ class CharacterRenderer {
     ctx.stroke();
     ctx.restore();
 
-    // ── 7. 端坐其上的英武大侠/金甲神将 ──
-    const riderY = horseY - 7;
-    const riderWind = Math.sin(animTimer * 0.22) * 3.5;
-
-    ctx.save();
-    // A. 背后大红锦缎披风 (随风猛烈翻卷飞扬)
-    ctx.fillStyle = '#b91c1c';
-    ctx.beginPath();
-    ctx.moveTo(-5, riderY - 10);
-    ctx.bezierCurveTo(-18, riderY - 7 + riderWind, -24, riderY + 4 + riderWind, -26, riderY + 12);
-    ctx.lineTo(-12, riderY + 9);
-    ctx.bezierCurveTo(-8, riderY + 5, -3, riderY - 3, -4, riderY - 8);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.0;
-    ctx.stroke();
-
-    // B. 大将身躯与锁子明光黄金战甲
-    const armorGrad = ctx.createLinearGradient(-6, riderY - 14, 6, riderY + 3);
-    armorGrad.addColorStop(0, '#fef08a');
-    armorGrad.addColorStop(0.4, '#f59e0b');
-    armorGrad.addColorStop(1, '#b45309');
-    ctx.fillStyle = armorGrad;
-    ctx.beginPath();
-    ctx.roundRect(-6.5, riderY - 14, 13, 14, [4, 4, 2, 2]);
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 0.9;
-    ctx.stroke();
-
-    // 纯银护心宝镜 (中央明亮烁目)
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, riderY - 7, 3.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // 龙纹吞肩护臂与手持缰绳
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(4, riderY - 10, 2.8, 0, Math.PI * 2);
-    ctx.fill();
-    // 握缰手掌
-    ctx.fillStyle = '#ffedd5';
-    ctx.beginPath();
-    ctx.arc(2, riderY - 8, 2.0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 自然骑乘的双腿与金线乌皮战靴 (跨于鞍旁)
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(-4, riderY, 7.5, 9, 2);
-    ctx.fill();
-    // 金线靴筒
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-4, riderY + 6.5, 7.5, 1.2);
-
-    // C. 俊逸英武的东方侠士面庞
-    ctx.fillStyle = '#ffedd5';
-    ctx.beginPath();
-    ctx.ellipse(0, riderY - 17.5, 5.2, 6.0, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 剑眉与黑亮双瞳
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-3.2, riderY - 19.5, 2.6, 0.8);
-    ctx.fillRect(0.8, riderY - 19.5, 2.6, 0.8);
-    ctx.beginPath();
-    ctx.arc(-1.8, riderY - 17.8, 1.1, 0, Math.PI * 2);
-    ctx.arc(1.8, riderY - 17.8, 1.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.arc(-1.5, riderY - 18.0, 0.4, 0, Math.PI * 2);
-    ctx.arc(2.1, riderY - 18.0, 0.4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 挺拔鼻梁与坚毅唇线
-    ctx.strokeStyle = '#ea580c';
-    ctx.lineWidth = 0.6;
-    ctx.beginPath();
-    ctx.moveTo(0, riderY - 17.5);
-    ctx.lineTo(0.5, riderY - 16.0);
-    ctx.lineTo(-0.5, riderY - 15.2);
-    ctx.stroke();
-
-    // D. 飞凤束发紫金冠与修长飘逸的赤红凤翎
-    const crownGrad = ctx.createLinearGradient(-5, riderY - 24, 5, riderY - 20);
-    crownGrad.addColorStop(0, '#fde047');
-    crownGrad.addColorStop(1, '#b45309');
-    ctx.fillStyle = crownGrad;
-    ctx.beginPath();
-    ctx.roundRect(-4.5, riderY - 23, 9, 5.5, [2, 2, 1, 1]);
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // 优雅向后飞挑的朱红长凤翎 (随疾行向后飘扬)
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 1.6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, riderY - 23);
-    ctx.bezierCurveTo(-6, riderY - 29, -14, riderY - 27 + riderWind, -19, riderY - 21);
-    ctx.stroke();
-    // 翎顶金彩
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.arc(-19, riderY - 21, 1.4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // E. 龙胆亮银枪 (斜指南天，枪头红缨如火，枪芒雪亮)
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(-4, riderY + 4);
-    ctx.lineTo(19, riderY - 32);
-    ctx.stroke();
-
-    // 枪尖如火红缨
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(17, riderY - 29, 3.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 淬火精钢枪尖 (带寒光夺目高光)
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.moveTo(17, riderY - 29);
-    ctx.lineTo(23, riderY - 37);
-    ctx.lineTo(21, riderY - 27);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#0284c7';
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
-
-    // 枪尖闪耀星芒
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(23, riderY - 37, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
+    // 骑手保持与步行、头像同一衣冠身份。
+    window.PlayerArt.draw(ctx, horseY - 7, animTimer, 'right', false, riderAppearance === 'heaven_general', true);
     ctx.restore();
   }
 
-  // =========================================================================
-  // 5. 硕鼠 (完美复刻图2：深灰浑圆肥硕身躯、粉嫩尖耳透光、红宝石双目、纤长卷尾)
   // =========================================================================
   static drawGiantRat(ctx, by, animTimer, direction, isMoving) {
     ctx.save();
@@ -4112,22 +3787,50 @@ class CharacterRenderer {
   static drawChanganTeaGranny(ctx, by, animTimer, direction) {
     ctx.save();
     const breath = Math.sin(animTimer * 0.1) * 0.4;
-    // 深蓝粗布裙与白围裙
-    ctx.fillStyle = '#1e3a5f';
-    ctx.beginPath(); ctx.roundRect(-8, by - 8 + breath, 16, 20, 3); ctx.fill();
-    ctx.fillStyle = '#f8fafc'; // 围裙
-    ctx.fillRect(-5.5, by - 3 + breath, 11, 14);
-    // 慈祥圆脸
-    ctx.fillStyle = '#fde68a';
-    ctx.beginPath(); ctx.arc(0, by - 14 + breath, 5.5, 0, Math.PI * 2); ctx.fill();
-    // 银白花发与青布头巾
-    ctx.fillStyle = '#cbd5e1';
+    if (direction === 'left') ctx.scale(-1, 1);
+    ctx.fillStyle = '#34312c';
+    ctx.beginPath(); ctx.ellipse(-4, by + 12, 3.5, 1.8, 0, 0, Math.PI * 2); ctx.ellipse(4, by + 12, 3.5, 1.8, 0, 0, Math.PI * 2); ctx.fill();
+    const robe = ctx.createLinearGradient(-8, by - 8, 8, by + 12);
+    robe.addColorStop(0, '#547184'); robe.addColorStop(1, '#253e56');
+    ctx.fillStyle = robe;
+    ctx.beginPath(); ctx.moveTo(-7, by - 9 + breath); ctx.quadraticCurveTo(-12, by - 2, -9, by + 11);
+    ctx.quadraticCurveTo(0, by + 15, 9, by + 11); ctx.quadraticCurveTo(12, by - 2, 7, by - 9 + breath); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ede3cc';
+    ctx.beginPath(); ctx.moveTo(-4.5, by - 5 + breath); ctx.lineTo(4.5, by - 5 + breath);
+    ctx.lineTo(6, by + 10); ctx.quadraticCurveTo(0, by + 12, -6, by + 10); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c2b394'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(-2, by + 1); ctx.lineTo(-3, by + 9); ctx.moveTo(2, by + 1); ctx.lineTo(3, by + 9); ctx.stroke();
+    ctx.strokeStyle = '#a3bbbd'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-5, by - 8 + breath); ctx.lineTo(0, by - 3 + breath); ctx.lineTo(5, by - 8 + breath); ctx.stroke();
+    ctx.fillStyle = '#d9dcd5';
+    ctx.beginPath(); ctx.arc(-4, by - 20 + breath, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ecc5a2';
+    ctx.beginPath(); ctx.ellipse(0, by - 14 + breath, 5.6, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#d9dcd5';
     ctx.beginPath(); ctx.arc(0, by - 16 + breath, 6, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = '#0f766e'; // 青头巾
-    ctx.fillRect(-6.5, by - 18 + breath, 13, 3.5);
-    // 怀抱青瓷茶壶
-    ctx.fillStyle = '#0d9488';
-    ctx.beginPath(); ctx.arc(6, by + breath, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#427b7b'; ctx.fillRect(-6, by - 18 + breath, 12, 2.5);
+    ctx.strokeStyle = '#66615a'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(-4, by - 15 + breath); ctx.lineTo(-1.6, by - 15.5 + breath); ctx.moveTo(1.6, by - 15.5 + breath); ctx.lineTo(4, by - 15 + breath);
+    ctx.moveTo(-4, by - 13 + breath); ctx.quadraticCurveTo(-2.7, by - 14 + breath, -1.4, by - 13 + breath);
+    ctx.moveTo(1.4, by - 13 + breath); ctx.quadraticCurveTo(2.7, by - 14 + breath, 4, by - 13 + breath); ctx.stroke();
+    ctx.strokeStyle = '#a96e61'; ctx.beginPath(); ctx.arc(0, by - 11.5 + breath, 2, 0.2, Math.PI - 0.2); ctx.stroke();
+    // 袖口、托壶手、青瓷壶嘴与壶柄为一体，转向时一起翻转。
+    ctx.strokeStyle = '#547184'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-7, by - 5 + breath); ctx.quadraticCurveTo(-7, by + 2 + breath, 4, by + 2 + breath); ctx.stroke();
+    ctx.fillStyle = '#ecc5a2'; ctx.beginPath(); ctx.ellipse(4, by + 2 + breath, 2.5, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#71b7ad'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.ellipse(4, by - 1 + breath, 2.6, 2.4, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#418c83';
+    ctx.beginPath(); ctx.moveTo(9, by - 2 + breath); ctx.lineTo(13, by - 4 + breath); ctx.lineTo(12, by - 1 + breath); ctx.lineTo(9, by + 1 + breath); ctx.closePath(); ctx.fill();
+    const porcelain = ctx.createLinearGradient(4, by - 4, 10, by + 3);
+    porcelain.addColorStop(0, '#b4ddd0'); porcelain.addColorStop(1, '#2e776f'); ctx.fillStyle = porcelain;
+    ctx.beginPath(); ctx.ellipse(7, by - 0.5 + breath, 4, 3.3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#84bcb0'; ctx.fillRect(4.5, by - 4 + breath, 5, 1); ctx.fillRect(6.2, by - 5 + breath, 1.6, 1.5);
+    ctx.strokeStyle = 'rgba(241,248,237,0.45)'; ctx.lineWidth = 0.7;
+    for (let i = 0; i < 2; i++) {
+      const drift = Math.sin(animTimer * 0.06 + i * 2) * 1.2;
+      ctx.beginPath(); ctx.moveTo(6 + i * 2, by - 6 + breath); ctx.bezierCurveTo(3 + i * 2 + drift, by - 9, 9 + i * 2 + drift, by - 11, 6 + i * 2, by - 14); ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -4137,22 +3840,49 @@ class CharacterRenderer {
   static drawChanganHawker(ctx, by, animTimer, direction) {
     ctx.save();
     const breath = Math.sin(animTimer * 0.12) * 0.5;
-    // 短打短衫与绑腿马裤
-    ctx.fillStyle = '#a16207';
-    ctx.fillRect(-6, by - 8 + breath, 12, 14);
-    ctx.fillStyle = '#451a03';
-    ctx.fillRect(-5.5, by + 6, 4, 7); ctx.fillRect(1.5, by + 6, 4, 7);
-    // 货郎淳朴面庞与青竹大斗笠
-    ctx.fillStyle = '#fde68a';
-    ctx.beginPath(); ctx.arc(0, by - 13 + breath, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ca8a04'; // 斗笠
-    ctx.beginPath(); ctx.moveTo(-11, by - 14 + breath); ctx.lineTo(0, by - 21 + breath); ctx.lineTo(11, by - 14 + breath); ctx.closePath(); ctx.fill();
-    // 肩挑扁担与前后朱漆百宝货箱
-    ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(-16, by - 8 + breath); ctx.lineTo(16, by - 8 + breath); ctx.stroke();
-    ctx.fillStyle = '#dc2626'; // 红漆货格
-    ctx.fillRect(-18, by - 4 + breath, 6, 8);
-    ctx.fillRect(12, by - 4 + breath, 6, 8);
+    if (direction === 'left') ctx.scale(-1, 1);
+    ctx.fillStyle = '#584537'; ctx.fillRect(-5, by + 4, 3.5, 8); ctx.fillRect(1.5, by + 4, 3.5, 8);
+    ctx.strokeStyle = '#c8b88e'; ctx.lineWidth = 0.8;
+    for (let y = 7; y <= 11; y += 2) {
+      ctx.beginPath(); ctx.moveTo(-5, by + y); ctx.lineTo(-1.5, by + y); ctx.moveTo(1.5, by + y); ctx.lineTo(5, by + y); ctx.stroke();
+    }
+    ctx.fillStyle = '#b19a65';
+    ctx.beginPath(); ctx.ellipse(-3.8, by + 12, 3.2, 1.5, 0, 0, Math.PI * 2); ctx.ellipse(3.8, by + 12, 3.2, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+    const coat = ctx.createLinearGradient(-6, by - 9, 6, by + 5);
+    coat.addColorStop(0, '#c9a269'); coat.addColorStop(1, '#89613d'); ctx.fillStyle = coat;
+    ctx.beginPath(); ctx.roundRect(-7, by - 9 + breath, 14, 15, 3); ctx.fill();
+    ctx.strokeStyle = '#f0dfbd'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-4, by - 9 + breath); ctx.lineTo(2, by - 3 + breath); ctx.lineTo(2, by + 4); ctx.stroke();
+    ctx.fillStyle = '#654732'; ctx.fillRect(-7, by + 2 + breath, 14, 2);
+    ctx.fillStyle = '#deb087';
+    ctx.beginPath(); ctx.ellipse(0, by - 13 + breath, 5, 5.8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#50362b'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(-3.5, by - 13.5 + breath); ctx.lineTo(-1, by - 14 + breath); ctx.moveTo(1, by - 14 + breath); ctx.lineTo(3.5, by - 13.5 + breath); ctx.stroke();
+    ctx.fillStyle = '#33251e'; ctx.fillRect(-2.8, by - 12 + breath, 1, 1); ctx.fillRect(1.8, by - 12 + breath, 1, 1);
+    ctx.strokeStyle = '#985c49'; ctx.beginPath(); ctx.arc(0, by - 11 + breath, 2, 0.1, Math.PI - 0.1); ctx.stroke();
+    ctx.fillStyle = '#c7a56b';
+    ctx.beginPath(); ctx.moveTo(-11, by - 15 + breath); ctx.quadraticCurveTo(-4, by - 17 + breath, 0, by - 22 + breath);
+    ctx.quadraticCurveTo(4, by - 17 + breath, 11, by - 15 + breath); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#87683f'; ctx.lineWidth = 0.6;
+    for (let x = -8; x <= 8; x += 4) {
+      ctx.beginPath(); ctx.moveTo(0, by - 21 + breath); ctx.lineTo(x, by - 15 + breath); ctx.stroke();
+    }
+    ctx.strokeStyle = '#6f4e31'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-17, by - 8 + breath); ctx.quadraticCurveTo(0, by - 10 + breath, 17, by - 8 + breath); ctx.stroke();
+    // 绳与货篮按同一个呼吸偏移，糕点、糖包和竹编框可在小尺寸辨认。
+    for (const x of [-15, 15]) {
+      ctx.strokeStyle = '#9b7e52'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(x, by - 8 + breath); ctx.lineTo(x - 4, by + 1 + breath);
+      ctx.moveTo(x, by - 8 + breath); ctx.lineTo(x + 4, by + 1 + breath); ctx.stroke();
+      ctx.fillStyle = '#854735'; ctx.beginPath(); ctx.roundRect(x - 5, by + breath, 10, 7, 1.5); ctx.fill();
+      ctx.strokeStyle = '#c7a36c'; ctx.lineWidth = 0.7;
+      ctx.strokeRect(x - 5, by + breath, 10, 7); ctx.beginPath(); ctx.moveTo(x - 5, by + 3 + breath); ctx.lineTo(x + 5, by + 3 + breath); ctx.stroke();
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = x < 0 ? '#efdbab' : '#d4dcc4';
+        ctx.beginPath(); ctx.roundRect(x - 4 + i * 2.7, by - 2 + breath, 2.5, 3, 0.6); ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#deb087'; ctx.beginPath(); ctx.ellipse(6, by - 7 + breath, 2, 1.3, -0.4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
@@ -4535,224 +4265,9 @@ class CharacterRenderer {
   // 18. 镇天神将 / 托塔天王 (金甲红缨、七宝玲珑塔)
   // =========================================================================
   static drawHeavenGeneral(ctx, by, animTimer, direction, isMoving) {
-    ctx.save();
-    const flip = direction === 'left' ? -1 : 1;
-    ctx.scale(flip, 1);
-
-    const walkCycle = animTimer * 0.22;
-    const legSwing = isMoving ? Math.sin(walkCycle) * 3.4 : 0;
-    const capeWave = Math.sin(animTimer * 0.20) * 3.8;
-
-    // ── 0. 地面阴影 ──
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.40)';
-    ctx.beginPath();
-    ctx.ellipse(0, by + 17, 14, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // ── 1. 宽阔飘扬的朱红神威大氅 (披风多层光影翻飞) ──
-    ctx.save();
-    // 披风底层暗红
-    ctx.fillStyle = '#991b1b';
-    ctx.beginPath();
-    ctx.moveTo(-7, by - 8);
-    ctx.lineTo(7, by - 8);
-    ctx.bezierCurveTo(14, by + 6 + capeWave, 16, by + 14 + capeWave, 13, by + 18);
-    ctx.lineTo(-13, by + 18);
-    ctx.bezierCurveTo(-16, by + 14 + capeWave, -14, by + 6 + capeWave, -7, by - 8);
-    ctx.closePath();
-    ctx.fill();
-
-    // 披风表层金丝滚边朱红
-    ctx.fillStyle = '#dc2626';
-    ctx.beginPath();
-    ctx.moveTo(-6, by - 8);
-    ctx.lineTo(6, by - 8);
-    ctx.bezierCurveTo(12, by + 5 + capeWave, 14, by + 13 + capeWave, 11, by + 17);
-    ctx.lineTo(-11, by + 17);
-    ctx.bezierCurveTo(-14, by + 13 + capeWave, -12, by + 5 + capeWave, -6, by - 8);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.0;
-    ctx.stroke();
-    ctx.restore();
-
-    // ── 2. 下肢：战裙与金甲乌皮战靴 ──
-    // 后腿
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(1 + legSwing * 0.4, by + 7, 5.5, 9);
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0 + legSwing * 0.4, by + 13, 6.5, 3.5);
-    ctx.fillStyle = '#eab308';
-    ctx.fillRect(0 + legSwing * 0.4, by + 13, 6.5, 1.0);
-
-    // 前腿
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(-6 - legSwing * 0.4, by + 7, 5.5, 9);
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-7 - legSwing * 0.4, by + 13, 6.5, 3.5);
-    ctx.fillStyle = '#eab308';
-    ctx.fillRect(-7 - legSwing * 0.4, by + 13, 6.5, 1.0);
-
-    // 锁子战裙裙摆
-    ctx.fillStyle = '#ca8a04';
-    ctx.beginPath();
-    ctx.moveTo(-8, by + 4);
-    ctx.lineTo(8, by + 4);
-    ctx.lineTo(7, by + 9);
-    ctx.lineTo(-7, by + 9);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // ── 3. 锁子黄金战甲 (高光金鳞与纯银护心宝镜) ──
-    const armorGrad = ctx.createLinearGradient(-9, by - 12, 9, by + 6);
-    armorGrad.addColorStop(0, '#fef08a');
-    armorGrad.addColorStop(0.3, '#f59e0b');
-    armorGrad.addColorStop(0.8, '#d97706');
-    armorGrad.addColorStop(1, '#92400e');
-    ctx.fillStyle = armorGrad;
-    ctx.beginPath();
-    ctx.roundRect(-8.5, by - 10, 17, 15, [3, 3, 2, 2]);
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 1.0;
-    ctx.stroke();
-
-    // 纯银雕纹护心镜 (中央高亮烁目)
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.arc(0, by - 2.5, 3.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 1.0;
-    ctx.stroke();
-    // 镜心微光
-    ctx.fillStyle = '#e0f2fe';
-    ctx.beginPath();
-    ctx.arc(0, by - 2.5, 1.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 狮蛮金带与宝珠玉扣
-    ctx.fillStyle = '#78350f';
-    ctx.fillRect(-8.5, by + 2, 17, 2.5);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-2.5, by + 1.2, 5, 4.0);
-
-    // 兽首龙纹护肩
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(-8.5, by - 8, 3.2, 0, Math.PI * 2);
-    ctx.arc(8.5, by - 8, 3.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#b45309';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // ── 4. 俊武神威的天将面容 ──
-    ctx.fillStyle = '#ffedd5';
-    ctx.beginPath();
-    ctx.ellipse(0, by - 14.5, 5.5, 6.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 浓黑剑眉与明亮神目
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-3.5, by - 16.5, 2.8, 0.9);
-    ctx.fillRect(0.7, by - 16.5, 2.8, 0.9);
-    ctx.beginPath();
-    ctx.arc(-2.0, by - 14.8, 1.2, 0, Math.PI * 2);
-    ctx.arc(2.0, by - 14.8, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.arc(-1.7, by - 15.1, 0.45, 0, Math.PI * 2);
-    ctx.arc(2.3, by - 15.1, 0.45, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 威严唇线
-    ctx.strokeStyle = '#c2410c';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-1.5, by - 11.5);
-    ctx.lineTo(1.5, by - 11.5);
-    ctx.stroke();
-
-    // ── 5. 凤翅兜鍪紫金神盔与朱红战缨 ──
-    const helmetGrad = ctx.createLinearGradient(-7, by - 24, 7, by - 18);
-    helmetGrad.addColorStop(0, '#fef08a');
-    helmetGrad.addColorStop(0.5, '#eab308');
-    helmetGrad.addColorStop(1, '#a16207');
-    ctx.fillStyle = helmetGrad;
-    ctx.beginPath();
-    ctx.roundRect(-6.5, by - 22, 13, 7.5, [3, 3, 1, 1]);
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // 双侧飞挑金凤翅
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.moveTo(-6.5, by - 19);
-    ctx.lineTo(-10.5, by - 25);
-    ctx.lineTo(-5.5, by - 22);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(6.5, by - 19);
-    ctx.lineTo(10.5, by - 25);
-    ctx.lineTo(5.5, by - 22);
-    ctx.closePath();
-    ctx.fill();
-
-    // 盔顶金盔顶与火红战缨
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-1.5, by - 24, 3, 2.5);
-    ctx.fillStyle = '#dc2626';
-    ctx.beginPath();
-    ctx.arc(0, by - 25.5, 3.2, 0, Math.PI * 2);
-    ctx.fill();
-    // 战缨飘丝
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(0, by - 25.5);
-    ctx.quadraticCurveTo(-4, by - 28 + capeWave, -7, by - 22);
-    ctx.stroke();
-
-    // ── 6. 左手所持【镇天金柄神剑】──
-    ctx.save();
-    ctx.translate(-9, by - 4);
-    // 剑鞘
-    ctx.fillStyle = '#1e1b4b';
-    ctx.fillRect(-1.8, -8, 3.6, 24);
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 0.8;
-    ctx.strokeRect(-1.8, -8, 3.6, 24);
-    // 黄金剑首与剑格
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(-3.5, -9, 7, 2.2);
-    ctx.fillRect(-1.2, -14, 2.4, 5);
-    ctx.arc(0, -14.5, 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    // 明黄剑穗
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(0, -14.5);
-    ctx.quadraticCurveTo(-2, -19 + capeWave, -1, -17 + capeWave);
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.restore();
+    window.PlayerArt.draw(ctx, by, animTimer, direction, isMoving, true);
   }
 
-  // =========================================================================
-  // 19. 灵河巨蚌 / 碧水老蚌精 (珍珠荧光、开合双壳)
-  // =========================================================================
-  // =========================================================================
-  // 19. 灵河巨蚌 / 东海蚌群 (1:1 像素级复刻实机截图右下角“蚌群”：深蓝紫与翠绿双重灵贝、千年东海夜明神珠、五彩珊瑚与水草气泡)
   // =========================================================================
   static drawClam(ctx, by, animTimer, direction) {
     ctx.save();

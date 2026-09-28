@@ -12,19 +12,30 @@ class DialogueEngine {
     this.isTyping = false;
     this.typeInterval = null;
     this.onCompleteCallback = null;
+    this.sessionId = 0;
+    this.isAdvancing = false;
   }
 
   // 根据说话人姓名/称号推断角色立绘ID
   inferRoleId(speaker, speakerTitle) {
     const s = `${speaker || ''} ${speakerTitle || ''}`;
+    if (s.includes('百花羞')) return 'baihuaxiu';
+    if (s.includes('宝象国国王')) return 'baoxiang_king';
+    if (s.includes('苏绣娘')) return 'changan_girl';
+    if (s.includes('杜子美')) return 'changan_scholar';
     // 顶级神佛与师徒四人
     if (s.includes('孙悟空') || s.includes('大圣') || s.includes('弼马温') || s.includes('美猴王') || s.includes('齐天')) return 'sun_wukong';
+    // 前世身份和具名人物优先，避免广寒仙子、龙三太子被泛称覆盖。
+    if (s.includes('嫦娥') || s.includes('广寒')) return 'change';
+    if (s.includes('卷帘') && !/悟净|沙僧/.test(s)) return 'juanlian';
+    if (s.includes('白龙') || s.includes('敖烈') || s.includes('龙马')) return 'xiaobailong';
+    if (s.includes('天蓬') && !/八戒|猪刚鬣|悟能/.test(s)) return 'heaven_general';
     if (s.includes('哪吒') || s.includes('三太子')) return 'nezha';
     if (s.includes('李靖') || s.includes('托塔') || s.includes('李天王')) return 'litianwang';
     if (s.includes('观音') || s.includes('菩萨') || s.includes('落伽山')) return 'guanyin';
     if (s.includes('玄奘') || s.includes('唐僧') || s.includes('三藏') || s.includes('金蝉')) return 'xuanzang';
-    if (s.includes('八戒') || s.includes('天蓬') || s.includes('猪刚鬣') || s.includes('悟能')) return 'zhu_bajie';
-    if (s.includes('沙僧') || s.includes('悟净') || s.includes('卷帘')) return 'sha_wujing';
+    if (s.includes('八戒') || s.includes('猪刚鬣') || s.includes('悟能')) return 'zhu_bajie';
+    if (s.includes('沙僧') || s.includes('悟净')) return 'sha_wujing';
     if (s.includes('白龙') || s.includes('敖烈') || s.includes('龙马')) return 'xiaobailong';
     if (s.includes('龙王') || s.includes('敖广') || s.includes('水族之主')) return 'dragon_king';
     if (s.includes('菩提') || s.includes('斜月三星') || s.includes('方寸')) return 'puti_zushi';
@@ -48,6 +59,8 @@ class DialogueEngine {
     if (s.includes('龙虾') || s.includes('虾兵') || s.includes('虾将')) return 'shrimp';
 
     // 人间市井名仕 NPC
+    if (s.includes('货郎') || s.includes('阿福')) return 'changan_hawker';
+    if (s.includes('小虎') || s.includes('坊间顽童')) return 'changan_child';
     if (s.includes('药铺') || s.includes('济世堂') || s.includes('郎中') || s.includes('大夫')) return 'yaopu_boss';
     if (s.includes('当铺') || s.includes('聚宝阁') || s.includes('掌柜')) return 'dangpu_boss';
     if (s.includes('铁匠') || s.includes('神兵坊') || s.includes('铸造')) return 'tiejiang';
@@ -63,13 +76,13 @@ class DialogueEngine {
 
   // 获取角色身份印章标签
   getRoleBadge(roleId, speaker) {
-    if (['guanyin', 'sun_wukong', 'puti_zushi', 'zhenyuanzi', 'taibai', 'heaven_general', 'nezha', 'litianwang', 'dragon_king', 'qixiannv'].includes(roleId)) {
+    if (['guanyin', 'sun_wukong', 'puti_zushi', 'zhenyuanzi', 'taibai', 'heaven_general', 'nezha', 'litianwang', 'lijing', 'dragon_king', 'qixiannv', 'change', 'juanlian'].includes(roleId)) {
       return '<div class="dialogue-role-seal seal-immortal">仙</div>';
     }
     if (['baigu_jing', 'huangpao_guai', 'hu_xianfeng', 'huangfeng_guai', 'wolf', 'clam', 'crab', 'shrimp', 'hunhun'].includes(roleId)) {
       return '<div class="dialogue-role-seal seal-demon">妖</div>';
     }
-    if (['yaopu_boss', 'dangpu_boss', 'tiejiang'].includes(roleId)) {
+    if (['yaopu_boss', 'dangpu_boss', 'tiejiang', 'blacksmith', 'changan_hawker'].includes(roleId)) {
       return '<div class="dialogue-role-seal seal-merchant">商</div>';
     }
     if (['zhongkui', 'mengpo', 'yanluowang'].includes(roleId)) {
@@ -81,6 +94,7 @@ class DialogueEngine {
   // 开启一段剧情对话
   start(dialogueData, onComplete = null) {
     if (!dialogueData || !dialogueData.steps || dialogueData.steps.length === 0) return;
+    this.sessionId++;
     this.currentDialogue = dialogueData;
     this.currentStep = 0;
     this.onCompleteCallback = onComplete;
@@ -125,7 +139,7 @@ class DialogueEngine {
 
   // 点击快进或下一步
   next() {
-    if (!this.currentDialogue) return;
+    if (!this.currentDialogue || this.isAdvancing) return;
 
     const step = this.currentDialogue.steps[this.currentStep];
     // 如果正在打字，直接显示全文
@@ -143,9 +157,15 @@ class DialogueEngine {
     }
 
     // 执行当前步的触发事件
-    if (step.action) {
-      step.action();
+    const sessionId = this.sessionId;
+    this.isAdvancing = true;
+    try {
+      if (step.action) step.action();
+    } finally {
+      this.isAdvancing = false;
     }
+    // 转场或新对白已经接管，旧步骤不能继续推进新对白。
+    if (sessionId !== this.sessionId || !this.currentDialogue) return;
 
     // 前进到下一步
     if (this.currentStep + 1 < this.currentDialogue.steps.length) {
@@ -157,6 +177,7 @@ class DialogueEngine {
 
   // 选择分支选项
   chooseOption(optIndex) {
+    if (!this.currentDialogue || this.isAdvancing) return;
     const step = this.currentDialogue.steps[this.currentStep];
     if (!step.options || !step.options[optIndex]) return;
 
@@ -164,7 +185,14 @@ class DialogueEngine {
     if (window.Sound) window.Sound.playSuccess();
 
     if (opt.nextStep !== undefined) {
-      if (opt.action) opt.action();
+      const sessionId = this.sessionId;
+      this.isAdvancing = true;
+      try {
+        if (opt.action) opt.action();
+      } finally {
+        this.isAdvancing = false;
+      }
+      if (sessionId !== this.sessionId || !this.currentDialogue) return;
       this.showStep(opt.nextStep);
     } else {
       this.close();
@@ -177,6 +205,9 @@ class DialogueEngine {
   // 关闭对话，彻底移除 DOM 与遮罩
   close() {
     if (this.typeInterval) clearInterval(this.typeInterval);
+    this.typeInterval = null;
+    this.isTyping = false;
+    this.sessionId++;
     const cb = this.onCompleteCallback;
     this.currentDialogue = null;
     this.onCompleteCallback = null;
@@ -200,6 +231,7 @@ class DialogueEngine {
     const dialogue = this.currentDialogue;
     const startStep = this.currentStep;
     const onComplete = this.onCompleteCallback;
+    const sessionId = this.sessionId;
 
     // 清空状态与移除 DOM 遮罩，防止后续 action 启动新流程时产生冲突
     this.currentDialogue = null;
@@ -209,42 +241,32 @@ class DialogueEngine {
     const el = document.getElementById('dialogue-overlay');
     if (el) el.remove();
 
-    // 从当前尚未执行完成的步骤开始，依次结算剩余所有步骤中的 action 与唯一选项 action
-    if (dialogue && Array.isArray(dialogue.steps)) {
-      for (let i = startStep; i < dialogue.steps.length; i++) {
-        // 若中间某个 action 同步开启了新对话，则停止当前旧对话剩余结算
-        if (this.currentDialogue !== null) {
-          break;
-        }
-
-        const step = dialogue.steps[i];
-        if (!step) continue;
-
-        // 1. 结算当前步骤自带的 action（主线任务推进、发放奖励、开启下一幕等）
-        if (typeof step.action === 'function') {
-          try {
-            step.action();
-          } catch (err) {
-            console.error(`[DialogueEngine] 执行第 ${i} 步 action 异常:`, err);
-          }
-        }
-
-        // 2. 如果存在唯一的选择项（剧情推进/切磋开战/确认接受），执行该选项的 action
-        if (step.options && step.options.length === 1) {
-          const singleOpt = step.options[0];
-          if (singleOpt && typeof singleOpt.action === 'function') {
-            try {
-              singleOpt.action();
-            } catch (err) {
-              console.error(`[DialogueEngine] 执行第 ${i} 步单选项 action 异常:`, err);
-            }
-          }
-        }
+    // 沿正常阅读的控制路径跳过，不能同时执行选项与步骤动作，
+    // 也不能越过终止选项、转场或新对白继续结算旧剧情。
+    const visited = new Set();
+    let failed = false;
+    for (let i = startStep; i < dialogue.steps.length;) {
+      if (sessionId !== this.sessionId || this.currentDialogue || visited.has(i)) break;
+      visited.add(i);
+      const step = dialogue.steps[i];
+      if (!step) break;
+      const options = step.options || [];
+      if (options.length > 1) break;
+      const option = options[0];
+      try {
+        const action = option ? option.action : step.action;
+        if (typeof action === 'function') action();
+      } catch (err) {
+        failed = true;
+        console.error(`[DialogueEngine] 跳过第 ${i} 步异常:`, err);
+        break;
       }
+      if (option && option.nextStep === undefined) break;
+      i = option ? option.nextStep : i + 1;
     }
 
-    // 3. 执行最终整体完成回调
-    if (typeof onComplete === 'function') {
+    // 只结束仍属于本轮的对白；新流程的状态与回调由新流程自己管理。
+    if (!failed && sessionId === this.sessionId && !this.currentDialogue && typeof onComplete === 'function') {
       try {
         onComplete();
       } catch (err) {
@@ -253,7 +275,7 @@ class DialogueEngine {
     }
 
     // 4. 恢复玩家行动
-    if (window.Player) {
+    if (!this.currentDialogue && window.Player) {
       window.Player.canMove = true;
     }
   }

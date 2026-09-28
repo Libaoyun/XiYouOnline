@@ -2259,6 +2259,36 @@ window.GAME_DATA.STORY_DIALOGUES = {
     ]
   },
 
+  // 白骨洞可选见闻：守灯人为受难者留灯，不触发主线或可重复奖励。
+  baigu_lampkeeper_talk: {
+    steps: [
+      {
+        speaker: '守灯老人', roleId: 'fisherman', speakerTitle: '【为归人留灯】',
+        text: '别往没灯的地方走。洞里还有怨气，北边骨厅尤其凶险。想出去，就沿灯盏往南；白虎岭的风再冷，也比这里好。',
+        options: [
+          { text: '你为何留在这里守灯？', nextStep: 1 },
+          { text: '洞里的人，可还有线索？', nextStep: 2 },
+          { text: '记下了。老人家也请保重。' }
+        ]
+      },
+      {
+        speaker: '守灯老人', roleId: 'fisherman', speakerTitle: '【残灯旧影】',
+        text: '从前我替商队引路，认得不少被掳进洞的人。有的家属只记得一块衣角，却走了几百里来找。我把灯留下，好让他们看得清，也让这里的人不至于连名字都埋在黑里。',
+        options: [{ text: '这盏灯，我会记住。', nextStep: 3 }, { text: '再问问洞中的线索。', nextStep: 2 }, { text: '告辞。' }]
+      },
+      {
+        speaker: '守灯老人', roleId: 'fisherman', speakerTitle: '【辨相之外】',
+        text: '旧衣上常见同一种骨纹，但那是妖魔留下的印记，不能拿它认定谁是妖。有人活着逃出去，衣上也沾了印记。少侠若要辨真伪，多看脚印、气息和证言，别只凭一眼。',
+        options: [{ text: '除妖也要护住无辜，我明白。', nextStep: 3 }, { text: '多谢提醒，告辞。' }]
+      },
+      {
+        speaker: '守灯老人', roleId: 'fisherman', speakerTitle: '【为归人留灯】',
+        text: '愿你有破幻的眼，也有肯听人说话的心。你有你的西行路，不必在此久留。出洞后若遇寻亲的人，告诉他这里有人留着灯。',
+        options: [{ text: '我会转告。告辞。' }]
+      }
+    ]
+  },
+
   // === 长安城织造·苏绣娘 ===
   changan_girl_talk: {
     steps: [
@@ -2288,9 +2318,38 @@ window.GAME_DATA.STORY_DIALOGUES = {
     steps: [
       {
         speaker: '货郎阿福',
+        roleId: 'changan_hawker',
         speakerTitle: '【百味挑担】',
         speakerIcon: '🍡',
-        text: '桂花糕、蓼花糖、五仁素饼！五仁真是五仁，我阿福不玩“数不清算你输”的把戏。少侠赶路，带块糕，饿了比空喊豪言管用。'
+        text: '桂花糕、蓼花糖、五仁素饼！五仁真是五仁，我阿福不玩“数不清算你输”的把戏。少侠若不急着赶路，听个跑商的笑话？不收茶钱，也不收笑钱。',
+        options: [
+          { text: '你这一路遇过什么趣事？', nextStep: 1 },
+          { text: '五仁饼里，到底是哪五仁？', nextStep: 2 },
+          { text: '先赶路了，祝你生意兴隆。' }
+        ]
+      },
+      {
+        speaker: '货郎阿福', roleId: 'changan_hawker', speakerTitle: '【跑商见闻】',
+        text: '前日在官道碰见个拦路的，问我带了多少银子。我说银子没有，欠条一把。他看了半晌，竟劝我换条路：“前头还有同行，别让人家也白忙。”唉，这世道，连山贼都嫌我薄利。',
+        options: [
+          { text: '人平安就好。下次跟商队一道走。', nextStep: 3 },
+          { text: '再问问你的五仁饼。', nextStep: 2 },
+          { text: '告辞，路上多保重。' }
+        ]
+      },
+      {
+        speaker: '货郎阿福', roleId: 'changan_hawker', speakerTitle: '【货真价实】',
+        text: '核桃仁、杏仁、芝麻仁、瓜子仁、松子仁。今早有位书生非说第六仁是“仁义”。我说仁义得有，可不能拿它顶松子——牙齿嚼不着，客官就要找我讲道理了。',
+        options: [
+          { text: '货真价实，才是长久生意。', nextStep: 3 },
+          { text: '听听跑商的见闻。', nextStep: 1 },
+          { text: '告辞，改日再聊。' }
+        ]
+      },
+      {
+        speaker: '货郎阿福', roleId: 'changan_hawker', speakerTitle: '【百味挑担】',
+        text: '承你吉言。等你西行回来，我还在这条街上。故事尽管带，糕点我来备；不过先说好，故事再长，也不能当欠账的由头。',
+        options: [{ text: '一言为定，告辞。' }]
       }
     ]
   },
@@ -2300,9 +2359,40 @@ window.GAME_DATA.STORY_DIALOGUES = {
     steps: [
       {
         speaker: '小虎',
+        roleId: 'changan_child',
         speakerTitle: '【坊间顽童】',
         speakerIcon: '🍭',
-        text: '你见过齐天大圣吗？听说他会七十二变！我要学第七十三变：在先生点名时变成已经做完功课的小虎。'
+        text: '你见过齐天大圣吗？听说他会七十二变！我要学第七十三变：在先生点名时变成已经做完功课的小虎。你先别告诉先生……要不要猜个字谜？',
+        options: [
+          { text: '好，出题吧。', nextStep: 1 },
+          { text: '不如先把功课做完？', nextStep: 4 },
+          { text: '下回再猜，告辞。' }
+        ]
+      },
+      {
+        speaker: '小虎', roleId: 'changan_child', speakerTitle: '【坊间小谜】',
+        text: '四四方方一张口，把块木头围里头。猜一个字！先生说，猜字要看字形，可不能问木头疼不疼。',
+        options: [
+          { text: '“杏”：口在木下。', nextStep: 3 },
+          { text: '“困”：口把木围住。', nextStep: 2 },
+          { text: '“呆”：口在木上。', nextStep: 3 },
+          { text: '让我再想想，先告辞。' }
+        ]
+      },
+      {
+        speaker: '小虎', roleId: 'changan_child', speakerTitle: '【猜中了】',
+        text: '对啦，是“困”！我本来想说“困就是功课把我围住”，先生说，那叫你自己出去玩，把功课落在屋里。唉，大人拆谜比出谜还快。',
+        options: [{ text: '知道答案了，也该回去写功课了。', nextStep: 4 }, { text: '多谢出题，告辞。' }]
+      },
+      {
+        speaker: '小虎', roleId: 'changan_child', speakerTitle: '【差一点】',
+        text: '位置差一点！是“困”，外边的口围着里边的木。先生说：“差一笔可就差远了。”我说少写一笔能省墨，他把省下的墨都用来批我的功课了。',
+        options: [{ text: '记住了，下次仔细看。', nextStep: 4 }, { text: '多谢解谜，告辞。' }]
+      },
+      {
+        speaker: '小虎', roleId: 'changan_child', speakerTitle: '【认真一回】',
+        text: '好吧，七十二变也不能替我认字。等我能把西行故事读顺了，再给街坊讲大圣。你路上小心；等你回来，我一定不会把“筋斗云”念成“斤豆云”！',
+        options: [{ text: '好好读书，回来听你讲。' }]
       }
     ]
   },

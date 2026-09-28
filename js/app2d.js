@@ -4469,8 +4469,10 @@ class GameApp2D {
       if (!unit) return 'shaoxia';
       const name = unit.name || '';
       if (unit.isPlayer) {
-        return (this.playerData && this.playerData.appearance === 'heaven_general') ? 'heaven_general' : 'shaoxia';
+        return this.playerChar?.appearance || this.playerData?.appearance || 'martial_hero';
       }
+      const creature = window.VisualIdentity?.resolveMonster(unit.appearance || unit.modelId, name, unit.id);
+      if (creature) return creature;
       if (name.includes('大圣') || name.includes('悟空')) return 'sun_wukong';
       if (name.includes('八戒') || name.includes('猪刚鬣')) return 'zhu_bajie';
       if (name.includes('沙僧') || name.includes('悟净')) return 'sha_wujing';
@@ -5010,9 +5012,11 @@ class GameApp2D {
           mId = 'martial_hero';
         }
       } else {
-        if (ally.name.includes('悟空') || ally.name.includes('猴') || ally.roleId === 'sun_wukong') mId = 'sun_wukong';
-        else if (ally.name.includes('八戒') || ally.name.includes('猪') || ally.roleId === 'zhu_bajie') mId = 'zhu_bajie';
-        else if (ally.name.includes('沙') || ally.roleId === 'sha_wujing') mId = 'sha_wujing';
+        const species = window.VisualIdentity?.resolveMonster(mId, ally.name, ally.templateId);
+        if (ally.name.includes('悟空') || ally.roleId === 'sun_wukong') mId = 'sun_wukong';
+        else if (ally.name.includes('八戒') || ally.name.includes('猪刚鬣') || ally.roleId === 'zhu_bajie') mId = 'zhu_bajie';
+        else if (ally.name.includes('悟净') || ally.name.includes('沙僧') || ally.roleId === 'sha_wujing') mId = 'sha_wujing';
+        else if (window.CreatureArt?.ids.has(species)) mId = species;
         else if (ally.name.includes('铁扇') || ally.roleId === 'tieshan' || mId.includes('tieshan')) mId = 'tieshan';
         else if (ally.name.includes('蛇') || ally.roleId === 'pet_snake' || mId.includes('she')) mId = 'pet_snake';
         else if (ally.name.includes('龟') || mId.includes('gui')) mId = 'turtle';

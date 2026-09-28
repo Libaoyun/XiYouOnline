@@ -348,13 +348,16 @@ class MiniMapEngine {
         if (tile === 'heaven_floor') color = '#ecf0f1';
         else if (tile === 'cloud_void') color = '#0a0d14';
         else if (tile === 'heaven_pillar') color = '#f39c12';
-        else if (tile === 'grass') color = '#27ae60';
+        else if (tile === 'grass') color = window.App2D?.tilemap?.biomes[mapData.id]?.base || '#27ae60';
         else if (tile === 'dirt_path') color = '#795548';
         else if (tile === 'bamboo') color = '#1e824c';
         else if (tile === 'water') color = '#2980b9';
         else if (tile === 'city_wall') color = '#34495e';
         else if (tile === 'mountain_rock') color = '#424242';
         else if (tile === 'wuxing_seal') color = '#ffd700';
+        else if (tile === 'demon_cave_wall') color = '#292632';
+        else if (tile === 'cave_floor') color = '#857888';
+        else if (tile === 'cave_lantern') color = '#e7ba74';
 
         ctx.fillStyle = color;
         ctx.fillRect(innerX + c * scaleX, innerY + r * scaleY, Math.ceil(scaleX), Math.ceil(scaleY));

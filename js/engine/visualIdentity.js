@@ -1,9 +1,14 @@
 /** 物种身份统一入口：地图、战斗、名册和头像共同使用。具名妖王优先于物种。 */
 window.VisualIdentity = {
-  aliases: { giant_rat: 'rat', wild_wolf: 'wolf', pet_snake: 'snake', bandit: 'hooligan', tyrant: 'hooligan' },
+  aliases: { giant_rat: 'rat', wild_wolf: 'wolf', pet_snake: 'snake', bandit: 'hooligan', tyrant: 'hooligan', huangfeng: 'huangfeng_guai', jinjiao: 'jinjiao', yinjiao: 'yinjiao', xiaozuanfeng: 'changan_hawker', shura: 'yecha' },
   resolveMonster(appearance, name = '', id = '') {
     const text = `${name} ${id}`.toLowerCase();
     const rules = [
+      [/金角|金角大王|jinjiao/, 'jinjiao'],
+      [/银角|银角大王|yinjiao/, 'yinjiao'],
+      [/小钻风|巡山小钻风|钻风|xiaozuanfeng/, 'changan_hawker'],
+      [/修罗王|黑风修罗|修罗|shura/, 'yecha'],
+      [/黄风|三昧神风|huangfeng/, 'huangfeng_guai'],
       [/黄袍|奎木狼|huangpao|kuimu/, 'huangpao_guai'],
       [/白骨夫人|白骨精|蚀骨尸魔|baigujing/, 'baigu_jing'],
       [/猪八戒|猪刚鬣|bajie/, 'zhu_bajie'],
@@ -19,6 +24,7 @@ window.VisualIdentity = {
       [/恶僧|demon_monk/, 'demon_monk'], [/假道士|道童妖|demon_taoist/, 'demon_taoist'],
       [/厉鬼|ghost/, 'ghost'], [/骷髅|怨灵|skeleton|skel_/, 'skeleton'],
       [/野猪|妖猪|猪妖/, 'pig'], [/野狐|灵狐|火狐|青丘|fox/, 'fox'],
+      [/狼|血狼|野狼|郊狼|wolf/, 'wolf'],
       [/枯树|树精|tree/, 'tree'], [/虎卒|tiger/, 'tiger'],
       [/石猴|小猴|stone_monkey/, 'stone_monkey'], [/夜叉|yecha/, 'yecha']
     ];

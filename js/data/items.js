@@ -688,6 +688,128 @@ window.GAME_DATA.ITEMS = {
     quality: 'blue',
     attrs: { hp: 220, matk: 38, mp: 150 },
     desc: '嵌有深渊千年水龙宝珠，温润凝神，极大拓宽气血与法力元海！'
+  },
+
+  // === 流沙河行李清缴奇珍与信物 ===
+  qingquan_jiu: {
+    id: 'qingquan_jiu',
+    name: '清泉酒',
+    type: 'consumable',
+    icon: '🍶',
+    price: 150,
+    quality: 'blue',
+    desc: '猪八戒私藏在经担底下的陈年美酒，被沙和尚搜缴没收。出家人不沾荤腥，正好赠予大将军。饮用后甘醇清爽，瞬间恢复 250 点法力精力！',
+    effect: { mp: 250 }
+  },
+  liusha_speed_boots: {
+    id: 'liusha_speed_boots',
+    name: '流沙逐风靴',
+    type: 'equip',
+    slot: 'boots',
+    reqLevel: 25,
+    icon: '🥾',
+    price: 3600,
+    quality: 'blue',
+    attrs: { spd: 45, def: 28, hp: 160 },
+    desc: '从沉重经担底层清理出的行军长靴，经八戒多年试穿磨合，虽有些旧却被加持了神速法咒，穿上后身轻如燕，大幅提升出手速度与防御！'
+  },
+  wukong_eyelash: {
+    id: 'wukong_eyelash',
+    name: '大圣防风假睫毛',
+    type: 'misc',
+    icon: '✨',
+    price: 999,
+    quality: 'purple',
+    desc: '齐天大圣在八卦炉中熏出火眼金睛后，特意在傲来国订制的极品防风烟纯金假睫毛！大圣被发现后满脸通红，严令小将军绝不可外传。'
+  },
+
+  // === 万寿山五庄观至宝 ===
+  renshen_guo: {
+    id: 'renshen_guo',
+    name: '草还丹·人参果',
+    type: 'consumable',
+    icon: '👶',
+    price: 30000,
+    quality: 'gold',
+    desc: '万寿山五庄观镇元大仙镇观之宝！三千年一开花，三千年一结果，闻一闻活三百六十岁，吃一个得寿四万七千年！服用后永久提升 1500 点气血上限与 800 点法力上限，并瞬间恢复全部气血与法力！',
+    effect: { hp: 99999, mp: 99999, maxHpBonus: 1500, maxMpBonus: 800 }
+  },
+  eq_am_hunyuan: {
+    id: 'eq_am_hunyuan',
+    name: '混元一气锦襕道袍',
+    type: 'equip',
+    slot: 'armor',
+    reqLevel: 35,
+    icon: '🥋',
+    price: 18000,
+    quality: 'gold',
+    attrs: { def: 145, hp: 1200, mdef: 110, mp: 450 },
+    desc: '地仙之祖镇元子亲赐的混元乾坤道袍！混元一气流转全身，刀枪不入，万法难侵，防御与体魄大幅跃升！'
+  },
+
+  // === 平顶山莲花洞至宝与老君金丹 ===
+  jiuzhuan_xuandu_dan: {
+    id: 'jiuzhuan_xuandu_dan',
+    name: '九转玄都金丹',
+    type: 'consumable',
+    icon: '💊',
+    price: 50000,
+    quality: 'gold',
+    desc: '太上老君兜率宫以六丁神火淬炼九九八十一天的无上九转圣丹！吞服后易筋洗髓、脱胎换骨，永久提升 2000 点气血上限与 1000 点法力上限，并瞬间补满气血精力！',
+    effect: { hp: 99999, mp: 99999, maxHpBonus: 2000, maxMpBonus: 1000 }
+  },
+  eq_wp_qixing: {
+    id: 'eq_wp_qixing',
+    name: '七星伏魔宝剑',
+    type: 'equip',
+    slot: 'weapon',
+    reqLevel: 45,
+    icon: '⚔️',
+    price: 28000,
+    quality: 'gold',
+    attrs: { atk: 185, matk: 140, hit: 55, crit: 12, hp: 600 },
+    desc: '太上老君炼魔随身神兵！剑身镂刻北斗七星玄奥古篆，挥动间星煞罡气纵横，大幅提升物理狂攻、法术威能与暴击率！'
+  },
+  zijin_hulu: {
+    id: 'zijin_hulu',
+    name: '紫金红葫芦·仙葫灵蕴',
+    type: 'misc',
+    icon: '🍶',
+    price: 8888,
+    quality: 'gold',
+    desc: '昆仑山下一缕仙藤结成的太玄至宝！太上老君盛丹之宝，叫人一声若敢应答，便教其神魂俱颤。金角大王落败后老君所留之法宝灵蕴信物。'
+  },
+
+  // === 苍茫三岭支线伏魔战利与道具 ===
+  eq_peishi_heifeng: {
+    id: 'eq_peishi_heifeng',
+    name: '黑风辟邪玉佩',
+    type: 'equip',
+    slot: 'necklace',
+    reqLevel: 30,
+    icon: '📿',
+    price: 12000,
+    quality: 'purple',
+    attrs: { hp: 450, def: 38, mdef: 42, mp: 200 },
+    desc: '玄风道长珍藏多年的辟邪温玉，曾浸染过三岭正气。佩戴后可凝神御煞，大幅增加体魄生命与双抗！'
+  },
+  qingqiu_hudan: {
+    id: 'qingqiu_hudan',
+    name: '青丘妖狐内丹',
+    type: 'quest_item',
+    icon: '🔮',
+    price: 500,
+    quality: 'blue',
+    desc: '野狐岭作恶青丘妖狐体内凝聚的妖气内丹，带有淡淡红雾，是向玄风道长复命的凭据。'
+  },
+  shangren_jinnang: {
+    id: 'shangren_jinnang',
+    name: '残破的行商锦囊',
+    type: 'quest_item',
+    icon: '💼',
+    price: 800,
+    quality: 'blue',
+    desc: '从郊狼岭恶狼利齿下夺回的过往客商行囊，记录着行商被劫的线索，向玄风道长交付可破狼患。'
   }
 };
 

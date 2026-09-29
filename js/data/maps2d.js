@@ -21657,8 +21657,8 @@ window.GAME_DATA.MAPS_2D = {
         "id": "npc_qingfeng",
         "name": "清风仙童",
         "title": "【五庄观执事】",
-        "x": 416,
-        "y": 256,
+        "x": 384,
+        "y": 288,
         "appearance": "martial_hero",
         "icon": "👦",
         "dialogueKey": "qingfeng_talk"
@@ -21667,8 +21667,8 @@ window.GAME_DATA.MAPS_2D = {
         "id": "npc_mingyue",
         "name": "明月仙童",
         "title": "【五庄观执事】",
-        "x": 416,
-        "y": 256,
+        "x": 448,
+        "y": 288,
         "appearance": "martial_hero",
         "icon": "👦",
         "dialogueKey": "mingyue_talk"
@@ -45045,6 +45045,55 @@ window.GAME_DATA.MAPS_2D = {
     ],
     portals: [{ x: 608, y: 800, targetMap: 'baihuling', targetX: 800, targetY: 320, name: '返回白虎岭' }]
   };
+
+  // 平顶山·莲花洞主线场景强化：开辟盘山石道与莲花洞前祭坛，配置巡山小妖、银角大王、金角大王与老君
+  const pds = window.GAME_DATA.MAPS_2D.pingdingshan;
+  if (pds) {
+    for (let r = 11; r <= 13; r++) {
+      for (let c = 17; c <= 21; c++) pds.tiles[r][c] = 'dirt_path';
+    }
+    for (let r = 5; r <= 10; r++) {
+      for (let c = 12; c <= 26; c++) pds.tiles[r][c] = 'stone_floor';
+    }
+    for (let c = 18; c <= 20; c++) pds.tiles[4][c] = 'dirt_path';
+    pds.npcs = [
+      { id: 'npc_xiaozuanfeng', name: '巡山小钻风', title: '【大王派我来巡山】', x: 864, y: 448, appearance: 'changan_hawker', icon: '🎺', dialogueKey: 'xiaozuanfeng_talk' },
+      { id: 'npc_yinjiao_boss', name: '银角大王', title: '【羊脂玉净瓶·移山压顶】', x: 544, y: 256, appearance: 'yinjiao', icon: '🥈', dialogueKey: 'yinjiao_encounter' },
+      { id: 'npc_jinjiao_boss', name: '金角大王', title: '【七星伏魔宝剑·芭蕉扇】', x: 672, y: 224, appearance: 'jinjiao', icon: '🥇', dialogueKey: 'jinjiao_encounter' },
+      { id: 'npc_taishang_laojun', name: '太上老君', title: '【兜率天尊·收魔度化】', x: 608, y: 224, appearance: 'puti_zushi', icon: '✨', dialogueKey: 'pingdingshan_laojun_aftermath' }
+    ];
+  }
+
+  // 苍茫三岭支线伏魔场景强化：野狐岭、郊狼岭、黑风绝壁
+  const yhl = window.GAME_DATA.MAPS_2D.yehu_ling;
+  if (yhl) {
+    yhl.npcs = [
+      { id: 'npc_yehu_hermit', name: '玄风道长', title: '【隐世玄修】', x: 608, y: 320, appearance: 'tang_seng', icon: '🧙‍♂️', dialogueKey: 'hermit_talk' },
+      { id: 'npc_sanling_fox_1', name: '青丘妖狐 (林间)', title: '【作恶多端】', x: 352, y: 288, appearance: 'fox', icon: '🦊', dialogueKey: 'sanling_fox_talk' },
+      { id: 'npc_sanling_fox_2', name: '青丘妖狐 (石崖)', title: '【作恶多端】', x: 768, y: 224, appearance: 'fox', icon: '🦊', dialogueKey: 'sanling_fox_talk' },
+      { id: 'npc_sanling_fox_3', name: '青丘妖狐 (深处)', title: '【作恶多端】', x: 896, y: 480, appearance: 'fox', icon: '🦊', dialogueKey: 'sanling_fox_talk' }
+    ];
+  }
+
+  const jll = window.GAME_DATA.MAPS_2D.jiaolang_ling;
+  if (jll) {
+    jll.npcs = [
+      { id: 'npc_sanling_wolf_1', name: '阴风血狼 (道旁)', title: '【凶狂嗜血】', x: 352, y: 288, appearance: 'wolf', icon: '🐺', dialogueKey: 'sanling_wolf_talk' },
+      { id: 'npc_sanling_wolf_2', name: '阴风血狼 (峡谷)', title: '【凶狂嗜血】', x: 608, y: 384, appearance: 'wolf', icon: '🐺', dialogueKey: 'sanling_wolf_talk' },
+      { id: 'npc_sanling_wolf_3', name: '阴风血狼 (绝壁前)', title: '【凶狂嗜血】', x: 896, y: 288, appearance: 'wolf', icon: '🐺', dialogueKey: 'sanling_wolf_talk' }
+    ];
+  }
+
+  const hfjb = window.GAME_DATA.MAPS_2D.heifeng_juebi;
+  if (hfjb) {
+    for (let r = 10; r <= 18; r++) {
+      for (let c = 6; c <= 18; c++) hfjb.tiles[r][c] = 'dirt_path';
+    }
+    hfjb.npcs = [
+      { id: 'npc_heifeng_shura_boss', name: '黑风修罗王', title: '【万妖魔窟霸主】', x: 320, y: 448, appearance: 'yecha', icon: '👹', dialogueKey: 'heifeng_shura_encounter' }
+    ];
+  }
+
   // 旧地图若借用其他物种，按具名生态修正。战斗属性与位置不变。
   if (window.VisualIdentity) {
     for (const map of Object.values(window.GAME_DATA.MAPS_2D)) {

@@ -155,6 +155,10 @@ class BattleEngine {
     const passives = (attacker.entity && attacker.entity.passives) || (attacker.passives) || [];
     const targetPassives = (target.entity && target.entity.passives) || (target.passives) || [];
 
+    // 计算最终闪避率
+    const hasHighDodge = targetPassives.some(p => p.id === 'high_dodge' || p.name === '高级闪避');
+    const finalDodgeRate = Math.min(0.75, dodgeRate + (hasHighDodge ? 0.15 : 0));
+
     // 序章剧情战役（天蓬战、大圣战）保证演出打击感与剧情爽感，默认不被普通闪避打断
     const isPrologueBattle = (target.id === 'tianpeng_boss' || attacker.id === 'tianpeng_boss' || target.id === 'wukong_havoc_boss' || attacker.id === 'wukong_havoc_boss');
     const isDodge = options.forceDodge !== undefined ? options.forceDodge : (isPrologueBattle ? false : (Math.random() < finalDodgeRate));
@@ -617,7 +621,10 @@ class BattleEngine {
 
     // 招降野怪 (面对非Boss)
     if (action.type === 'capture') {
-      const targetEnemy = this.enemies[action.targetIndex];
+      let targetEnemy = this.enemies[action.targetIndex];
+      if (!targetEnemy || targetEnemy.hp <= 0) {
+        targetEnemy = this.getAliveEnemies()[0];
+      }
       if (!targetEnemy || targetEnemy.hp <= 0) return;
 
       if (targetEnemy.isBoss) {
@@ -706,7 +713,10 @@ class BattleEngine {
     if (action.type === 'attack') {
       const aliveEnemies = this.getAliveEnemies();
       if (aliveEnemies.length === 0) return;
-      const targetEnemy = this.enemies[action.targetIndex] || aliveEnemies[0];
+      let targetEnemy = this.enemies[action.targetIndex];
+      if (!targetEnemy || targetEnemy.hp <= 0) {
+        targetEnemy = aliveEnemies[0];
+      }
 
       // 调用全新核心法则结算公式
       const attackRes = BattleEngine.calculateAttackDamage(ally, targetEnemy);
@@ -786,7 +796,10 @@ class BattleEngine {
 
     const aliveEnemies = this.getAliveEnemies();
     if (aliveEnemies.length === 0) return;
-    const targetEnemy = this.enemies[action.targetIndex] || aliveEnemies[0];
+    let targetEnemy = this.enemies[action.targetIndex];
+    if (!targetEnemy || targetEnemy.hp <= 0) {
+      targetEnemy = aliveEnemies[0];
+    }
 
     const getAdjustedSkillDamage = (targetUnit, rawDmg) => {
       if (targetUnit.id === 'wukong_havoc_boss') {
@@ -1061,6 +1074,22 @@ class BattleEngine {
       this.rewardSkillProficiency(ally, skill);
       return;
     }
+
+    // === 通用绝技与仙宠法术保底结算 (保障天雷引等任意绝技不失效、不卡死) ===
+    const costMp = skill.costMp || 15;
+    if (ally.mp < costMp) {
+      this.log(`【精力不足】${ally.name} 精力不足 (${ally.mp}/${costMp})，无法施展【${skill.name}】！`);
+      if (cb) await cb({ type: 'message', text: '精力不足无法施法' });
+      return;
+    }
+    ally.mp = Math.max(0, ally.mp - costMp);
+    const baseDmg = Math.max(20, Math.floor((ally.atk || 50) * 1.35 + (skill.level || 1) * 20));
+    const finalDmg = getAdjustedSkillDamage(targetEnemy, baseDmg);
+    targetEnemy.hp = Math.max(0, targetEnemy.hp - finalDmg);
+    this.log(`【${skill.name}】${ally.name} 催动玄光法决轰击【${targetEnemy.name}】，造成 ${finalDmg} 点法术重创！`);
+    if (window.Sound) window.Sound.playMagic();
+    if (cb) await cb({ type: 'damage', attacker: ally.id, targetIndex: targetEnemy.enemyIndex, damage: finalDmg, text: `${skill.name} -${finalDmg}` });
+    this.rewardSkillProficiency(ally, skill);
   }
 
   // 绝技熟练度结算 (严格遵循 SkillMasteryEngine 5级25000法则与神坛菩提老祖突破铁律)

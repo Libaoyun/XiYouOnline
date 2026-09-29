@@ -124,7 +124,7 @@ MountSystem.TEMPLATES = {
     desc: '产自天庭御马监的通灵神驹，身披雪白龙鳞，脚踏流云，不仅迅捷无比，更能护主御敌。',
     baseHp: 300,
     baseAtk: 40,
-    speedBonus: 0.35
+    speedBonus: 0.60
   },
   tahuo_ju: {
     id: 'tahuo_ju',
@@ -134,7 +134,7 @@ MountSystem.TEMPLATES = {
     desc: '四蹄生烈焰的洪荒奇兽，性格狂烈暴虐，大幅增强乘骑者的杀伐攻伐之威。',
     baseHp: 220,
     baseAtk: 65,
-    speedBonus: 0.38
+    speedBonus: 0.65
   },
   zhuri_cong: {
     id: 'zhuri_cong',
@@ -144,7 +144,7 @@ MountSystem.TEMPLATES = {
     desc: '传说中拥有麒麟血脉的金骢宝马，鬃毛金黄，生机浩荡，具有强大的护元增血之效。',
     baseHp: 480,
     baseAtk: 30,
-    speedBonus: 0.32
+    speedBonus: 0.55
   },
   qitian_shenlong: {
     id: 'qitian_shenlong',
@@ -154,7 +154,7 @@ MountSystem.TEMPLATES = {
     desc: '【三界至尊神骑】龙啸九天，万妖臣服！赋予乘骑者排山倒海般的神力和无尽生机！',
     baseHp: 1200,
     baseAtk: 180,
-    speedBonus: 0.50
+    speedBonus: 0.85
   }
 };
 

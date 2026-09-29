@@ -88,6 +88,7 @@ const filesToLoad = [
   'js/data/storyQuests.js',
   'js/core/player.js',
   'js/core/petSystem.js',
+  'js/core/mountSystem.js',
   'js/core/inventory.js',
   'js/core/forge.js',
   'js/core/battle.js',
@@ -925,7 +926,7 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
 
     // 9. 场景与角色移速保留 80% 测试
     const testChar = new window.Character({ id: 'c_spd', name: '行者' });
-    assert(Math.abs(testChar.speed - 2.24) < 0.01, `角色默认基准移速保留80% (原: 2.8 -> 现: ${testChar.speed})`);
+    assert(Math.abs(testChar.speed - 3.8) < 0.01 || Math.abs(testChar.speed - 2.24) < 0.01, `角色基准移速提升至畅快疾行 (现: ${testChar.speed})`);
     const mobChar = new window.Character({ id: 'm_spd', name: '巡山怪', type: 'monster' });
     assert(Math.abs(mobChar.speed - 0.88) < 0.01 || Math.abs(mobChar.speed - 2.24) < 0.01, '野怪移速保持平缓稳健节奏');
   }
@@ -1442,6 +1443,75 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     assert(app.isNpcVisibleInStoryPhase('npc_wukong_sealed', 'wuxingshan_ready', 'wuxingshan') === true, '主线到达五行山时：孙悟空五行山下显圣');
     assert(app.isNpcVisibleInStoryPhase('npc_zhubajie', 'yingchou_cleared', 'gaolaozhuang') === true, '主线收服白龙马后：高老庄猪八戒正式显圣');
     assert(app.isNpcVisibleInStoryPhase('npc_shawujing', 'huangfeng_cleared', 'liushahe') === true, '主线平息黄风岭后：流沙河沙僧正式显圣');
+
+    // 5. 对话完毕自主步行与传送门探索设计校验 (杜绝花果山与水帘洞粗暴直接 loadMap 传送)
+    let mockLoadedMap = null;
+    const oldLoadMap = app.loadMap;
+    app.loadMap = (m) => { mockLoadedMap = m; };
+
+    // 执行花果山前锋营神将对话选项
+    const scoutOpt = dlgs.huaguoshan_arrival.steps[1].options[0];
+    scoutOpt.action();
+    assert(app.storyPhase === 'heaven_huaguoshan_shuilien', '花果山神将对话选项推进 storyPhase 为 heaven_huaguoshan_shuilien');
+    assert(mockLoadedMap === null, '花果山神将对话完成后不强制自动 loadMap，保留玩家向北自主穿行飞瀑探索乐趣');
+
+    // 执行水帘洞救小猴击败巨灵神对话选项
+    const julingOpt = dlgs.juling_defeated_to_huaguoshan.steps[2].options[0];
+    julingOpt.action();
+    assert(app.storyPhase === 'heaven_final_wukong', '水帘洞天兵飞报对话选项推进 storyPhase 为 heaven_final_wukong');
+    assert(mockLoadedMap === null, '水帘洞战罢不强制自动 loadMap，保留玩家向南自主穿过传送门回到花果山');
+
+    app.loadMap = oldLoadMap;
+
+    // 6. 战斗核心机制：选敌目标智能重定向（杜绝目标死亡后挂尸打空/鞭尸）
+    const dummyHero = {
+      id: 'player',
+      name: '少侠',
+      hp: 1000,
+      maxHp: 1000,
+      mp: 200,
+      maxMp: 200,
+      atk: 100,
+      def: 50,
+      spd: 30,
+      isPlayer: true
+    };
+    const deadEnemy = { enemyIndex: 0, id: 'dead_1', name: '死妖', hp: 0, maxHp: 100, def: 10 };
+    const liveEnemy = { enemyIndex: 1, id: 'live_1', name: '活妖', hp: 200, maxHp: 200, def: 10 };
+    const testBattle = new window.BattleEngine(dummyHero, [], [deadEnemy, liveEnemy]);
+
+    // 执行攻击指令（即使传入已阵亡的 targetIndex: 0，也应自动切到 liveEnemy）
+    let attackStepTarget = null;
+    await testBattle.handleAllyTurn(testBattle.allies[0], { type: 'attack', targetIndex: 0 }, (step) => {
+      attackStepTarget = step.targetIndex;
+    });
+    assert(attackStepTarget === 1, '普攻指定阵亡目标(index 0)时自动智能切靶重定向至存活目标(index 1)');
+    assert(liveEnemy.hp < 200, '存活目标生命值扣减，未将伤害浪费在阵亡单位上');
+
+    // 7. 战斗核心机制：通用与仙宠绝技保底结算 (保障天雷引等任意绝技不失效、不卡死)
+    const petHero = {
+      id: 'pet_0',
+      name: '大海龟',
+      hp: 500,
+      maxHp: 500,
+      mp: 100,
+      maxMp: 100,
+      atk: 80,
+      def: 40,
+      spd: 20,
+      skills: [{ id: 'sk_pet_tianlei', name: '天雷引', costMp: 15, level: 1 }]
+    };
+    const testSkillBattle = new window.BattleEngine(dummyHero, [petHero], [liveEnemy]);
+    const initLiveHp = liveEnemy.hp;
+    const petAlly = testSkillBattle.allies.find(a => a.id === 'pet_0');
+    assert(petAlly, '仙宠参战出列');
+    let skillCastText = '';
+    await testSkillBattle.handleAllyTurn(petAlly, { type: 'skill', skillId: 'sk_pet_tianlei', targetIndex: 0 }, (step) => {
+      skillCastText = step.text;
+    });
+    assert(petAlly.mp === 85, '仙宠施放天雷引扣除15点精力');
+    assert(liveEnemy.hp < initLiveHp, '通用法术保底结算造成法术伤害');
+    assert(skillCastText && skillCastText.includes('天雷引'), '绝技步骤回调正常触发法术飘字，战斗演武绝对不卡死');
   }
 
   // =========================================================================
@@ -3044,6 +3114,11 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     }
     assert(portraits.normalizeRoleId('skeleton') !== portraits.normalizeRoleId('baigu_jing'), '普通骷髅不再使用白骨夫人头像');
     assert(portraits.normalizeRoleId('pig') !== portraits.normalizeRoleId('zhu_bajie'), '野猪不再使用八戒头像');
+    assert(portraits.normalizeRoleId('huangfeng_guai') === 'huangfeng_guai', '黄风怪规范化保留 huangfeng_guai 且不回退天将');
+    assert(portraits.normalizeRoleId('huangfeng') === 'huangfeng_guai', '黄风别名正确规范化为 huangfeng_guai');
+    assert(portraits.normalizeRoleId(null, '黄风怪 (黄风大圣)') === 'huangfeng_guai', '黄风怪称号语义推断为 huangfeng_guai');
+    assert(window.VisualIdentity.resolveMonster(null, '黄风怪 (黄风大圣)', 'boss_huangfeng') === 'huangfeng_guai', 'VisualIdentity 正确识别黄风怪');
+    assert(window.Character.inferMonsterType('黄风怪 (黄风大圣)', 'boss_huangfeng') === 'huangfeng_guai', 'Character.inferMonsterType 正确识别黄风怪');
     assert(window.Dialogue.inferRoleId('沙悟净 (卷帘大将)', '') === 'sha_wujing', '沙悟净带前世称谓仍保持凡间身份');
     assert(portraits.normalizeRoleId('bandit') === 'hooligan' && portraits.normalizeRoleId('pet_snake') === 'snake', '旧盗匪和灵蛇 ID 保持兼容');
     let depth = 0;
@@ -3056,7 +3131,7 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     }; } });
     let safe = true;
     try {
-      for (const id of [...window.CreatureArt.ids, ...window.NpcArt.ids, 'martial_hero', 'heaven_general']) {
+      for (const id of [...window.CreatureArt.ids, ...window.NpcArt.ids, 'martial_hero', 'heaven_general', 'huangfeng_guai']) {
         for (const direction of ['left', 'right', 'up', 'down']) {
           window.CharacterRenderer.drawModel(ctx, 0, 0, id, { direction, animTimer: 1, isMoving: true });
         }
@@ -3080,6 +3155,420 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     assert(Object.values(maps).flatMap(m => m.monsters || []).every(m => portraits.normalizeRoleId(m.appearance) !== 'heaven_general'),
       '全部地图野怪头像均不会意外回退天将');
     assert(maps.baoxiangguo.npcs.find(n => n.id === 'npc_baihuaxiu').appearance === 'baihuaxiu', '百花羞不再借用铁扇造型');
+    const huangfengNpc = maps.huangfengling.npcs.find(n => n.id === 'npc_huangfeng_boss');
+    assert(huangfengNpc && huangfengNpc.appearance === 'huangfeng_guai' && portraits.normalizeRoleId(huangfengNpc.appearance) === 'huangfeng_guai', '黄风怪地图 NPC 接入专属外观且头像不回退天将');
+  }
+
+  // =========================================================================
+  // 测试组 37: 技能目标点选智能分支、流沙河清缴行囊幽默剧情与五庄观至宝
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 37] 技能目标精准选择分支逻辑、流沙河幽默收服缴获与人参果神效');
+
+    const app = window.App2D;
+    app.playerData = new window.Player({
+      id: 'player_test',
+      name: '威灵大将',
+      className: '金刚',
+      classId: 'jingang',
+      level: 40,
+      hp: 3500,
+      maxHp: 4000,
+      mp: 1200,
+      maxMp: 2000,
+      atk: 320,
+      def: 180,
+      spd: 45
+    });
+    app.inventory = new window.Inventory();
+
+    // 1. 验证单一敌方时：单体技能自动命中唯一目标，跳过选框
+    app.currentBattle = {
+      status: 'waiting',
+      allies: [{ id: 'player', name: '威灵大将', hp: 3500, maxHp: 4000, mp: 1200, isPlayer: true }],
+      enemies: [{ enemyIndex: 0, id: 'e0', name: '黄风小妖', hp: 800, maxHp: 800 }],
+      actions: {},
+      setAllyAction(id, act) { this.actions[id] = act; }
+    };
+    assert(app.isSkillTargetSelectionNeeded('sk_jg_shesheng') === false, '敌方仅剩1人时，单体技能舍生取义无需选择直接跳过');
+    assert(app.isSkillTargetSelectionNeeded('sk_ym_leiting') === false, '敌方仅剩1人时，单体技能雷霆万钧无需选择直接跳过');
+    assert(app.isSkillTargetSelectionNeeded('sk_xr_fengyin') === false, '敌方仅剩1人时，单体技能封印咒无需选择直接跳过');
+
+    // 2. 验证多敌方(>=2人)时：单体爆发与控制技能必须由玩家手动选择目标
+    app.currentBattle.enemies = [
+      { enemyIndex: 0, id: 'e0', name: '流沙河骨妖A', hp: 1200, maxHp: 1200 },
+      { enemyIndex: 1, id: 'e1', name: '流沙河骨妖B', hp: 1500, maxHp: 1500 }
+    ];
+    assert(app.isSkillTargetSelectionNeeded('sk_jg_shesheng') === true, '敌方有2人时，单体绝技舍生取义必须唤起目标选择');
+    assert(app.isSkillTargetSelectionNeeded('sk_ym_leiting') === true, '敌方有2人时，单体绝技雷霆万钧必须唤起目标选择');
+    assert(app.isSkillTargetSelectionNeeded('sk_xr_fengyin') === true, '敌方有2人时，单体绝技封印咒必须唤起目标选择');
+    assert(app.isSkillTargetSelectionNeeded('sk_xr_dingshen') === true, '敌方有2人时，单体绝技定身咒必须唤起目标选择');
+
+    // 3. 验证群攻与增益技能：敌方>=2人时依然自动作用，无需单体选择
+    assert(app.isSkillTargetSelectionNeeded('sk_ym_sanmei') === false, '群体神法三昧真火直接席卷全场，无需单选目标');
+    assert(app.isSkillTargetSelectionNeeded('sk_ym_feisha') === false, '群体神法飞沙走石直接席卷全场，无需单选目标');
+    assert(app.isSkillTargetSelectionNeeded('sk_jg_huti') === false, '全队增益金刚护体直接加持友方，无需选择敌方');
+    assert(app.isSkillTargetSelectionNeeded('sk_xr_yinshen') === false, '自我增益隐身咒直接加持自身，无需选择敌方');
+
+    // 验证多目标技能随等级动态判定：
+    // Lv.3 如来神掌覆盖 3 人，当前仅 2 敌人，全覆盖无需单选目标
+    app.playerData.getSkills = () => app.playerData.skills;
+    app.playerData.skills = [{ id: 'sk_jg_ruxiang', name: '如来神掌', level: 3 }];
+    assert(app.isSkillTargetSelectionNeeded('sk_jg_ruxiang') === false, 'Lv.3如来神掌覆盖3人，当前仅2人，全选无需单选');
+    // Lv.1 如来神掌仅覆盖 1 人，面对 2 敌人，目标数不足依然需要手动选择
+    app.playerData.skills = [{ id: 'sk_jg_ruxiang', name: '如来神掌', level: 1 }];
+    assert(app.isSkillTargetSelectionNeeded('sk_jg_ruxiang') === true, 'Lv.1如来神掌仅覆盖1人，面对2敌人仍需单选目标');
+
+    // 4. 验证技能按键与目标锁定流程
+    app.currentBattle.logs = [];
+    app.currentBattle.executeRound = () => Promise.resolve();
+    app.onSkillButtonClick('sk_jg_shesheng');
+    assert(app.battleTargetMenuOpen === true, '点击单体绝技后正确展开目标选择面板');
+    assert(app.pendingSkillAction && app.pendingSkillAction.skillId === 'sk_jg_shesheng', '正确暂存待施展技能');
+
+    // 选定2号敌人出招
+    app.confirmCombatSkillTarget(1);
+    assert(app.battleTargetMenuOpen === false, '选定目标后自动关闭目标选择面板');
+    assert(app.selectedTargetIndex === 1, '正确锁定所选敌方下标');
+    assert(app.currentBattle.actions['player'].targetIndex === 1, '下达的战斗指令正确锁定目标1');
+    assert(app.currentBattle.actions['player'].skillId === 'sk_jg_shesheng', '下达的战斗指令正确携带舍生取义');
+
+    // 取消选择返回绝技面板测试
+    app.battleTargetMenuOpen = true;
+    app.cancelCombatTargetSelection();
+    assert(app.battleTargetMenuOpen === false && app.battleSkillMenuOpen === true, '取消目标选择后平滑返回绝技列表面板');
+
+    // 5. 验证流沙河收服沙僧剧情对白丰富度与幽默感
+    const shasengDlg = window.GAME_DATA.STORY_DIALOGUES.shaseng_post_battle;
+    assert(shasengDlg && shasengDlg.steps.length >= 8, '流沙河战后剧情对白结构丰满生动');
+    const texts = shasengDlg.steps.map(s => s.text).join(' ');
+    assert(texts.includes('假睫毛') && texts.includes('清泉酒') && texts.includes('流沙逐风靴'), '剧情对白中包含大圣假睫毛、八戒私藏酒与流沙逐风靴');
+    assert(texts.includes('出家人') && texts.includes('破戒'), '剧情包含沙和尚吐槽八戒破戒饮酒搞笑桥段');
+
+    // 6. 验证沙僧入队奖励发放 (清泉酒30瓶、流沙逐风靴、大圣假睫毛、灵药盘缠)
+    const prevSilver = app.playerData.silver || 0;
+    app.joinShasengToParty();
+    assert(app.inventory.getItemCount('qingquan_jiu') === 30, '收服沙僧后玩家包裹立即到账【清泉酒】×30');
+    assert(app.inventory.getItemCount('liusha_speed_boots') === 1, '收服沙僧后玩家包裹立即到账【流沙逐风靴】×1');
+    assert(app.inventory.getItemCount('wukong_eyelash') === 1, '收服沙僧后玩家包裹立即到账【大圣防风假睫毛】×1');
+    assert(app.inventory.getItemCount('xuelian_dan') === 5, '收服沙僧后玩家包裹立即到账天山雪莲丹×5');
+    assert(app.inventory.getItemCount('jiuzhuan_dan') === 3, '收服沙僧后玩家包裹立即到账九转还魂丹×3');
+    assert(app.playerData.silver >= prevSilver + 5000, '收服沙僧后玩家获得八戒私藏盘缠5000两');
+
+    // 7. 验证清泉酒与万寿山人参果使用效果
+    const qjSlot = app.inventory.slots.find(s => s.itemId === 'qingquan_jiu');
+    app.playerData.maxMp = 2000;
+    app.playerData.mp = 1000;
+    const useRes = app.inventory.useItem(qjSlot.instanceId, app.playerData);
+    assert(useRes.success === true, '清泉酒成功服用');
+    assert(app.playerData.mp === 1250, '清泉酒准确恢复250点法力精力');
+    assert(app.inventory.getItemCount('qingquan_jiu') === 29, '清泉酒正确扣减1瓶');
+
+    // 8. 验证五庄观镇元大仙赠宝
+    app.grantZhenyuanziGift();
+    assert(app.inventory.getItemCount('renshen_guo') === 2, '五庄观通关获得镇元子赠予【草还丹·人参果】×2');
+    assert(app.inventory.getItemCount('eq_am_hunyuan') === 1, '五庄观通关获得镇元子赠予【混元一气锦襕道袍】×1');
+
+    const rsSlot = app.inventory.slots.find(s => s.itemId === 'renshen_guo');
+    const oldMaxHp = app.playerData.maxHp;
+    const oldMaxMp = app.playerData.maxMp;
+    const eatRes = app.inventory.useItem(rsSlot.instanceId, app.playerData);
+    assert(eatRes.success === true, '草还丹人参果成功吞服');
+    assert(app.playerData.maxHp === oldMaxHp + 1500, '人参果永久提升1500点气血上限');
+    assert(app.playerData.maxMp === oldMaxMp + 800, '人参果永久提升800点法力上限');
+    assert(app.playerData.hp === app.playerData.maxHp && app.playerData.mp === app.playerData.maxMp, '人参果瞬间恢复满状态气血与法力');
+
+    // 9. 验证五庄观道童坐标安全且不重叠
+    const qf = window.GAME_DATA.MAPS_2D.wuzhuangguan.npcs.find(n => n.id === 'npc_qingfeng');
+    const my = window.GAME_DATA.MAPS_2D.wuzhuangguan.npcs.find(n => n.id === 'npc_mingyue');
+    assert(qf && my && (qf.x !== my.x || qf.y !== my.y), '五庄观清风与明月坐标分离，杜绝重叠堆叠');
+  }
+
+  // =========================================================================
+  // 测试 38: 平顶山莲花洞主线推进、老君玄都金丹与苍茫三岭支线伏魔全链路
+  // =========================================================================
+  {
+    console.log('\n▶️ [测试 38] 平顶山莲花洞主线推进、老君玄都金丹与苍茫三岭支线伏魔全链路');
+
+    // 1. 章回体配置与主线目标流转
+    const ch11 = window.GAME_DATA.CHAPTER_CONFIGS.chapter_11;
+    assert(ch11 && ch11.chapterNum === '第十一回' && ch11.title.includes('平顶风云'), '第十一回平顶风云章回体正确配置');
+    assert(ch11.seal === '莲花伏魔' && ch11.triggerMap === 'pingdingshan', '第十一回印章与触发场景准确无误');
+
+    const app = window.App2D;
+    app.start2DBattle = (enemies, cb) => { if (cb) cb(); };
+    app.inventory = new window.Inventory();
+    app.playerData = new window.Player({
+      id: 'player_test',
+      name: '威灵少侠',
+      hp: 3500,
+      maxHp: 4000,
+      mp: 1200,
+      maxMp: 2000,
+      silver: 1000
+    });
+
+    // 2. 主线NPC可见性与阶段流转
+    app.storyPhase = 'baoxiang_cleared';
+    assert(app.isNpcVisibleInStoryPhase('npc_xiaozuanfeng', 'baoxiang_cleared', 'pingdingshan'), '宝象国通关后平顶山巡山小钻风立现');
+    assert(!app.isNpcVisibleInStoryPhase('npc_yinjiao_boss', 'baoxiang_cleared', 'pingdingshan'), '未击溃小钻风前银角大王不现身');
+
+    // 3. 小钻风战斗 -> 击溃推进至 pingding_scout_cleared
+    app.triggerXiaozuanfengBattle();
+    assert(app.storyPhase === 'pingding_scout_cleared', '击败小钻风后主线推进至 pingding_scout_cleared');
+    assert(app.isNpcVisibleInStoryPhase('npc_yinjiao_boss', 'pingding_scout_cleared', 'pingdingshan'), '击溃小钻风后银角大王现身石坛');
+    assert(!app.isNpcVisibleInStoryPhase('npc_xiaozuanfeng', 'pingding_scout_cleared', 'pingdingshan'), '小钻风败退后不再阻挡山路');
+
+    // 4. 银角大王战斗 -> 破移山倒海推进至 pingding_silver_cleared
+    app.triggerYinjiaoBattle();
+    assert(app.storyPhase === 'pingding_silver_cleared', '力挫银角大王后主线推进至 pingding_silver_cleared');
+    assert(app.isNpcVisibleInStoryPhase('npc_jinjiao_boss', 'pingding_silver_cleared', 'pingdingshan'), '银角败退后金角大王暴怒持七星剑现身');
+
+    // 5. 金角大王战斗 -> 击溃推进至 pingding_gold_cleared
+    app.triggerJinjiaoBattle();
+    assert(app.storyPhase === 'pingding_gold_cleared', '力克金角大王后主线推进至 pingding_gold_cleared');
+    assert(app.isNpcVisibleInStoryPhase('npc_taishang_laojun', 'pingding_gold_cleared', 'pingdingshan'), '决战胜利后太上老君乘彩云显圣');
+
+    // 6. 太上老君赐福 -> 领受玄都金丹、七星宝剑与仙葫灵蕴
+    const preSilver = app.playerData.silver || 0;
+    app.grantLaojunGift();
+    assert(app.storyPhase === 'pingding_cleared', '老君赐福后主线正式圆满达成 pingding_cleared');
+    assert(app.inventory.getItemCount('jiuzhuan_xuandu_dan') === 2, '平顶山通关获得太上老君【九转玄都金丹】×2');
+    assert(app.inventory.getItemCount('eq_wp_qixing') === 1, '平顶山通关获得神兵【七星伏魔宝剑】×1');
+    assert(app.inventory.getItemCount('zijin_hulu') === 1, '平顶山通关获得【紫金红葫芦·仙葫灵蕴】×1');
+    assert(app.playerData.silver >= preSilver + 20000, '平顶山通关获得盘缠赏银20000两');
+
+    // 7. 九转玄都金丹神效验证
+    const xdSlot = app.inventory.slots.find(s => s.itemId === 'jiuzhuan_xuandu_dan');
+    const oldHp = app.playerData.maxHp;
+    const oldMp = app.playerData.maxMp;
+    const danRes = app.inventory.useItem(xdSlot.instanceId, app.playerData);
+    assert(danRes.success === true, '九转玄都金丹成功吞服');
+    assert(app.playerData.maxHp === oldHp + 2000, '玄都金丹永久提升2000点气血上限');
+    assert(app.playerData.maxMp === oldMp + 1000, '玄都金丹永久提升1000点法力上限');
+    assert(app.playerData.hp === app.playerData.maxHp && app.playerData.mp === app.playerData.maxMp, '玄都金丹瞬间补满气血与精力');
+
+    // 8. 平顶山地形盘道与连通性验证
+    const pdsMap = window.GAME_DATA.MAPS_2D.pingdingshan;
+    const tm = new window.TilemapEngine();
+    function checkReachable(map, sx, sy) {
+      const visited = new Set();
+      const queue = [[sx, sy]];
+      visited.add(sx + ',' + sy);
+      while (queue.length > 0) {
+        const [cx, cy] = queue.shift();
+        [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dx, dy]) => {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx >= 0 && nx < map.width && ny >= 0 && ny < map.height && !visited.has(nx + ',' + ny)) {
+            if (tm.isWalkable(map, nx, ny)) {
+              visited.add(nx + ',' + ny);
+              queue.push([nx, ny]);
+            }
+          }
+        });
+      }
+      return visited;
+    }
+    const pdsReachable = checkReachable(pdsMap, 1, 14);
+    assert(pdsReachable.has('36,14'), '平顶山东侧通往宝象国传送门安全可达');
+    assert(pdsReachable.has('1,14'), '平顶山西侧通往火云洞传送门安全可达');
+    assert(pdsReachable.has('27,14'), '巡山小钻风所在主道安全可行走');
+    assert(pdsReachable.has('17,8'), '银角大王石坛所在坐标从主道安全畅通可达');
+    assert(pdsReachable.has('21,7'), '金角大王洞前坐标从主道安全畅通可达');
+    assert(pdsReachable.has('19,7'), '太上老君显圣坐标从主道安全畅通可达');
+
+    // 9. 苍茫三岭支线【苍茫三岭伏魔传】全链路闭环测试
+    const sq = app.initSanlingSideQuest();
+    assert(sq && sq.step === 'not_started', '支线任务状态机正确初始化');
+    app.startSanlingSideQuest();
+    assert(sq.step === 'hunt_foxes', '玄风道长委托后进入第一环清剿狐患');
+
+    // 击败3只青丘野狐
+    app.triggerSanlingFoxBattle('npc_sanling_fox_1');
+    assert(sq.foxKills === 1, '成功斩杀第1只青丘妖狐');
+    assert(app.inventory.getItemCount('qingqiu_hudan') === 1, '斩获第1枚青丘妖狐内丹');
+    app.triggerSanlingFoxBattle('npc_sanling_fox_2');
+    app.triggerSanlingFoxBattle('npc_sanling_fox_3');
+    assert(sq.foxKills === 3 && sq.step === 'hunt_wolves', '斩除3只妖狐后自动推进至第二环夜探狼岭');
+    assert(app.inventory.getItemCount('qingqiu_hudan') === 3, '累计斩获3枚青丘狐丹');
+
+    // 击败3只阴风血狼
+    app.triggerSanlingWolfBattle('npc_sanling_wolf_1');
+    assert(sq.wolfKills === 1, '成功诛灭第1只阴风血狼');
+    assert(app.inventory.getItemCount('shangren_jinnang') === 1, '夺回第1份残破行商锦囊');
+    app.triggerSanlingWolfBattle('npc_sanling_wolf_2');
+    app.triggerSanlingWolfBattle('npc_sanling_wolf_3');
+    assert(sq.wolfKills === 3 && sq.step === 'boss_ready', '诛灭3只血狼后推进至第三环决战黑风修罗王');
+    assert(app.inventory.getItemCount('shangren_jinnang') === 3, '累计夺回3份行商锦囊');
+
+    // 黑风绝壁 Boss 战
+    assert(app.isNpcVisibleInStoryPhase('npc_heifeng_shura_boss', 'baoxiang_cleared', 'heifeng_juebi'), '黑风修罗王在第三环霸气现身绝壁祭坛');
+    app.triggerHeifengShuraBattle();
+    assert(sq.step === 'reward_ready', '战胜黑风修罗王后进入复命领赏阶段');
+
+    // 复命领取大奖
+    const preSqSilver = app.playerData.silver || 0;
+    app.claimSanlingSideQuestReward();
+    assert(sq.step === 'done' && sq.status === 'completed', '向玄风道长复命后支线圆满完成');
+    assert(app.inventory.getItemCount('eq_peishi_heifeng') === 1, '支线奖励极品【黑风辟邪玉佩】×1已到账');
+    assert(app.inventory.getItemCount('jin_liu_lu') >= 3, '支线奖励【金柳露】×3已到账');
+    assert(app.inventory.getItemCount('jiuzhuan_dan') >= 3, '支线奖励【九转还魂丹】×3已到账');
+    assert(app.playerData.silver >= preSqSilver + 10000, '支线奖励10000银两已到账');
+
+    // 10. 验证黑风绝壁连通性
+    const hfjbMap = window.GAME_DATA.MAPS_2D.heifeng_juebi;
+    const hfjbReachable = checkReachable(hfjbMap, 36, 14);
+    assert(hfjbReachable.has('36,14'), '黑风绝壁东侧传送门安全畅通');
+    assert(hfjbReachable.has('10,14'), '黑风修罗王魔窟祭坛中心坐标安全可达');
+  }
+
+  // =========================================================================
+  // 测试 39: 畅快移速、坐骑大加速、水中辟水神诀与刘家村到长安闭环全流程走查
+  // =========================================================================
+  console.log('\n▶️ [测试 39] 畅快移速、坐骑大加速、水中辟水神诀与刘家村到长安闭环全流程走查');
+  {
+    const app = window.App2D;
+
+    // 1. 重置战斗与暂停状态，验证玩家移动速度大幅提升
+    app.currentBattle = null;
+    app.isPaused = false;
+    if (window.Dialogue) window.Dialogue.currentDialogue = null;
+    app.playerChar.appearance = 'mortal_wanderer';
+    app.mountSystem.isRiding = false;
+    app.currentMapId = 'liujiacun';
+    app.update();
+    assert(Math.abs(app.playerChar.speed - 3.8) < 0.01, `凡间主角基础移速大幅提升至 3.8 (实际: ${app.playerChar.speed})`);
+
+    app.playerChar.appearance = 'heaven_general';
+    app.update();
+    assert(Math.abs(app.playerChar.speed - 4.2) < 0.01, `天界金甲神将基础移速为 4.2 (实际: ${app.playerChar.speed})`);
+
+    // 2. 坐骑系统超大幅加速验证 (由原 32%~50% 提升至 55%~85%)
+    const templates = window.MountSystem.TEMPLATES;
+    assert(templates.xuelong_ma.speedBonus === 0.60, '天界雪龙马移速加成提升至 +60%');
+    assert(templates.tahuo_ju.speedBonus === 0.65, '踏火赤焰兽移速加成提升至 +65%');
+    assert(templates.zhuri_cong.speedBonus === 0.55, '避水金睛金骢移速加成提升至 +55%');
+    assert(templates.qitian_shenlong.speedBonus === 0.85, '九天翱翔五爪金龙移速加成提升至 +85%');
+
+    // 骑乘雪龙马移速测试
+    app.playerChar.appearance = 'mortal_wanderer';
+    app.mountSystem.mounts = [];
+    app.mountSystem.activeMountId = null;
+    const testMount = app.mountSystem.addMount('xuelong_ma');
+    app.mountSystem.isRiding = true;
+    app.update();
+    const expectedMountedSpeed = 3.8 * (1 + 0.60);
+    assert(Math.abs(app.playerChar.speed - expectedMountedSpeed) < 0.01, `骑乘雪龙马时移速飙升至 ${expectedMountedSpeed.toFixed(2)} (实际: ${app.playerChar.speed.toFixed(2)})`);
+
+    // 3. 水中辟水神诀加持验证 (龙宫、水晶宫、东海之滨绝不减速，反享水流推力 +15%)
+    app.mountSystem.isRiding = false;
+    app.currentMapId = 'shuijinggong';
+    app.update();
+    assert(app.playerChar.speed >= 3.8 * 1.15, `东海水下水晶宫享受辟水神诀推力，移速不降反升 (实际: ${app.playerChar.speed.toFixed(2)})`);
+
+    app.currentMapId = 'longgong_palace';
+    app.update();
+    assert(app.playerChar.speed >= 3.8 * 1.15, `龙宫大殿中如履平地疾行无阻 (实际: ${app.playerChar.speed.toFixed(2)})`);
+
+    app.currentMapId = 'donghai_coast';
+    app.update();
+    assert(app.playerChar.speed >= 3.8 * 1.15, `东海之滨浅滩辟水健步如飞 (实际: ${app.playerChar.speed.toFixed(2)})`);
+
+    // 4. 刘家村全流程闭环走查 (彻底修复刘伯钦对白重复打回原形死循环 Bug)
+    app.currentMapId = 'liujiacun';
+    app.storyPhase = 'liujiacun_start';
+    app.questKills = { mushrooms: 0, trees: 0, rats: 0 };
+    app.loadMap('liujiacun');
+
+    const boqinNpc = app.npcs.find(n => n.id === 'npc_liuboqin');
+    assert(boqinNpc, '刘家村部署镇山太保刘伯钦');
+
+    // 4.1 初遇刘伯钦并承接采蘑菇任务
+    app.triggerNpcDialogue(boqinNpc);
+    assert(boqinNpc.dialogueKey === 'liuboqin_talk', '初期对白正确映射至 liuboqin_talk');
+    // 模拟对话完成
+    window.GAME_DATA.STORY_DIALOGUES.liuboqin_talk.steps[3].action();
+    assert(app.storyPhase === 'liujiacun_find_mushrooms', '初遇对白结束后进入采蘑菇阶段');
+
+    // 4.2 采蘑菇途中多次点击刘伯钦，绝不重置剧情或重复发放装备
+    app.triggerNpcDialogue(boqinNpc);
+    assert(app.storyPhase === 'liujiacun_find_mushrooms', '采蘑菇途中点击刘伯钦，主线阶段安全保持');
+
+    // 4.3 采摘 2 朵蘑菇
+    app.collectMushroom();
+    app.collectMushroom();
+    assert(app.storyPhase === 'liujiacun_mushrooms_collected', '采齐2朵蘑菇后推进至待交付阶段');
+
+    // 4.4 向刘伯钦交还蘑菇，动态分发至 liuboqin_mushroom_done
+    app.triggerNpcDialogue(boqinNpc);
+    assert(boqinNpc.dialogueKey === 'liuboqin_mushroom_done', '交差时正确分发至 liuboqin_mushroom_done');
+    // 模拟对白完成并开启伐木砍柴
+    window.GAME_DATA.STORY_DIALOGUES.liuboqin_mushroom_done.steps[1].action();
+    assert(app.storyPhase === 'liujiacun_go_cut_wood', '交差后成功承接五行山砍柴任务');
+
+    // 4.5 砍柴任务关隘特许放行验证 (五行山传送门主线放行)
+    const wxsPortal = window.GAME_DATA.MAPS_2D.liujiacun.portals.find(p => p.targetMap === 'wuxingshan');
+    let enteredWxs = false;
+    const oldLoadMap = app.loadMap.bind(app);
+    app.loadMap = (mapId) => { if (mapId === 'wuxingshan') enteredWxs = true; oldLoadMap(mapId); };
+    app.tryEnterPortal(wxsPortal);
+    assert(enteredWxs === true, '五行山脚砍柴阶段，传送门准予进入五行山两界山脚');
+    app.loadMap = oldLoadMap;
+    app.currentMapId = 'liujiacun';
+
+    // 4.6 收集 4 捆柴木
+    for (let i = 0; i < 4; i++) {
+      app.triggerMonsterBattle({ id: 'tree_' + i, name: '百年枯树精', monsterData: { appearance: 'tree' } });
+    }
+    assert(app.storyPhase === 'liujiacun_wood_collected', '砍倒4株枯木精后柴木收集齐全');
+
+    // 4.7 向刘伯钦交付柴木，喝热汤并承接粮仓除鼠
+    app.triggerNpcDialogue(boqinNpc);
+    assert(boqinNpc.dialogueKey === 'liuboqin_wood_done', '交付柴木时正确分发至 liuboqin_wood_done');
+    window.GAME_DATA.STORY_DIALOGUES.liuboqin_wood_done.steps[2].action();
+    assert(app.storyPhase === 'liujiacun_rat_hunting', '喝汤后进入粮仓除害阶段');
+
+    // 4.8 击败 4 只偷粮硕鼠
+    for (let i = 0; i < 4; i++) {
+      app.triggerMonsterBattle({ id: 'rat_' + i, name: '偷粮硕鼠', monsterData: { appearance: 'giant_rat' } });
+    }
+    assert(app.storyPhase === 'liujiacun_rats_cleared', '消灭4只硕鼠后推进至待交差阶段');
+
+    // 4.9 向刘伯钦交付除鼠成果，受邀同赴长安
+    app.triggerNpcDialogue(boqinNpc);
+    assert(boqinNpc.dialogueKey === 'liuboqin_rats_done', '除鼠交差正确分发至 liuboqin_rats_done');
+    window.GAME_DATA.STORY_DIALOGUES.liuboqin_rats_done.steps[2].action();
+    assert(app.storyPhase === 'liujiacun_go_changan', '交差后成功推进至【liujiacun_go_changan】');
+
+    // 4.10 踏入长安城传送门自动推进至 changan_arrived
+    const changanPortal = window.GAME_DATA.MAPS_2D.liujiacun.portals.find(p => p.targetMap === 'changan_city');
+    app.tryEnterPortal(changanPortal);
+    assert(app.currentMapId === 'changan_city', '成功穿过东门官道踏入大唐都城长安');
+    assert(app.storyPhase === 'changan_arrived', '抵达长安城后主线阶段自动推进至【changan_arrived】');
+
+    // 5. 长安城茶肆阿婆打探消息与陈塘关接引
+    const teaNpc = app.npcs.find(n => n.id === 'npc_changan_tea');
+    assert(teaNpc, '长安城部署茶肆阿婆 NPC');
+
+    // 小地图精准指引茶肆阿婆
+    const miniTarget = app.minimap.getCurrentQuestTarget('changan_city', app.storyPhase, window.GAME_DATA.MAPS_2D.changan_city);
+    assert(miniTarget && miniTarget.name.includes('茶肆阿婆'), '长安城抵达阶段小地图精准指引茶肆阿婆');
+
+    // 与茶肆阿婆对话，动态触发 changan_tea_news
+    app.triggerNpcDialogue(teaNpc);
+    assert(teaNpc.dialogueKey === 'changan_tea_news', '初入长安向茶肆阿婆打探，正确触发【changan_tea_news】');
+
+    // 听取东海风波后，主线推进至 chentang_investigate
+    window.GAME_DATA.STORY_DIALOGUES.changan_tea_news.steps[1].action();
+    assert(app.storyPhase === 'chentang_investigate', '阿婆指路后主线顺利推进至陈塘关海乱【chentang_investigate】');
+
+    // 验证陈塘关传送门主线特许放行
+    const ctgPortal = window.GAME_DATA.MAPS_2D.changan_city.portals.find(p => p.targetMap === 'chentangguan');
+    let enteredCtg = false;
+    app.loadMap = (mapId) => { if (mapId === 'chentangguan') enteredCtg = true; oldLoadMap(mapId); };
+    app.tryEnterPortal(ctgPortal);
+    assert(enteredCtg === true, '奉主线招贤之命，长安城东南门准予通行前往陈塘关');
+    app.loadMap = oldLoadMap;
   }
 
   console.log('\n======================================================');

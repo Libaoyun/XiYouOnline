@@ -126,6 +126,77 @@ class Inventory {
     return false;
   }
 
+  // 使用消耗品或道具
+  useItem(instanceId, player, currentPet = null) {
+    const slot = this.slots.find(s => s.instanceId === instanceId);
+    if (!slot) return { success: false, msg: '物品不存在！' };
+
+    const item = window.GAME_DATA.ITEMS[slot.itemId];
+    if (!item) return { success: false, msg: '未知物品！' };
+
+    if (item.type === 'equip') {
+      return this.equip(instanceId, player);
+    }
+
+    if (item.type === 'consumable' && item.effect) {
+      let effectApplied = false;
+      const msgs = [];
+
+      // 气血恢复
+      if (item.effect.hp) {
+        if (player.hp < player.maxHp) {
+          const heal = Math.min(item.effect.hp, player.maxHp - player.hp);
+          player.hp += heal;
+          msgs.push(`恢复 ${heal} 点气血`);
+          effectApplied = true;
+        } else if (!item.effect.maxHpBonus && !item.effect.mp && !item.effect.maxMpBonus) {
+          return { success: false, msg: '气血充盈，无需服用！' };
+        }
+      }
+
+      // 法力恢复
+      if (item.effect.mp) {
+        if (player.mp < player.maxMp) {
+          const restore = Math.min(item.effect.mp, player.maxMp - player.mp);
+          player.mp += restore;
+          msgs.push(`恢复 ${restore} 点法力`);
+          effectApplied = true;
+        } else if (!item.effect.maxHpBonus && !item.effect.hp && !item.effect.maxMpBonus) {
+          return { success: false, msg: '法力充沛，无需服用！' };
+        }
+      }
+
+      // 永久气血与法力上限提升 (如人参果)
+      if (item.effect.maxHpBonus) {
+        player.maxHp = (player.maxHp || 100) + item.effect.maxHpBonus;
+        player.hp = player.maxHp;
+        msgs.push(`气血上限永久提升 ${item.effect.maxHpBonus} 点`);
+        effectApplied = true;
+      }
+      if (item.effect.maxMpBonus) {
+        player.maxMp = (player.maxMp || 50) + item.effect.maxMpBonus;
+        player.mp = player.maxMp;
+        msgs.push(`法力上限永久提升 ${item.effect.maxMpBonus} 点`);
+        effectApplied = true;
+      }
+
+      // 飞行符瞬移
+      if (item.effect.teleport) {
+        this.removeItem(slot.itemId, 1);
+        if (window.Sound) window.Sound.playSuccess();
+        return { success: true, teleportMap: item.effect.teleport, msg: `神符光华一闪，瞬息传送至【长安城】！` };
+      }
+
+      if (effectApplied) {
+        this.removeItem(slot.itemId, 1);
+        if (window.Sound) window.Sound.playSuccess();
+        return { success: true, msg: `服用了【${item.name}】！${msgs.join('，')}！` };
+      }
+    }
+
+    return { success: false, msg: '该物品无法直接在当前状态下使用。' };
+  }
+
   // 手动穿戴装备
   equip(instanceId, player) {
     const slotIdx = this.slots.findIndex(s => s.instanceId === instanceId);

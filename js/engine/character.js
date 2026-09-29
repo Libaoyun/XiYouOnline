@@ -9,6 +9,7 @@ class Character {
     const identity = window.VisualIdentity?.resolveMonster(null, name, id);
     if (identity) return identity;
     const s = `${name || ''}_${id || ''}`.toLowerCase();
+    if (s.includes('黄风') || s.includes('三昧神风') || s.includes('huangfeng')) return 'huangfeng_guai';
     if (s.includes('黄袍') || s.includes('奎木狼') || s.includes('huangpao') || s.includes('kuimu')) return 'huangpao_guai';
     if (s.includes('白骨夫人') || s.includes('白骨精') || s.includes('baigujing')) return 'skeleton';
     if (s.includes('skeleton') || s.includes('骷髅') || s.includes('怨灵') || s.includes('厉鬼')) return 'skeleton';
@@ -46,7 +47,7 @@ class Character {
     this.width = 26;
     this.height = 34;
 
-    this.speed = options.speed || (options.type === 'monster' ? 0.88 : 2.24); // 80% 基础巡逻移动速度
+    this.speed = options.speed || (options.type === 'monster' ? 0.88 : 3.8); // 敏捷行云流水移动速度 (基础 3.8)
     this.direction = options.direction || 'down'; // 'down' | 'up' | 'left' | 'right'
     this.isMoving = false;
     this.animFrame = 0;
@@ -575,6 +576,8 @@ class CharacterRenderer {
       CharacterRenderer.drawBaimuMojun(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('huangpao') || mId.includes('kuimu')) {
       CharacterRenderer.drawHuangpaoGuai(ctx, by, animTimer, direction, isMoving);
+    } else if (mId.includes('huangfeng') || mId.includes('huang_feng')) {
+      CharacterRenderer.drawHuangfengGuai(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('skeleton') || mId.includes('skel') || mId.includes('ghost')) {
       CharacterRenderer.drawBoneWraith(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('lijing') || mId.includes('li_jing')) {
@@ -637,7 +640,7 @@ class CharacterRenderer {
       CharacterRenderer.drawWildWolf(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('tieshan') || mId.includes('tie_shan')) {
       CharacterRenderer.drawTieShanGongZhu(ctx, by, animTimer, direction, isMoving);
-    } else if (mId.includes('martial') || mId.includes('hero') || mId.includes('huang') || mId.includes('mortal') || mId.includes('player') || mId.includes('wanderer')) {
+    } else if (mId.includes('martial') || mId.includes('hero') || (mId.includes('huang') && !mId.includes('huangfeng') && !mId.includes('huangpao')) || mId.includes('mortal') || mId.includes('player') || mId.includes('wanderer')) {
       CharacterRenderer.drawMartialHero(ctx, by, animTimer, direction, isActing, isMoving);
     } else if (mId.includes('rat') || mId.includes('shuoshu') || mId.includes('shuo_shu')) {
       CharacterRenderer.drawGiantRat(ctx, by, animTimer, direction, isMoving);
@@ -3282,6 +3285,317 @@ class CharacterRenderer {
     ctx.beginPath(); ctx.moveTo(15, by + 3); ctx.quadraticCurveTo(25, by - 11, 22, by - 24); ctx.stroke();
     ctx.strokeStyle = '#f7e2a6'; ctx.lineWidth = .8;
     ctx.beginPath(); ctx.moveTo(17, by + 1); ctx.quadraticCurveTo(25, by - 12, 22, by - 22); ctx.stroke();
+    ctx.restore();
+  }
+
+  // =========================================================================
+  // 黄风岭妖王·黄风怪 (黄毛貂鼠精、金丝锁甲、短披风、三股钢叉与三昧神风纹)
+  // =========================================================================
+  static drawHuangfengGuai(ctx, by, animTimer, direction, isMoving) {
+    ctx.save();
+    const flip = direction === 'left' ? -1 : 1;
+    ctx.scale(flip, 1);
+    const isBack = direction === 'up';
+
+    const legMove = isMoving ? Math.sin(animTimer * 0.42) * 3.2 : 0;
+    const breath = Math.sin(animTimer * 0.16) * 1.0;
+    const windPhase = animTimer * 0.3;
+    const forkWave = Math.sin(animTimer * 0.25) * 1.5;
+
+    // 1. 三昧神风·沙暴风旋气晕 (淡金赭黄背景气旋)
+    const sandAura = ctx.createRadialGradient(0, by - 10, 4, 0, by - 10, 32);
+    sandAura.addColorStop(0, 'rgba(251, 191, 36, 0.28)');
+    sandAura.addColorStop(0.5, 'rgba(217, 119, 6, 0.14)');
+    sandAura.addColorStop(1, 'rgba(180, 83, 9, 0)');
+    ctx.fillStyle = sandAura;
+    ctx.beginPath();
+    ctx.arc(0, by - 10, 32, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 灵动的三昧神风气旋弧线 (沙雾金线)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(253, 224, 71, 0.65)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    const wSway1 = Math.sin(windPhase) * 4;
+    ctx.moveTo(-22, by + 4 + wSway1);
+    ctx.quadraticCurveTo(-16 + wSway1, by - 18, 0, by - 26);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    const wSway2 = Math.cos(windPhase * 1.2) * 4;
+    ctx.moveTo(18, by + 8 - wSway2);
+    ctx.quadraticCurveTo(20 + wSway2, by - 8, 4, by - 24);
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. 迎风猎猎飞舞的赭黄短披风 (系于两肩后方，随狂风扬起)
+    const capeWave = Math.sin(windPhase * 1.4) * 4;
+    const capeGrad = ctx.createLinearGradient(-16, by - 8, 12, by + 14);
+    capeGrad.addColorStop(0, '#f59e0b');
+    capeGrad.addColorStop(0.4, '#d97706');
+    capeGrad.addColorStop(1, '#78350f');
+    ctx.fillStyle = capeGrad;
+    ctx.beginPath();
+    if (isBack) {
+      ctx.moveTo(-9, by - 8 + breath);
+      ctx.quadraticCurveTo(-19 + capeWave, by + 4, -16 + capeWave * 1.2, by + 16);
+      ctx.quadraticCurveTo(0, by + 14, 16 + capeWave * 0.8, by + 16);
+      ctx.quadraticCurveTo(18 + capeWave, by + 4, 9, by - 8 + breath);
+    } else {
+      ctx.moveTo(-9, by - 8 + breath);
+      ctx.quadraticCurveTo(-18 + capeWave, by + 2, -15 + capeWave * 1.2, by + 15);
+      ctx.quadraticCurveTo(-7, by + 12, 1, by + 14);
+      ctx.lineTo(8, by - 8 + breath);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#fde047';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // 3. 妖王利爪战靴与劲装下裳
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(-7, by + 7 + legMove, 5.5, 8);
+    ctx.fillRect(1.5, by + 7 - legMove, 5.5, 8);
+    // 金铜护胫与利爪战靴尖
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(-7.5, by + 10 + legMove, 6.5, 3.5);
+    ctx.fillRect(1, by + 10 - legMove, 6.5, 3.5);
+    ctx.fillStyle = '#1c1917';
+    ctx.beginPath();
+    ctx.ellipse(-4.5, by + 15 + legMove, 4.5, 2.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(4.5, by + 15 - legMove, 4.5, 2.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. 身躯：金丝兽面锁子胸甲 / 背甲
+    const armorGrad = ctx.createLinearGradient(-10, by - 12, 10, by + 6);
+    armorGrad.addColorStop(0, '#fbbf24');
+    armorGrad.addColorStop(0.45, '#d97706');
+    armorGrad.addColorStop(1, '#92400e');
+    ctx.fillStyle = armorGrad;
+    ctx.beginPath();
+    ctx.roundRect(-9, by - 11 + breath, 18, 17, 3.5);
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    if (!isBack) {
+      // 胸前旋风流云纹金护心镜
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(0, by - 3 + breath, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // 护心镜内旋风细纹
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(0, by - 3 + breath, 2, windPhase, windPhase + Math.PI * 1.2);
+      ctx.stroke();
+    }
+
+    // 战带与护腰
+    ctx.fillStyle = '#991b1b';
+    ctx.fillRect(-8.5, by + 3 + breath, 17, 3.2);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-2.5, by + 2.5 + breath, 5, 4.2);
+
+    // 5. 标志性神兵：三股钢叉 (Trident Spear)
+    ctx.save();
+    ctx.translate(11, by - 5 + breath + forkWave);
+    ctx.rotate(0.18 + Math.sin(windPhase * 0.8) * 0.03);
+
+    // 乌金叉杆
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(-1.5, -18, 3, 38);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(-0.7, -18, 1.4, 38);
+
+    // 叉喉朱红流苏红缨
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    ctx.moveTo(-4, -18); ctx.lineTo(4, -18); ctx.lineTo(1, -12); ctx.lineTo(-1, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(-3, -19.5, 6, 2.5);
+
+    // 钢叉三股利刃 (中锋长直，左右两侧月牙收拢)
+    const steelGrad = ctx.createLinearGradient(0, -38, 0, -18);
+    steelGrad.addColorStop(0, '#ffffff');
+    steelGrad.addColorStop(0.5, '#e2e8f0');
+    steelGrad.addColorStop(1, '#94a3b8');
+    ctx.fillStyle = steelGrad;
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 0.8;
+
+    // 中锋 (中主股)
+    ctx.beginPath();
+    ctx.moveTo(0, -36);
+    ctx.lineTo(2.2, -19);
+    ctx.lineTo(-2.2, -19);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 左侧股刃
+    ctx.beginPath();
+    ctx.moveTo(-2, -19);
+    ctx.quadraticCurveTo(-8, -25, -5.5, -33);
+    ctx.quadraticCurveTo(-6.5, -23, -1, -20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 右侧股刃
+    ctx.beginPath();
+    ctx.moveTo(2, -19);
+    ctx.quadraticCurveTo(8, -25, 5.5, -33);
+    ctx.quadraticCurveTo(6.5, -23, 1, -20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 叉尖锋芒反光星芒
+    const glintAlpha = 0.5 + Math.sin(animTimer * 0.5) * 0.4;
+    ctx.fillStyle = `rgba(255, 255, 255, ${glintAlpha})`;
+    ctx.beginPath();
+    ctx.arc(0, -36, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // 6. 黄貂鼠妖首级、尖吻、尖耳与五官
+    const headY = by - 18 + breath;
+
+    // 貂鼠妖长尖双耳 (外耳金黄棕褐，内耳透亮柔粉，区别于老虎圆耳)
+    ctx.save();
+    // 左尖耳
+    ctx.fillStyle = '#b45309';
+    ctx.beginPath();
+    ctx.moveTo(-7.5, headY - 4);
+    ctx.lineTo(-10.5, headY - 17);
+    ctx.lineTo(-3.5, headY - 8);
+    ctx.closePath();
+    ctx.fill();
+    if (!isBack) {
+      ctx.fillStyle = '#fecdd3';
+      ctx.beginPath();
+      ctx.moveTo(-6.8, headY - 5);
+      ctx.lineTo(-9.2, headY - 15);
+      ctx.lineTo(-4.2, headY - 8);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 右尖耳
+    ctx.fillStyle = '#b45309';
+    ctx.beginPath();
+    ctx.moveTo(3.5, headY - 8);
+    ctx.lineTo(10.5, headY - 17);
+    ctx.lineTo(7.5, headY - 4);
+    ctx.closePath();
+    ctx.fill();
+    if (!isBack) {
+      ctx.fillStyle = '#fecdd3';
+      ctx.beginPath();
+      ctx.moveTo(4.2, headY - 8);
+      ctx.lineTo(9.2, headY - 15);
+      ctx.lineTo(6.8, headY - 5);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 貂鼠头颅主轮廓与脸颊金黄蓬松腮毛
+    const headGrad = ctx.createLinearGradient(-8, headY - 10, 8, headY + 6);
+    headGrad.addColorStop(0, '#f59e0b');
+    headGrad.addColorStop(0.5, '#d97706');
+    headGrad.addColorStop(1, '#92400e');
+    ctx.fillStyle = headGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, headY - 9);
+    ctx.quadraticCurveTo(8.5, headY - 7, 8.5, headY);
+    // 颊旁翘起的貂毛簇
+    ctx.lineTo(10, headY + 3);
+    ctx.lineTo(7.5, headY + 5);
+    ctx.quadraticCurveTo(0, headY + (isBack ? 8 : 10), -7.5, headY + 5);
+    ctx.lineTo(-10, headY + 3);
+    ctx.lineTo(-8.5, headY);
+    ctx.quadraticCurveTo(-8.5, headY - 7, 0, headY - 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 额头赤金战箍与风纹灵石
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-6.5, headY - 7.5, 13, 2.4);
+    if (!isBack) {
+      ctx.fillStyle = '#10b981'; // 绿翡翠/定风灵玉宝石
+      ctx.beginPath();
+      ctx.arc(0, headY - 6.3, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 突出向前的尖长貂吻 (浅金黄色)
+      ctx.fillStyle = '#fde68a';
+      ctx.beginPath();
+      ctx.moveTo(-4.5, headY + 0.5);
+      ctx.quadraticCurveTo(0, headY - 1.5, 4.5, headY + 0.5);
+      ctx.quadraticCurveTo(4, headY + 7, 0, headY + 8);
+      ctx.quadraticCurveTo(-4, headY + 7, -4.5, headY + 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+
+      // 黑亮小巧鼠鼻尖
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.ellipse(0, headY + 6.5, 1.6, 1.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 锐利金黄妖圣双眸 (倾斜机警的竖瞳)
+      for (const side of [-1, 1]) {
+        const ex = side * 3.6;
+        const ey = headY - 0.5;
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.ellipse(ex, ey, 2.2, 1.6, side * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        // 妖瞳竖仁
+        ctx.fillStyle = '#451a03';
+        ctx.beginPath();
+        ctx.ellipse(ex + side * 0.2, ey, 0.8, 1.5, side * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        // 微光
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(ex - side * 0.4, ey - 0.5, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 左右细长灵动鼠须 (各2根细白金丝)
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.9)';
+      ctx.lineWidth = 0.65;
+      ctx.beginPath();
+      // 左须
+      ctx.moveTo(-3, headY + 5.5); ctx.lineTo(-12, headY + 4);
+      ctx.moveTo(-3, headY + 6.5); ctx.lineTo(-11, headY + 8);
+      // 右须
+      ctx.moveTo(3, headY + 5.5); ctx.lineTo(12, headY + 4);
+      ctx.moveTo(3, headY + 6.5); ctx.lineTo(11, headY + 8);
+      ctx.stroke();
+    }
+
     ctx.restore();
   }
 

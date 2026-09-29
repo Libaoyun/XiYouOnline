@@ -102,6 +102,8 @@ class GameApp2D {
     this.pendingAction = null; // 暂存动作
     this.combatSubMenu = null; // null | 'skills' | 'items'
     this.isAnimatingCombat = false; // 是否正在播放打斗位移动画
+    this.battleTargetMenuOpen = false; // 是否处于单体绝技目标选择面板状态
+    this.pendingSkillAction = null; // 暂存待施展的技能信息
 
     // 全局防呆拦截：彻底禁用原生 alert 与 confirm，杜绝浏览器丑陋弹窗，统一国风主题
     window.alert = (msg) => {
@@ -835,6 +837,9 @@ class GameApp2D {
       baoxiang_seek_princess: 112,
       baoxiang_boss_ready: 115,
       baoxiang_cleared: 120,
+      pingding_scout_cleared: 124,
+      pingding_silver_cleared: 126,
+      pingding_gold_cleared: 128,
       pingding_cleared: 130,
       huoyun_cleared: 140,
       poer_cleared: 150,
@@ -904,13 +909,47 @@ class GameApp2D {
       return currentWeight >= phaseWeights.baihu_cleared;
     }
 
+    // 8.1 平顶山莲花洞剧情 NPC：小钻风、银角大王、金角大王、太上老君
+    if (npcId === 'npc_xiaozuanfeng') {
+      return currentWeight >= phaseWeights.baoxiang_cleared && currentWeight < phaseWeights.pingding_scout_cleared;
+    }
+    if (npcId === 'npc_yinjiao_boss') {
+      return storyPhase === 'pingding_scout_cleared';
+    }
+    if (npcId === 'npc_jinjiao_boss') {
+      return storyPhase === 'pingding_silver_cleared';
+    }
+    if (npcId === 'npc_taishang_laojun') {
+      return currentWeight >= phaseWeights.pingding_gold_cleared;
+    }
+
+    // 8.2 苍茫三岭支线伏魔 NPC 与妖物
+    if (npcId && npcId.startsWith('npc_sanling_fox_')) {
+      const sq = this.playerData?.sideQuests?.sq_sanling_demon;
+      if (!sq || sq.step !== 'hunt_foxes') return false;
+      return !sq.foxesDefeated || !sq.foxesDefeated[npcId];
+    }
+    if (npcId && npcId.startsWith('npc_sanling_wolf_')) {
+      const sq = this.playerData?.sideQuests?.sq_sanling_demon;
+      if (!sq || sq.step !== 'hunt_wolves') return false;
+      return !sq.wolvesDefeated || !sq.wolvesDefeated[npcId];
+    }
+    if (npcId === 'npc_heifeng_shura_boss') {
+      const sq = this.playerData?.sideQuests?.sq_sanling_demon;
+      if (!sq) return false;
+      return sq.step === 'boss_ready';
+    }
+    if (npcId === 'npc_yehu_hermit') {
+      return true;
+    }
+
     // 9. 东胜神洲·花果山与水帘洞：仅在天宫序章大圣反天、奉旨下界征剿阶段出现
     const isHeavenPhase = storyPhase && storyPhase.startsWith('heaven_');
     if (mapId === 'huaguoshan' || mapId === 'huaguoshan_shuilien') {
       if (!isHeavenPhase) return false;
       // 天庭前锋营神将：在花果山主山，指引大将前往水帘洞探查
       if (npcId === 'npc_tianbing_scout') {
-        return storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_huaguoshan';
+        return storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_huaguoshan' || storyPhase === 'heaven_huaguoshan_shuilien';
       }
       // 赤毛马猴：在水帘洞内入口迎敌切磋
       if (npcId === 'npc_chimao_mahou' || npcId === 'npc_chimaomahou') {
@@ -1146,7 +1185,11 @@ class GameApp2D {
       'baihu_second_cleared': 'npc_baigujing',
       'baihu_cleared': 'npc_baoxiang_king',
       'baoxiang_seek_princess': 'npc_baihuaxiu',
-      'baoxiang_boss_ready': 'npc_huangpao_boss'
+      'baoxiang_boss_ready': 'npc_huangpao_boss',
+      'baoxiang_cleared': 'npc_xiaozuanfeng',
+      'pingding_scout_cleared': 'npc_yinjiao_boss',
+      'pingding_silver_cleared': 'npc_jinjiao_boss',
+      'pingding_gold_cleared': 'npc_taishang_laojun'
     };
 
     const shouldShowQuestExclamation = (n) => {
@@ -1162,9 +1205,16 @@ class GameApp2D {
       // 2. 地面采摘物不显示感叹号
       if (n.id.startsWith('prop_mushroom_')) return false;
 
-      // 3. 支线副本 NPC：如果有专属支线标识，可显示支线感叹号
+      // 3. 支线副本 NPC：如果有专属支线标识或三岭降妖任务，可显示支线感叹号
       if (n.isSideQuest) {
         return !this.interactedNpcSet || !this.interactedNpcSet.has(n.id);
+      }
+      if (n.id === 'npc_yehu_hermit') {
+        const sq = this.playerData?.sideQuests?.sq_sanling_demon;
+        return !sq || sq.step !== 'done';
+      }
+      if (n.id && (n.id.startsWith('npc_sanling_fox_') || n.id.startsWith('npc_sanling_wolf_') || n.id === 'npc_heifeng_shura_boss')) {
+        return true;
       }
 
       // 4. 主线感叹号严格唯一匹配：只有当前阶段指定的唯一 NPC 显示感叹号！
@@ -1260,10 +1310,27 @@ class GameApp2D {
     window.addEventListener('keydown', (e) => {
       this.keysDown[e.key] = true;
       if (this.currentBattle) {
+        if (this.battleTargetMenuOpen) {
+          if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q') {
+            this.cancelCombatTargetSelection();
+            return;
+          }
+          if (e.key >= '1' && e.key <= '9') {
+            const targetNum = parseInt(e.key, 10) - 1;
+            const aliveEnemies = this.currentBattle.enemies.filter(en => en.hp > 0);
+            if (aliveEnemies[targetNum]) {
+              const actualIdx = aliveEnemies[targetNum].enemyIndex !== undefined ? aliveEnemies[targetNum].enemyIndex : targetNum;
+              this.confirmCombatSkillTarget(actualIdx);
+              return;
+            }
+          }
+        }
         if (e.key === ' ' || e.key === 'Enter') {
           if (this.battleSkillMenuOpen) {
-            const skills = this.playerData ? this.playerData.getSkills() : [];
-            if (skills.length > 0) this.chooseCombatAction('skill', skills[0].id);
+            const curAllyId = this.selectedAllyId || 'player';
+            const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
+            const skills = curAlly?.isPlayer ? this.playerData.getSkills() : (curAlly?.skills || []);
+            if (skills.length > 0) this.onSkillButtonClick(skills[0].id);
           } else {
             this.chooseCombatAction('attack');
           }
@@ -1486,8 +1553,13 @@ class GameApp2D {
   // 统一传送门进入与等级门禁校验
   tryEnterPortal(p) {
     if (!p || this.isTransitioning) return;
-    // 关隘与练功区等级限制校验
-    if (p.minLevel && this.player && this.player.level < p.minLevel) {
+    
+    // 关隘与练功区等级限制校验 (主线对应任务特许放行)
+    const pLevel = (this.playerData && this.playerData.level) || (this.player && this.player.level) || 1;
+    const isWuxingWoodPass = p.targetMap === 'wuxingshan' && (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering');
+    const isChentangStoryPass = p.targetMap === 'chentangguan' && (this.storyPhase === 'chentang_investigate' || this.storyPhase.startsWith('chentang_') || this.storyPhase.startsWith('donghai_') || this.storyPhase.startsWith('longgong_'));
+
+    if (p.minLevel && pLevel < p.minLevel && !isWuxingWoodPass && !isChentangStoryPass) {
       // 玩家向后轻微反弹 28px 防止贴门循环触发
       const bounceAngle = Math.atan2(this.playerChar.y - p.y, this.playerChar.x - p.x);
       this.playerChar.x = p.x + Math.cos(bounceAngle) * 28;
@@ -1498,12 +1570,18 @@ class GameApp2D {
       const targetMapData = window.GAME_DATA.MAPS_2D[p.targetMap];
       const targetName = targetMapData?.name || p.name;
       window.showGameMessage(
-        `⛔【修仙警令】前方【${targetName}】妖气极盛（野怪凶险，需修行达到 Lv.${p.minLevel}），少侠当前仅 Lv.${this.player.level}，恐有性命之忧，请先行历练！`,
+        `⛔【修仙警令】前方【${targetName}】妖气极盛（野怪凶险，需修行达到 Lv.${p.minLevel}），少侠当前仅 Lv.${pLevel}，恐有性命之忧，请先行历练！`,
         'warning',
         4500
       );
       if (window.Sound && window.Sound.playMiss) window.Sound.playMiss();
       return;
+    }
+
+    // 踏入长安城传送门：若当前为主线受刘伯钦之托赶赴长安阶段，自动推进至抵达长安
+    if (p.targetMap === 'changan_city' && this.storyPhase === 'liujiacun_go_changan') {
+      this.storyPhase = 'changan_arrived';
+      window.showGameMessage('🏮 已抵达大唐王都·长安城！请前往茶肆向阿婆打探各方消息。', 'info', 4000);
     }
 
     this.loadMap(p.targetMap, { x: p.targetX, y: p.targetY }, { duration: 0.75 });
@@ -1534,10 +1612,17 @@ class GameApp2D {
     const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
     if (!mapData) return;
 
-    // 1. 坐骑移速与骑乘状态 (保留80%移动速度，避免过快)
-    const baseSpeed = this.playerChar.appearance === 'heaven_general' ? 2.4 : 2.0;
-    const speedBonus = this.mountSystem.getStatsBonus().speedBonus;
-    this.playerChar.speed = baseSpeed * (1 + speedBonus);
+    // 1. 敏捷移速与坐骑骑乘状态 (基础移速大幅提升，坐骑大幅加速，水中辟水神诀绝无迟滞)
+    const baseSpeed = this.playerChar.appearance === 'heaven_general' ? 4.2 : 3.8;
+    const speedBonus = this.mountSystem && this.mountSystem.getStatsBonus ? (this.mountSystem.getStatsBonus().speedBonus || 0) : 0;
+    let finalSpeed = baseSpeed * (1 + speedBonus);
+
+    // 🌊 龙宫与东海海域：辟水神诀加持，在水底如履平地，享受水流推力 +15% 极速畅游！
+    if (this.currentMapId === 'shuijinggong' || this.currentMapId === 'longgong_palace' || this.currentMapId === 'donghai_coast') {
+      finalSpeed = Math.max(finalSpeed, baseSpeed * 1.15 * (1 + speedBonus));
+    }
+
+    this.playerChar.speed = finalSpeed;
     this.playerChar.isRiding = this.mountSystem.isRiding;
 
     // 2. 键盘手动移动检测
@@ -1740,6 +1825,89 @@ class GameApp2D {
       } else if (this.storyPhase === 'chentang_investigate') {
         npc.dialogueKey = 'chentang_lijing_talk';
       }
+    }
+
+    // 依据当前最新 storyPhase 动态匹配刘家村刘伯钦的主线对话
+    if (npc.id === 'npc_liuboqin') {
+      if (this.storyPhase === 'liujiacun_start') {
+        npc.dialogueKey = 'liuboqin_talk';
+      } else if (this.storyPhase === 'liujiacun_find_mushrooms') {
+        const mushrooms = (this.questKills && this.questKills.mushrooms) || 0;
+        window.Dialogue.start({
+          steps: [{
+            speaker: '刘伯钦',
+            speakerTitle: '【镇山太保】',
+            speakerIcon: '🏹',
+            text: `村中草地长有青蘑菇，认准青伞白柄，采 2 朵【野生青蘑菇】回来即可下锅。目前已采得 (${mushrooms}/2)。`
+          }]
+        });
+        return;
+      } else if (this.storyPhase === 'liujiacun_mushrooms_collected') {
+        npc.dialogueKey = 'liuboqin_mushroom_done';
+      } else if (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering') {
+        const trees = (this.questKills && this.questKills.trees) || 0;
+        window.Dialogue.start({
+          steps: [{
+            speaker: '刘伯钦',
+            speakerTitle: '【镇山太保】',
+            speakerIcon: '🏹',
+            text: `五行山脚下的【百年枯树精】挡了采樵路，请少侠前去击败 4 株收集坚韧柴木。目前已砍得 (${trees}/4) 捆。`
+          }]
+        });
+        return;
+      } else if (this.storyPhase === 'liujiacun_wood_collected') {
+        npc.dialogueKey = 'liuboqin_wood_done';
+      } else if (this.storyPhase === 'liujiacun_rat_hunting') {
+        const rats = (this.questKills && this.questKills.rats) || 0;
+        window.Dialogue.start({
+          steps: [{
+            speaker: '刘伯钦',
+            speakerTitle: '【镇山太保】',
+            speakerIcon: '🏹',
+            text: `粮仓被【偷粮硕鼠】钻了洞，正偷吃乡亲们过冬的口粮，请少侠在田垄粮仓周围消灭 4 只硕鼠。目前已消灭 (${rats}/4) 只。`
+          }]
+        });
+        return;
+      } else if (this.storyPhase === 'liujiacun_rats_cleared') {
+        npc.dialogueKey = 'liuboqin_rats_done';
+      } else if (this.storyPhase === 'liujiacun_go_changan') {
+        window.Dialogue.start({
+          steps: [{
+            speaker: '刘伯钦',
+            speakerTitle: '【同赴长安】',
+            speakerIcon: '🏹',
+            text: '山货已经打点齐整。少侠，东门官道已开，咱们这就启程同赴大唐都城【长安城】吧！',
+            options: [
+              {
+                text: '【🏮 立即与刘伯钦一同启程前往长安城】',
+                action: () => {
+                  if (window.Dialogue) window.Dialogue.close();
+                  this.storyPhase = 'changan_arrived';
+                  this.loadMap('changan_city', { x: 96, y: 544 });
+                  window.showGameMessage('🏮 已抵达大唐王都·长安城！请前往茶肆向阿婆打探各方消息。', 'info', 4000);
+                }
+              },
+              {
+                text: '【我先在村中转转，稍后自行前往东门】'
+              }
+            ]
+          }]
+        });
+        return;
+      }
+    }
+
+    // 依据当前最新 storyPhase 动态匹配长安城茶肆阿婆的主线对话
+    if (npc.id === 'npc_changan_tea') {
+      if (this.storyPhase === 'changan_arrived' || this.storyPhase === 'liujiacun_go_changan') {
+        npc.dialogueKey = 'changan_tea_news';
+      } else {
+        npc.dialogueKey = 'changan_tea_talk';
+      }
+    }
+
+    if (window.Dialogue) {
+      window.Dialogue.currentNpcId = npc.id;
     }
 
     if (npc.dialogueKey && window.GAME_DATA.STORY_DIALOGUES[npc.dialogueKey]) {
@@ -3530,7 +3698,7 @@ class GameApp2D {
     this.playerData.unequipItem('armor');
     this.playerChar.name = this.playerData.name;
     this.playerChar.appearance = 'mortal_wanderer';
-    this.playerChar.speed = 2.08; // 80% 速度 (原2.6)
+    this.playerChar.speed = 3.8; // 敏捷行云流水凡尘移速 (基础 3.8)
 
     this.storyPhase = 'liujiacun_start';
     this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
@@ -3633,6 +3801,26 @@ class GameApp2D {
       skills: md.skills || monsterChar.skills || ['连击']
     };
 
+    // 新手剧情怪物动态数值适格化 (确保凡间新手剧情战斗平滑适度，杜绝新手被高等级野怪秒杀)
+    const isQuestTree = monsterChar.id.includes('tree') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'tree') || monsterChar.name.includes('枯树精');
+    if (isQuestTree && (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering')) {
+      mob.level = 2;
+      mob.hp = 110;
+      mob.maxHp = 110;
+      mob.atk = 22;
+      mob.def = 10;
+      mob.spd = 18;
+    }
+    const isQuestHooligan = monsterChar.name.includes('混混') || monsterChar.id.includes('hooligan') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'hooligan');
+    if (isQuestHooligan && this.storyPhase === 'chentang_defeat_hooligans') {
+      mob.level = 4;
+      mob.hp = 180;
+      mob.maxHp = 180;
+      mob.atk = 32;
+      mob.def = 16;
+      mob.spd = 22;
+    }
+
     this.start2DBattle([mob], () => {
       this.monsters = this.monsters.filter(m => m.id !== monsterChar.id);
       if (monsterChar.isGhostTarget) {
@@ -3706,16 +3894,16 @@ class GameApp2D {
       name: '混混头目·雷震彪',
       isMutated: false,
       isBoss: true,
-      level: 16,
-      hp: 1500,
-      maxHp: 1500,
-      mp: 300,
-      maxMp: 300,
-      atk: 105,
-      def: 48,
-      matk: 20,
-      mdef: 20,
-      spd: 26,
+      level: 6,
+      hp: 450,
+      maxHp: 450,
+      mp: 150,
+      maxMp: 150,
+      atk: 46,
+      def: 22,
+      matk: 15,
+      mdef: 15,
+      spd: 24,
       skills: ['破甲拳', '连击']
     };
     const minion1 = {
@@ -3726,16 +3914,16 @@ class GameApp2D {
       name: '地痞随从·恶犬',
       isMutated: false,
       isBoss: false,
-      level: 12,
-      hp: 500,
-      maxHp: 500,
-      mp: 100,
-      maxMp: 100,
-      atk: 60,
-      def: 28,
+      level: 4,
+      hp: 150,
+      maxHp: 150,
+      mp: 50,
+      maxMp: 50,
+      atk: 24,
+      def: 14,
       matk: 10,
       mdef: 10,
-      spd: 22,
+      spd: 20,
       skills: ['普通攻击']
     };
     const minion2 = {
@@ -3746,16 +3934,16 @@ class GameApp2D {
       name: '地痞随从·飞蝗',
       isMutated: false,
       isBoss: false,
-      level: 12,
-      hp: 500,
-      maxHp: 500,
-      mp: 100,
-      maxMp: 100,
-      atk: 60,
-      def: 28,
+      level: 4,
+      hp: 150,
+      maxHp: 150,
+      mp: 50,
+      maxMp: 50,
+      atk: 24,
+      def: 14,
       matk: 10,
       mdef: 10,
-      spd: 22,
+      spd: 20,
       skills: ['普通攻击']
     };
 
@@ -3780,16 +3968,16 @@ class GameApp2D {
       name: '巡海夜叉·李艮',
       isMutated: false,
       isBoss: true,
-      level: 12,
-      hp: 1200,
-      maxHp: 1200,
-      mp: 400,
-      maxMp: 400,
-      atk: 95,
-      def: 55,
-      matk: 40,
-      mdef: 40,
-      spd: 28,
+      level: 8,
+      hp: 650,
+      maxHp: 650,
+      mp: 250,
+      maxMp: 250,
+      atk: 52,
+      def: 24,
+      matk: 25,
+      mdef: 25,
+      spd: 26,
       skills: ['巨浪劈', '托天叉']
     };
     this.start2DBattle([yechaBoss], () => {
@@ -4050,6 +4238,7 @@ class GameApp2D {
     const boss = {
       id: 'boss_huangfeng',
       name: '黄风怪 (黄风大圣)',
+      appearance: 'huangfeng_guai',
       level: 34,
       hp: 9200,
       maxHp: 9200,
@@ -4115,10 +4304,25 @@ class GameApp2D {
       skills: ['金刚护体', '水攻', '高级神佑复生']
     };
     this.companions.push(shasengPet);
+
+    // 查缴行李战利品犒赏大将军 (清泉酒30瓶、流沙逐风靴、大圣假睫毛、灵药盘缠)
+    if (this.inventory) {
+      this.inventory.addItem('qingquan_jiu', 30);
+      this.inventory.addItem('liusha_speed_boots', 1);
+      this.inventory.addItem('wukong_eyelash', 1);
+      this.inventory.addItem('xuelian_dan', 5);
+      this.inventory.addItem('jiuzhuan_dan', 3);
+    }
+    if (this.playerData) {
+      this.playerData.silver += 5000;
+      this.playerData.exp += 45000;
+      this.playerData.recalculateStats(false);
+    }
+
     window.Sound.playLevelUp();
     this.updatePlayerHud();
     this.saveAutoProgress();
-    window.showGameMessage('🎉【卷帘大将沙和尚】挑担入队！师徒四人同心圆满，飞渡八百里流沙河！', 'success', 4500);
+    window.showGameMessage('🎉【卷帘大将沙和尚】入队！查缴战利：清泉酒×30、流沙逐风靴×1、大圣防风睫毛、金丹与银两！', 'success', 5000);
   }
 
   // === 第八章：浮屠山乌巢禅师传心经 ===
@@ -4164,13 +4368,17 @@ class GameApp2D {
         this.storyPhase === 'baihu_second_cleared' || this.storyPhase === 'baihu_cleared') return;
     this.storyPhase = 'wuzhuang_cleared';
     this.npcs = this.npcs.filter(n => n.id !== 'npc_zhenyuanzi');
+    if (this.inventory) {
+      this.inventory.addItem('renshen_guo', 2);
+      this.inventory.addItem('eq_am_hunyuan', 1);
+    }
     this.playerData.exp += 60000;
     this.playerData.silver += 50000;
     this.playerData.recalculateStats(false);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
     this.saveAutoProgress();
-    window.showGameMessage('🎉 获赠万寿山【草还丹人参果】仙果！修为经验暴增60000，境界大幅突破！', 'success', 4500);
+    window.showGameMessage('🎉 获赠万寿山【草还丹·人参果】×2 与【混元一气锦襕道袍】！修为经验暴增60000，境界大幅突破！', 'success', 4500);
   }
 
   advanceBaoxiangStory(nextPhase, targetNpcId) {
@@ -4276,6 +4484,427 @@ class GameApp2D {
       setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.huangpao_aftermath), 500);
       window.showGameMessage('🎉【大破波月洞】降伏奎木狼还朝！救出百花羞公主，获赠神兵【冷月追魂宝刀】与【高级必杀兽诀】！', 'success', 5000);
     });
+  }
+
+  // === 第十二回：平顶山·莲花洞主线战斗与太上道祖点化 ===
+  triggerXiaozuanfengBattle() {
+    if (window.Dialogue) window.Dialogue.close();
+    const enemies = [
+      {
+        id: 'boss_xiaozuanfeng',
+        name: '巡山小钻风',
+        appearance: 'changan_hawker',
+        modelId: 'changan_hawker',
+        level: 46,
+        hp: 12000,
+        maxHp: 12000,
+        mp: 2500,
+        maxMp: 2500,
+        atk: 270,
+        def: 145,
+        matk: 220,
+        mdef: 135,
+        spd: 46,
+        skills: ['隐身咒', '连击', '飞沙走石']
+      },
+      {
+        id: 'mob_xuanfeng_1',
+        name: '巡山精怪·铜锣手',
+        appearance: 'hooligan',
+        modelId: 'hooligan',
+        level: 44,
+        hp: 6500,
+        maxHp: 6500,
+        mp: 1200,
+        maxMp: 1200,
+        atk: 230,
+        def: 125,
+        spd: 40,
+        skills: ['连击']
+      },
+      {
+        id: 'mob_xuanfeng_2',
+        name: '巡山精怪·令旗兵',
+        appearance: 'hooligan',
+        modelId: 'hooligan',
+        level: 44,
+        hp: 6500,
+        maxHp: 6500,
+        mp: 1200,
+        maxMp: 1200,
+        atk: 230,
+        def: 125,
+        spd: 41,
+        skills: ['连击']
+      }
+    ];
+
+    this.start2DBattle(enemies, () => {
+      this.storyPhase = 'pingding_scout_cleared';
+      this.npcs = this.npcs.filter(n => n.id !== 'npc_xiaozuanfeng');
+      this.playerData.gainExp(35000);
+      this.playerData.silver += 8000;
+      this.updatePlayerHud();
+      this.saveAutoProgress();
+      window.Sound.playLevelUp();
+      setTimeout(() => {
+        window.showGameMessage('🎺 小钻风丢下铜锣狼狈逃窜！山门盘道已开，二大王【银角大王】正在前方石坛移山压顶！', 'success', 5000);
+      }, 500);
+    });
+  }
+
+  triggerYinjiaoBattle() {
+    if (window.Dialogue) window.Dialogue.close();
+    const boss = {
+      id: 'boss_yinjiao',
+      name: '银角大王',
+      appearance: 'yinjiao',
+      modelId: 'yinjiao',
+      level: 50,
+      hp: 24000,
+      maxHp: 24000,
+      mp: 6000,
+      maxMp: 6000,
+      atk: 340,
+      def: 180,
+      matk: 320,
+      mdef: 175,
+      spd: 45,
+      skills: ['封印咒', '飞沙走石', '三昧真火', '雷霆万钧']
+    };
+
+    this.start2DBattle([boss], () => {
+      this.storyPhase = 'pingding_silver_cleared';
+      this.npcs = this.npcs.filter(n => n.id !== 'npc_yinjiao_boss');
+      this.playerData.gainExp(55000);
+      this.playerData.silver += 12000;
+      this.updatePlayerHud();
+      this.saveAutoProgress();
+      window.Sound.playLevelUp();
+      setTimeout(() => {
+        window.showGameMessage('🥈 大破移山压顶大阵！银角大王负伤逃回洞中，大大王【金角大王】暴怒持七星剑杀出！', 'success', 5000);
+      }, 500);
+    });
+  }
+
+  triggerJinjiaoBattle() {
+    if (window.Dialogue) window.Dialogue.close();
+    const bosses = [
+      {
+        id: 'boss_jinjiao',
+        name: '金角大王',
+        appearance: 'jinjiao',
+        modelId: 'jinjiao',
+        level: 52,
+        hp: 30000,
+        maxHp: 30000,
+        mp: 8000,
+        maxMp: 8000,
+        atk: 380,
+        def: 210,
+        matk: 350,
+        mdef: 200,
+        spd: 47,
+        skills: ['雷霆万钧', '舍生取义', '三昧真火', '飞沙走石']
+      },
+      {
+        id: 'mob_yinjiao_shadow',
+        name: '银角幻身护卫',
+        appearance: 'yinjiao',
+        modelId: 'yinjiao',
+        level: 48,
+        hp: 10000,
+        maxHp: 10000,
+        mp: 3000,
+        maxMp: 3000,
+        atk: 260,
+        def: 155,
+        spd: 43,
+        skills: ['封印咒', '定身咒']
+      }
+    ];
+
+    this.start2DBattle(bosses, () => {
+      this.storyPhase = 'pingding_gold_cleared';
+      this.npcs = this.npcs.filter(n => n.id !== 'npc_jinjiao_boss');
+      this.playerData.gainExp(75000);
+      this.playerData.silver += 16000;
+      this.updatePlayerHud();
+      this.saveAutoProgress();
+      window.Sound.playLevelUp();
+      setTimeout(() => {
+        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.pingdingshan_laojun_aftermath);
+      }, 500);
+    });
+  }
+
+  grantLaojunGift() {
+    if (this.storyPhase === 'pingding_cleared') return;
+    this.storyPhase = 'pingding_cleared';
+    if (this.inventory) {
+      this.inventory.addItem('jiuzhuan_xuandu_dan', 2);
+      this.inventory.addItem('eq_wp_qixing', 1);
+      this.inventory.addItem('zijin_hulu', 1);
+    }
+    this.playerData.gainExp(80000);
+    this.playerData.silver += 20000;
+    this.updatePlayerHud();
+    this.saveAutoProgress();
+    window.Sound.playLevelUp();
+    window.showGameMessage('🎉【平顶风云伏双魔】功德圆满！获赠太上老君【九转玄都金丹】×2、神兵【七星伏魔宝剑】与【紫金红葫芦·仙葫灵蕴】！', 'success', 6000);
+  }
+
+  // === 支线任务：【苍茫三岭伏魔传】逻辑实现 ===
+  initSanlingSideQuest() {
+    if (!this.playerData) return null;
+    this.playerData.sideQuests = this.playerData.sideQuests || {};
+    if (!this.playerData.sideQuests.sq_sanling_demon) {
+      this.playerData.sideQuests.sq_sanling_demon = {
+        id: 'sq_sanling_demon',
+        title: '苍茫三岭伏魔传',
+        step: 'not_started',
+        foxKills: 0,
+        wolfKills: 0,
+        foxesDefeated: {},
+        wolvesDefeated: {}
+      };
+    }
+    return this.playerData.sideQuests.sq_sanling_demon;
+  }
+
+  startSanlingSideQuest() {
+    const sq = this.initSanlingSideQuest();
+    if (!sq) return;
+    if (sq.step === 'not_started') {
+      sq.step = 'hunt_foxes';
+      this.saveAutoProgress();
+      window.Sound.playSuccess();
+      window.showGameMessage('📜 已接取支线任务【苍茫三岭伏魔传】！前往野狐岭林间击败 3 只作恶的青丘妖狐！', 'success', 5000);
+    }
+  }
+
+  checkSanlingSideQuestProgress() {
+    const sq = this.initSanlingSideQuest();
+    if (!sq) return;
+    if (sq.step === 'hunt_foxes') {
+      window.showGameMessage(`🦊【第一环·清剿狐患】请在野狐岭击败青丘妖狐 (当前进度: ${sq.foxKills || 0}/3)`, 'info', 4500);
+    } else if (sq.step === 'hunt_wolves') {
+      window.showGameMessage(`🐺【第二环·夜探狼岭】请前往郊狼岭击败阴风血狼 (当前进度: ${sq.wolfKills || 0}/3)`, 'info', 4500);
+    } else if (sq.step === 'boss_ready') {
+      window.showGameMessage('👹【第三环·决战魔窟】深入万妖魔窟·黑风绝壁，斩杀凶暴霸主【黑风修罗王】！', 'warn', 5000);
+    } else if (sq.step === 'reward_ready') {
+      window.showGameMessage('✨ 修罗王已伏诛！速速向野狐岭玄风道长复命，领受辟邪灵佩等丰厚大奖！', 'success', 5000);
+    } else if (sq.step === 'done') {
+      window.showGameMessage('🎉 苍茫三岭妖氛尽散，三岭百姓皆感念少侠神威！', 'success', 4500);
+    }
+  }
+
+  triggerSanlingFoxBattle(npcId = 'npc_sanling_fox_1') {
+    if (window.Dialogue) window.Dialogue.close();
+    const enemies = [
+      {
+        id: 'monster_sanling_fox',
+        name: '青丘妖狐',
+        appearance: 'fox',
+        modelId: 'fox',
+        level: 28,
+        hp: 3800,
+        maxHp: 3800,
+        mp: 1500,
+        maxMp: 1500,
+        atk: 180,
+        def: 85,
+        spd: 38,
+        skills: ['隐身咒', '三昧真火']
+      },
+      {
+        id: 'monster_fox_sub',
+        name: '野狐妖仆',
+        appearance: 'fox',
+        modelId: 'fox',
+        level: 26,
+        hp: 2600,
+        maxHp: 2600,
+        mp: 800,
+        maxMp: 800,
+        atk: 140,
+        def: 70,
+        spd: 34,
+        skills: []
+      }
+    ];
+
+    this.start2DBattle(enemies, () => {
+      const sq = this.initSanlingSideQuest();
+      if (sq) {
+        sq.foxesDefeated = sq.foxesDefeated || {};
+        sq.foxesDefeated[npcId] = true;
+        sq.foxKills = (sq.foxKills || 0) + 1;
+        if (this.inventory) {
+          this.inventory.addItem('qingqiu_hudan', 1);
+        }
+        if (sq.foxKills >= 3 && sq.step === 'hunt_foxes') {
+          sq.step = 'hunt_wolves';
+          window.Sound.playLevelUp();
+          window.showGameMessage('🎉【狐患已清】成功斩获3枚青丘狐丹！第二环开启：速穿过西门进入【郊狼岭】斩杀3只阴风血狼！', 'success', 5000);
+        } else {
+          window.showGameMessage(`🦊 击败青丘妖狐！取得【青丘妖狐内丹】×1！(狐患进度: ${sq.foxKills}/3)`, 'success', 3500);
+        }
+      }
+      this.npcs = this.npcs.filter(n => n.id !== npcId);
+      this.playerData.gainExp(12000);
+      this.playerData.silver += 2000;
+      this.updatePlayerHud();
+      this.saveAutoProgress();
+    });
+  }
+
+  triggerSanlingWolfBattle(npcId = 'npc_sanling_wolf_1') {
+    if (window.Dialogue) window.Dialogue.close();
+    const enemies = [
+      {
+        id: 'monster_sanling_wolf',
+        name: '阴风血狼',
+        appearance: 'wolf',
+        modelId: 'wolf',
+        level: 32,
+        hp: 5200,
+        maxHp: 5200,
+        mp: 1200,
+        maxMp: 1200,
+        atk: 220,
+        def: 110,
+        spd: 42,
+        skills: ['连击', '狂暴重击']
+      },
+      {
+        id: 'monster_wolf_sub',
+        name: '嗜血幼狼',
+        appearance: 'wolf',
+        modelId: 'wolf',
+        level: 30,
+        hp: 3400,
+        maxHp: 3400,
+        mp: 800,
+        maxMp: 800,
+        atk: 170,
+        def: 90,
+        spd: 39,
+        skills: []
+      }
+    ];
+
+    this.start2DBattle(enemies, () => {
+      const sq = this.initSanlingSideQuest();
+      if (sq) {
+        sq.wolvesDefeated = sq.wolvesDefeated || {};
+        sq.wolvesDefeated[npcId] = true;
+        sq.wolfKills = (sq.wolfKills || 0) + 1;
+        if (this.inventory) {
+          this.inventory.addItem('shangren_jinnang', 1);
+        }
+        if (sq.wolfKills >= 3 && sq.step === 'hunt_wolves') {
+          sq.step = 'boss_ready';
+          window.Sound.playLevelUp();
+          window.showGameMessage('⚔️【狼患荡平】成功夺回行商遗物！群魔震恐，深处【黑风绝壁】魔窟霸主【黑风修罗王】已现身迎战！', 'warn', 5500);
+        } else {
+          window.showGameMessage(`🐺 诛灭阴风血狼！夺回【残破的行商锦囊】×1！(狼患进度: ${sq.wolfKills}/3)`, 'success', 3500);
+        }
+      }
+      this.npcs = this.npcs.filter(n => n.id !== npcId);
+      this.playerData.gainExp(16000);
+      this.playerData.silver += 3000;
+      this.updatePlayerHud();
+      this.saveAutoProgress();
+    });
+  }
+
+  triggerHeifengShuraBattle() {
+    if (window.Dialogue) window.Dialogue.close();
+    const bosses = [
+      {
+        id: 'boss_heifeng_shura',
+        name: '黑风修罗王',
+        appearance: 'yecha',
+        modelId: 'yecha',
+        level: 38,
+        hp: 16800,
+        maxHp: 16800,
+        mp: 4000,
+        maxMp: 4000,
+        atk: 290,
+        def: 160,
+        matk: 240,
+        mdef: 145,
+        spd: 44,
+        skills: ['雷霆万钧', '舍生取义', '三昧真火']
+      },
+      {
+        id: 'mob_shura_guard_1',
+        name: '修罗血煞卫·左',
+        appearance: 'yecha',
+        modelId: 'yecha',
+        level: 35,
+        hp: 6000,
+        maxHp: 6000,
+        mp: 1500,
+        maxMp: 1500,
+        atk: 210,
+        def: 120,
+        spd: 38,
+        skills: ['连击']
+      },
+      {
+        id: 'mob_shura_guard_2',
+        name: '修罗血煞卫·右',
+        appearance: 'yecha',
+        modelId: 'yecha',
+        level: 35,
+        hp: 6000,
+        maxHp: 6000,
+        mp: 1500,
+        maxMp: 1500,
+        atk: 210,
+        def: 120,
+        spd: 38,
+        skills: ['连击']
+      }
+    ];
+
+    this.start2DBattle(bosses, () => {
+      const sq = this.initSanlingSideQuest();
+      if (sq) {
+        sq.step = 'reward_ready';
+      }
+      this.npcs = this.npcs.filter(n => n.id !== 'npc_heifeng_shura_boss');
+      this.playerData.gainExp(35000);
+      this.playerData.silver += 8000;
+      this.updatePlayerHud();
+      this.saveAutoProgress();
+      window.Sound.playLevelUp();
+      window.showGameMessage('🎉【荡平魔窟】万妖魔窟霸主【黑风修罗王】伏诛！速速返回野狐岭向【玄风道长】复命领赏！', 'success', 6000);
+    });
+  }
+
+  claimSanlingSideQuestReward() {
+    const sq = this.initSanlingSideQuest();
+    if (!sq || sq.step !== 'reward_ready') {
+      window.showGameMessage('道长抚须含笑：“三岭妖氛未绝，少侠莫急，功成自会奉上厚礼。”', 'info');
+      return;
+    }
+    sq.step = 'done';
+    sq.status = 'completed';
+    if (this.inventory) {
+      this.inventory.addItem('eq_peishi_heifeng', 1);
+      this.inventory.addItem('jin_liu_lu', 3);
+      this.inventory.addItem('jiuzhuan_dan', 3);
+    }
+    this.playerData.gainExp(35000);
+    this.playerData.silver += 10000;
+    this.updatePlayerHud();
+    this.saveAutoProgress();
+    window.Sound.playLevelUp();
+    window.showGameMessage('🎉【苍茫三岭伏魔传】支线圆满达成！获赠极品【黑风辟邪玉佩】×1、【金柳露】×3、【九转还魂丹】×3 与 10000 银两！', 'success', 6000);
   }
 
   // 兼容别名
@@ -4391,14 +5020,121 @@ class GameApp2D {
 
   toggleSkillMenu(isOpen) {
     this.battleSkillMenuOpen = isOpen;
+    if (!isOpen) {
+      this.battleTargetMenuOpen = false;
+      this.pendingSkillAction = null;
+    }
     const hexSvg = document.getElementById('battle-hex-svg');
     const skillPanel = document.getElementById('battle-skill-panel');
+    const targetPanel = document.getElementById('battle-target-panel');
     if (hexSvg && skillPanel) {
-      hexSvg.style.display = isOpen ? 'none' : 'block';
-      skillPanel.style.display = isOpen ? 'flex' : 'none';
+      hexSvg.style.display = (isOpen || this.battleTargetMenuOpen) ? 'none' : 'block';
+      skillPanel.style.display = (isOpen && !this.battleTargetMenuOpen) ? 'flex' : 'none';
+      if (targetPanel) targetPanel.style.display = this.battleTargetMenuOpen ? 'flex' : 'none';
       if (window.Sound) window.Sound.playBeep();
       return;
     }
+    this.renderBattleInterface();
+  }
+
+  // 判定是否需要由玩家手动点选目标
+  isSkillTargetSelectionNeeded(skillId) {
+    if (!this.currentBattle) return false;
+    const aliveEnemies = this.currentBattle.enemies.filter(e => e.hp > 0);
+    if (aliveEnemies.length <= 1) return false; // 敌方仅存1人，目标无歧义，直接跳过选择
+
+    // 获取当前出招角色及该技能配置
+    const curAllyId = this.selectedAllyId || 'player';
+    const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
+    const skills = curAlly?.isPlayer ? (this.playerData?.getSkills ? this.playerData.getSkills() : (this.playerData?.skills || [])) : (curAlly?.skills || []);
+    const sk = skills.find(s => s.id === skillId || s.name === skillId) || { id: skillId, name: skillId };
+    const sId = sk.id || '';
+    const sName = sk.name || '';
+
+    // 1. 增益/隐身/团队防御类技能：无需选择敌方目标
+    if (sId === 'sk_jg_huti' || sName.includes('金刚护体') ||
+        sId === 'sk_xr_yinshen' || sName.includes('隐身')) {
+      return false;
+    }
+
+    // 2. 必中全场群伤神法：三昧真火、飞沙走石，必中所有敌人，无需指定单体
+    if (sId === 'sk_ym_sanmei' || sName.includes('三昧真火') ||
+        sId === 'sk_ym_feisha' || sName.includes('飞沙走石')) {
+      return false;
+    }
+
+    // 3. 计算该技能可命中的最大目标数
+    let maxTargets = 1;
+    if (sId === 'sk_jg_ruxiang' || sName.includes('如来神掌')) {
+      const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateMpDrainAttack) ?
+        window.SkillMasteryEngine.calculateMpDrainAttack(true, curAlly, aliveEnemies[0], sk.level || 1, sk.mastery || 0) : { maxTargets: 3 };
+      maxTargets = calc.maxTargets || 3;
+    } else if (sId === 'sk_ym_wandu' || sName.includes('万毒攻心')) {
+      const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateWandu) ?
+        window.SkillMasteryEngine.calculateWandu(curAlly, aliveEnemies[0], sk.level || 1, sk.mastery || 0) : { maxTargets: 3 };
+      maxTargets = calc.maxTargets || 3;
+    } else if (sId === 'sk_xr_luanhun' || sName.includes('乱魂')) {
+      const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateControlSpell) ?
+        window.SkillMasteryEngine.calculateControlSpell('luanhun', sk.level || 1, sk.mastery || 0) : { maxTargets: 1 };
+      maxTargets = calc.maxTargets || 1;
+    } else if (sId === 'sk_xr_fengyin' || sName.includes('封印')) {
+      const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateControlSpell) ?
+        window.SkillMasteryEngine.calculateControlSpell('fengyin', sk.level || 1, sk.mastery || 0) : { maxTargets: 1 };
+      maxTargets = calc.maxTargets || 1;
+    } else if (sId === 'sk_xr_dingshen' || sName.includes('定身')) {
+      const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateControlSpell) ?
+        window.SkillMasteryEngine.calculateControlSpell('dingshen', sk.level || 1, sk.mastery || 0) : { maxTargets: 1 };
+      maxTargets = calc.maxTargets || 1;
+    } else {
+      // 舍生取义、雷霆万钧、佛光普照、天雷斩、水攻等单体爆发/控制技能
+      maxTargets = 1;
+    }
+
+    // 核心准则：仅当敌方可选目标刚好等于或小于该技能目标数时无需选择直接跳过；
+    // 若敌方人数多于该技能作用目标（例如敌方还有2人而释放舍生、雷霆、封印等单体技能），依然必须选择！
+    if (aliveEnemies.length <= maxTargets) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // 技能按钮点击智能分发
+  onSkillButtonClick(skillId) {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+
+    if (this.isSkillTargetSelectionNeeded(skillId)) {
+      this.pendingSkillAction = { skillId };
+      this.battleSkillMenuOpen = false;
+      this.battleTargetMenuOpen = true;
+      if (window.Sound) window.Sound.playBeep();
+      window.showGameMessage('🎯 请在战场中点选目标或在列表中锁定敌方！', 'info', 2500);
+      this.renderBattleInterface();
+    } else {
+      this.battleSkillMenuOpen = false;
+      this.battleTargetMenuOpen = false;
+      this.pendingSkillAction = null;
+      this.chooseCombatAction('skill', skillId);
+    }
+  }
+
+  // 确认选定技能目标并执行出招
+  confirmCombatSkillTarget(targetIdx) {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+    const skillId = this.pendingSkillAction ? this.pendingSkillAction.skillId : null;
+    this.selectedTargetIndex = targetIdx;
+    this.battleTargetMenuOpen = false;
+    this.pendingSkillAction = null;
+    if (window.Sound) window.Sound.playBeep();
+    this.chooseCombatAction('skill', skillId);
+  }
+
+  // 取消目标选择并返回绝技选择面板
+  cancelCombatTargetSelection() {
+    this.battleTargetMenuOpen = false;
+    this.pendingSkillAction = null;
+    this.battleSkillMenuOpen = true;
+    if (window.Sound) window.Sound.playBeep();
     this.renderBattleInterface();
   }
 
@@ -4460,10 +5196,16 @@ class GameApp2D {
     if (!layer || !this.currentBattle) return;
 
     const turnQueue = (this.currentBattle && this.currentBattle.turnQueue) || [];
+
+    // 智能校准选定存活目标，杜绝目标死亡后挂尸打空
+    if (!this.currentBattle.enemies[this.selectedTargetIndex] || this.currentBattle.enemies[this.selectedTargetIndex].hp <= 0) {
+      const firstAliveIdx = this.currentBattle.enemies.findIndex(e => e.hp > 0);
+      this.selectedTargetIndex = firstAliveIdx >= 0 ? firstAliveIdx : 0;
+    }
     const curTarget = this.currentBattle.enemies[this.selectedTargetIndex] || this.currentBattle.enemies[0];
     const curAllyId = this.selectedAllyId || 'player';
     const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
-    const skills = curAlly?.isPlayer ? this.playerData.getSkills() : (curAlly?.skills || []);
+    const skills = curAlly?.isPlayer ? (this.playerData?.getSkills ? this.playerData.getSkills() : (this.playerData?.skills || [])) : (curAlly?.skills || []);
 
     const getBattleRoleId = (unit) => {
       if (!unit) return 'shaoxia';
@@ -4567,7 +5309,7 @@ class GameApp2D {
           <!-- 3. 中央：暗红漆金蜂窝六边形按键矩阵 (复刻图3核心按键) 与 绝技选择面板 (常驻DOM，稳定定位) -->
           <div class="battle-honeycomb-menu-container" id="battle-honeycomb-menu" style="${this.currentBattle.status === 'executing' ? 'opacity:0.35;pointer-events:none;' : 'opacity:1;pointer-events:auto;'}">
             <!-- 常驻七蜂窝指令矩阵 -->
-            <svg viewBox="0 0 148 240" class="hex-btn-cluster" id="battle-hex-svg" style="display:${this.battleSkillMenuOpen ? 'none' : 'block'};width:142px;height:230px;">
+            <svg viewBox="0 0 148 240" class="hex-btn-cluster" id="battle-hex-svg" style="display:${(this.battleSkillMenuOpen || this.battleTargetMenuOpen) ? 'none' : 'block'};width:142px;height:230px;">
               <defs>
                 <linearGradient id="lacquerRedGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#b32424" />
@@ -4629,13 +5371,13 @@ class GameApp2D {
             </svg>
 
             <!-- 绝技选择面板 (常驻DOM，通过display互斥，不破坏布局，杜绝重叠与重排闪烁) -->
-            <div class="battle-skill-popup-panel" id="battle-skill-panel" style="display:${this.battleSkillMenuOpen ? 'flex' : 'none'};">
+            <div class="battle-skill-popup-panel" id="battle-skill-panel" style="display:${(this.battleSkillMenuOpen && !this.battleTargetMenuOpen) ? 'flex' : 'none'};">
               <div style="font-size:12px;font-weight:bold;color:#ffd700;border-bottom:1px solid #c59b27;padding-bottom:3px;display:flex;justify-content:space-between;align-items:center;">
                 <span>✨ 施展门派绝技</span>
                 <span style="font-size:10.5px;cursor:pointer;color:#ffd700;" onclick="window.App2D.toggleSkillMenu(false)">✕ 返回指令</span>
               </div>
               ${skills.length === 0 ? `<div style="font-size:10px;color:#888;text-align:center;padding:10px 0;">尚未领悟绝技</div>` : skills.map(sk => `
-                <button class="battle-skill-item-btn" onclick="window.App2D.chooseCombatAction('skill', '${sk.id}')">
+                <button class="battle-skill-item-btn" onclick="window.App2D.onSkillButtonClick('${sk.id}')">
                   <div>
                     <div style="color:#ffd700;font-weight:bold;font-size:11.5px;">${sk.icon || '🔥'} ${sk.name}</div>
                     <div style="font-size:9px;color:#a8e6cf;">消耗: ${sk.costMp ? `${sk.costMp}精力` : '无'}</div>
@@ -4644,6 +5386,31 @@ class GameApp2D {
                 </button>
               `).join('')}
               <button class="mrp-vertical-btn" style="padding:4px;font-size:11px;margin-top:2px;" onclick="window.App2D.toggleSkillMenu(false)">◀ 返回指令</button>
+            </div>
+
+            <!-- 目标单体选择面板 (当敌方>=2且单体绝技时精准唤起) -->
+            <div class="battle-skill-popup-panel" id="battle-target-panel" style="display:${this.battleTargetMenuOpen ? 'flex' : 'none'};">
+              <div style="font-size:12px;font-weight:bold;color:#ffd700;border-bottom:1px solid #c59b27;padding-bottom:3px;display:flex;justify-content:space-between;align-items:center;">
+                <span>🎯 选择施法目标</span>
+                <span style="font-size:10.5px;cursor:pointer;color:#ffd700;" onclick="window.App2D.cancelCombatTargetSelection()">✕ 返回绝技</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto;padding:3px 0;">
+                ${this.currentBattle.enemies.map((e, idx) => {
+                  if (e.hp <= 0) return '';
+                  const actualIdx = e.enemyIndex !== undefined ? e.enemyIndex : idx;
+                  const hpPct = Math.max(0, Math.min(100, Math.round((e.hp / (e.maxHp || e.hp || 1)) * 100)));
+                  return `
+                    <button class="battle-skill-item-btn" onclick="window.App2D.confirmCombatSkillTarget(${actualIdx})" style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-left:3px solid #ff4757;">
+                      <div style="text-align:left;">
+                        <div style="color:#ffd700;font-weight:bold;font-size:11px;">[Lv.${e.level || 1}] ${e.name}</div>
+                        <div style="font-size:9.5px;color:#ff6b6b;">气血: ${e.hp}/${e.maxHp || e.hp} (${hpPct}%)</div>
+                      </div>
+                      <span style="font-size:10px;color:#f5cd79;background:rgba(214,48,49,0.3);padding:2px 6px;border-radius:3px;border:1px solid #d63031;">锁定 🎯</span>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+              <button class="mrp-vertical-btn" style="padding:4px;font-size:11px;margin-top:2px;" onclick="window.App2D.cancelCombatTargetSelection()">◀ 返回重新选技</button>
             </div>
           </div>
         </div>
@@ -4673,7 +5440,7 @@ class GameApp2D {
 
         <!-- 实时战斗日志框 (底部极简滚动条) -->
         <div class="battle-log-box" id="battle-log-box-2d" style="background:rgba(10,8,6,0.92);border-top:1px solid #4a3824;padding:3px 12px;font-size:11px;line-height:1.5;color:#fef0cd;max-height:42px;overflow-y:auto;">
-          ${this.currentBattle.logs.slice(-2).map(l => `<div>${l}</div>`).join('')}
+          ${((this.currentBattle && this.currentBattle.logs) || []).slice(-2).map(l => `<div>${l}</div>`).join('')}
         </div>
       </div>
     `;
@@ -4729,7 +5496,12 @@ class GameApp2D {
         }
       });
       if (closestIdx !== -1) {
-        this.selectTarget(closestIdx);
+        if (this.battleTargetMenuOpen) {
+          const actualIdx = (enemies[closestIdx] && enemies[closestIdx].enemyIndex !== undefined) ? enemies[closestIdx].enemyIndex : closestIdx;
+          this.confirmCombatSkillTarget(actualIdx);
+        } else {
+          this.selectTarget(closestIdx);
+        }
       }
     }
     // 右侧区域：切换受指派友方角色
@@ -4839,6 +5611,18 @@ class GameApp2D {
         ctx.restore();
       }
 
+      // 处于目标选择阶段时，为所有存活敌方头顶绘制醒目点选提示
+      if (this.battleTargetMenuOpen) {
+        ctx.save();
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#ff4757';
+        ctx.shadowBlur = 6;
+        ctx.fillText('🎯 点选锁定', renderX, renderY - 38);
+        ctx.restore();
+      }
+
       // 敌方全身模型派发：优先继承野外实体的原生 appearance / modelId / templateId，绝不粗暴篡改！
       let mId = e.appearance || e.modelId || e.templateId || '';
 
@@ -4849,6 +5633,7 @@ class GameApp2D {
         else if (n.includes('蚌')) mId = 'clam';
         else if (n.includes('蟹')) mId = 'crab';
         else if (n.includes('虾')) mId = 'shrimp';
+        else if (n.includes('黄风') || n.includes('huangfeng')) mId = 'huangfeng_guai';
         else if (n.includes('狼') || n.includes('huangpao')) mId = 'wild_wolf';
         else if (n.includes('虎') || n.includes('huxianfeng')) mId = 'hu_xianfeng';
         else if (n.includes('蛇')) mId = 'pet_snake';
@@ -5362,6 +6147,16 @@ class GameApp2D {
     if (!this.currentBattle || this.currentBattle.status === 'executing') return;
 
     this.battleSkillMenuOpen = false;
+    this.battleTargetMenuOpen = false;
+    this.pendingSkillAction = null;
+
+    // 智能校准选定存活目标，无需强迫玩家手动点选
+    let validTargetIdx = this.selectedTargetIndex;
+    if (validTargetIdx === undefined || validTargetIdx === null || !this.currentBattle.enemies[validTargetIdx] || this.currentBattle.enemies[validTargetIdx].hp <= 0) {
+      const firstAliveIdx = this.currentBattle.enemies.findIndex(e => e.hp > 0);
+      validTargetIdx = firstAliveIdx >= 0 ? firstAliveIdx : 0;
+      this.selectedTargetIndex = validTargetIdx;
+    }
 
     // 默认若选择药品，优先使用金创药
     const medicineItem = this.inventory ? this.inventory.getItems().find(s => s.itemId === 'jinchuang_yao' || s.itemId === 'dahuan_dan') : null;
@@ -5371,7 +6166,7 @@ class GameApp2D {
 
     const actionData = {
       type: type,
-      targetIndex: this.selectedTargetIndex || 0,
+      targetIndex: validTargetIdx,
       skillId: skillId || (curAlly && curAlly.skills && curAlly.skills[0] ? curAlly.skills[0].id : null),
       itemId: medicineItem ? medicineItem.itemId : 'jinchuang_yao'
     };
@@ -5390,6 +6185,7 @@ class GameApp2D {
     if (unassigned) {
       this.selectedAllyId = unassigned.id;
       if (window.Sound) window.Sound.playBeep();
+      window.showGameMessage(`👉 请为【${unassigned.name}】选择出招指令，或按【空格/攻击】全员出手！`, 'info', 2200);
       this.renderBattleInterface();
     } else {
       // 全员指令就绪，执行交锋！
@@ -5402,6 +6198,8 @@ class GameApp2D {
     if (!this.currentBattle || this.currentBattle.status === 'executing') return;
 
     this.battleSkillMenuOpen = false;
+    this.battleTargetMenuOpen = false;
+    this.pendingSkillAction = null;
 
     // 锁定指令菜单，杜绝交锋演算期间鼠标滑过触发重排与重叠
     const menuContainer = document.getElementById('battle-honeycomb-menu');
@@ -5410,84 +6208,122 @@ class GameApp2D {
       menuContainer.style.opacity = '0.35';
     }
 
+    // 确保选定存活目标
+    let validTargetIdx = this.selectedTargetIndex;
+    if (validTargetIdx === undefined || validTargetIdx === null || !this.currentBattle.enemies[validTargetIdx] || this.currentBattle.enemies[validTargetIdx].hp <= 0) {
+      const firstAliveIdx = this.currentBattle.enemies.findIndex(e => e.hp > 0);
+      validTargetIdx = firstAliveIdx >= 0 ? firstAliveIdx : 0;
+      this.selectedTargetIndex = validTargetIdx;
+    }
+
     // 为未指定行动的友方默认设置普攻
     this.currentBattle.allies.forEach(a => {
       if (a.hp > 0 && !this.currentBattle.actions[a.id]) {
         this.currentBattle.setAllyAction(a.id, {
           type: 'attack',
-          targetIndex: this.selectedTargetIndex || 0
+          targetIndex: validTargetIdx
         });
       }
     });
 
     const speedDelay = (this.combatSpeedMultiplier === 2) ? 320 : 600;
 
-    await this.currentBattle.executeRound(async (step) => {
-      // 实时更新底部战报条，无需摧毁主舞台DOM
-      const logBox = document.getElementById('battle-log-box-2d');
-      if (logBox && this.currentBattle.logs) {
-        logBox.innerHTML = this.currentBattle.logs.slice(-2).map(l => `<div>${l}</div>`).join('');
-        logBox.scrollTop = logBox.scrollHeight;
+    try {
+      await this.currentBattle.executeRound(async (step) => {
+        // 实时更新底部战报条，无需摧毁主舞台DOM
+        const logBox = document.getElementById('battle-log-box-2d');
+        if (logBox && this.currentBattle && this.currentBattle.logs) {
+          logBox.innerHTML = this.currentBattle.logs.slice(-2).map(l => `<div>${l}</div>`).join('');
+          logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        const stage = document.getElementById('battle-stage-area');
+
+        // 视觉打击感与极速冲锋滑步漂移交锋反馈 (完美解决站桩无动效问题)
+        if (step.type === 'damage' || step.type === 'dodge') {
+          const isSelfAttacker = step.attacker === 'self';
+          const isAllyAttacker = !isSelfAttacker && (!step.attacker || !step.attacker.startsWith('enemy_'));
+
+          let attackerEntity = null;
+          let targetEntity = null;
+
+          if (isSelfAttacker) {
+            attackerEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
+            targetEntity = attackerEntity;
+          } else if (isAllyAttacker) {
+            attackerEntity = this.currentBattle.allies.find(a => a.id === step.attacker) || this.currentBattle.allies[0];
+            targetEntity = (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex])
+              ? this.currentBattle.enemies[step.targetIndex]
+              : (this.currentBattle.enemies.find(e => e.hp > 0) || this.currentBattle.enemies[0]);
+          } else {
+            attackerEntity = this.currentBattle.enemies.find(e => ('enemy_' + e.enemyIndex) === step.attacker) || this.currentBattle.enemies[0];
+            targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
+          }
+
+          // 识别技能差异化法术特效类型
+          let skillType = 'slash'; // 默认普攻白色剑光
+          const logText = (step.text || '') + ((this.currentBattle.logs && this.currentBattle.logs.slice(-1)[0]) || '');
+          if (logText.includes('火') || logText.includes('炎') || logText.includes('凤')) skillType = 'fire';
+          else if (logText.includes('雷') || logText.includes('电') || logText.includes('霹雳')) skillType = 'thunder';
+          else if (logText.includes('冰') || logText.includes('水') || logText.includes('海') || logText.includes('霜')) skillType = 'ice';
+          else if (logText.includes('佛光') || logText.includes('舍生') || logText.includes('金刚') || logText.includes('破甲')) skillType = 'shield';
+          else if (logText.includes('吸血') || logText.includes('魔')) skillType = 'slash';
+
+          // 极速冲锋突进到对方身前击打，并平滑倒退归位 (若非自损反噬)
+          if (!isSelfAttacker && attackerEntity && targetEntity) {
+            await this.playDashAttackAnimation(attackerEntity, targetEntity, isAllyAttacker, skillType);
+          }
+
+          // 受击飘字与震屏
+          if (targetEntity && targetEntity._battlePos) {
+            this.spawnBattleFloatingTextAtCoords(
+              targetEntity._battlePos.x,
+              targetEntity._battlePos.y,
+              step.text,
+              step.type === 'dodge' ? 'damage' : (step.isCrit ? 'crit' : 'damage')
+            );
+          }
+
+          if (stage) {
+            stage.classList.add('arena-shake');
+            setTimeout(() => stage.classList.remove('arena-shake'), 280);
+          }
+        } else if (step.type === 'heal' || step.type === 'mana') {
+          const targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
+          if (targetEntity && targetEntity._battlePos) {
+            this.spawnBattleSkillEffect('heal', targetEntity._battlePos.x, targetEntity._battlePos.y, 400);
+            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
+          }
+        } else if (step.type === 'buff' || step.type === 'invis') {
+          const targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
+          if (targetEntity && targetEntity._battlePos) {
+            this.spawnBattleSkillEffect('shield', targetEntity._battlePos.x, targetEntity._battlePos.y, 400);
+            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
+          }
+        } else if (step.text) {
+          const targetEntity = (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex]) || this.currentBattle.allies[0];
+          if (targetEntity && targetEntity._battlePos) {
+            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'damage');
+          }
+        }
+
+        await new Promise(r => setTimeout(r, Math.max(120, Math.floor(speedDelay * 0.7))));
+      });
+    } catch (roundErr) {
+      console.error('战斗演算异常捕获，已自动恢复输入状态:', roundErr);
+      if (this.currentBattle && this.currentBattle.status === 'executing') {
+        this.currentBattle.status = 'player_input';
       }
-
-      const stage = document.getElementById('battle-stage-area');
-
-      // 视觉打击感与极速冲锋滑步漂移交锋反馈 (完美解决站桩无动效问题)
-      if (step.type === 'damage' || step.type === 'dodge') {
-        const isAllyAttacker = !step.attacker.startsWith('enemy_');
-        const attackerEntity = isAllyAttacker
-          ? (this.currentBattle.allies.find(a => a.id === step.attacker) || this.currentBattle.allies[0])
-          : (this.currentBattle.enemies.find(e => ('enemy_' + e.enemyIndex) === step.attacker) || this.currentBattle.enemies[0]);
-
-        const targetEntity = isAllyAttacker
-          ? (this.currentBattle.enemies[step.targetIndex] || this.currentBattle.enemies[0])
-          : (this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0]);
-
-        // 识别技能差异化法术特效类型
-        let skillType = 'slash'; // 默认普攻白色剑光
-        const logText = (step.text || '') + (this.currentBattle.logs.slice(-1)[0] || '');
-        if (logText.includes('火') || logText.includes('炎') || logText.includes('凤')) skillType = 'fire';
-        else if (logText.includes('雷') || logText.includes('电') || logText.includes('霹雳')) skillType = 'thunder';
-        else if (logText.includes('冰') || logText.includes('水') || logText.includes('海') || logText.includes('霜')) skillType = 'ice';
-        else if (logText.includes('佛光') || logText.includes('舍生') || logText.includes('金刚') || logText.includes('破甲')) skillType = 'shield';
-        else if (logText.includes('吸血') || logText.includes('魔')) skillType = 'slash';
-
-        // 极速冲锋突进到对方身前击打，并平滑倒退归位
-        if (attackerEntity && targetEntity) {
-          await this.playDashAttackAnimation(attackerEntity, targetEntity, isAllyAttacker, skillType);
-        }
-
-        // 受击飘字与震屏
-        if (targetEntity && targetEntity._battlePos) {
-          this.spawnBattleFloatingTextAtCoords(
-            targetEntity._battlePos.x,
-            targetEntity._battlePos.y,
-            step.text,
-            step.type === 'dodge' ? 'damage' : (step.isCrit ? 'crit' : 'damage')
-          );
-        }
-
-        if (stage) {
-          stage.classList.add('arena-shake');
-          setTimeout(() => stage.classList.remove('arena-shake'), 280);
-        }
-      } else if (step.type === 'heal' || step.type === 'mana') {
-        const targetEntity = this.currentBattle.allies.find(a => a.id === step.target);
-        if (targetEntity && targetEntity._battlePos) {
-          this.spawnBattleSkillEffect('heal', targetEntity._battlePos.x, targetEntity._battlePos.y, 400);
-          this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
-        }
-      } else if (step.text) {
-        const targetEntity = this.currentBattle.enemies[step.targetIndex] || this.currentBattle.allies[0];
-        if (targetEntity && targetEntity._battlePos) {
-          this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'damage');
-        }
+    } finally {
+      this.isAnimatingCombat = false;
+      const menuContainer = document.getElementById('battle-honeycomb-menu');
+      if (menuContainer) {
+        menuContainer.style.pointerEvents = 'auto';
+        menuContainer.style.opacity = '1';
       }
+    }
 
-      await new Promise(r => setTimeout(r, Math.max(120, Math.floor(speedDelay * 0.7))));
-    });
-
-    this.isAnimatingCombat = false;
+    if (!this.currentBattle) return;
 
     // 检查战斗胜负状态
     if (this.currentBattle.status === 'victory') {

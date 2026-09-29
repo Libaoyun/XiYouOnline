@@ -53,10 +53,10 @@ class MiniMapEngine {
       }
       if (storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_huaguoshan') {
         return {
-          x: 27 * 32,
-          y: 12 * 32,
-          name: '征讨先锋巨灵神',
-          desc: '挺身大战巨灵神，舍身保全花果山幼猴'
+          x: 19 * 32,
+          y: 25 * 32,
+          name: '南天门下界传送阵',
+          desc: '出南天门向南下界，前往东胜神洲·花果山平乱'
         };
       }
       if (storyPhase === 'heaven_final_wukong') {
@@ -67,6 +67,14 @@ class MiniMapEngine {
           desc: '南天门总决战，与齐天大圣豪迈切磋'
         };
       }
+      if (storyPhase === 'heaven_tiangong_trial') {
+        return {
+          x: 19 * 32,
+          y: 8 * 32,
+          name: '太白金星 / 玉皇大帝',
+          desc: '凌霄宝殿听候玉帝圣旨公审发落'
+        };
+      }
       return {
         x: 15 * 32,
         y: 12 * 32,
@@ -75,33 +83,177 @@ class MiniMapEngine {
       };
     }
 
-    // 2. 双叉岭刚苏醒 -> 目标：镇山太保刘伯钦
-    if (mapId === 'liujiacun' && storyPhase === 'liujiacun_start') {
-      return {
-        x: 10 * 32,
-        y: 9 * 32,
-        name: '刘伯钦',
-        desc: '上前与刘伯钦对话求助'
-      };
+    // 1.1 东胜神洲·花果山主山
+    if (mapId === 'huaguoshan') {
+      if (storyPhase === 'heaven_saved_juanlian' || storyPhase === 'heaven_huaguoshan') {
+        return {
+          x: 19 * 32,
+          y: 22 * 32,
+          name: '天庭前锋营神将',
+          desc: '向山麓神将探问花果山战局'
+        };
+      }
+      if (storyPhase === 'heaven_huaguoshan_shuilien') {
+        return {
+          x: 19 * 32,
+          y: 4 * 32,
+          name: '水帘洞天飞瀑',
+          desc: '穿过飞瀑进入水帘洞探查'
+        };
+      }
+      if (storyPhase === 'heaven_final_wukong') {
+        return {
+          x: 19 * 32,
+          y: 11 * 32,
+          name: '齐天大圣孙悟空',
+          desc: '迎战反出天庭的齐天大圣！'
+        };
+      }
     }
 
-    // 3. 猎虎除狼之后 -> 目标：东去长安城传送门
-    if (mapId === 'liujiacun' && storyPhase === 'liujiacun_hunted') {
-      return {
-        x: 25 * 32,
-        y: 10 * 32,
-        name: '东行长安传送门',
-        desc: '启程前往大唐王都长安城'
-      };
+    // 1.2 花果山·水帘洞天
+    if (mapId === 'huaguoshan_shuilien') {
+      if (storyPhase === 'heaven_huaguoshan_shuilien') {
+        return {
+          x: 19 * 32,
+          y: 18 * 32,
+          name: '赤毛马猴',
+          desc: '与水帘洞守山马猴切磋较量'
+        };
+      }
+      if (storyPhase === 'heaven_huaguoshan_rescue') {
+        return {
+          x: 20 * 32,
+          y: 11 * 32,
+          name: '征讨先锋巨灵神',
+          desc: '击退滥杀幼猴的先锋巨灵神！'
+        };
+      }
+      if (storyPhase === 'heaven_juling_defeated' || storyPhase === 'heaven_final_wukong') {
+        return {
+          x: 19 * 32,
+          y: 24 * 32,
+          name: '洞口传送阵',
+          desc: '走出水帘洞，返回花果山迎战大圣'
+        };
+      }
     }
 
-    // 4. 大唐长安城 -> 目标：玄奘法师或观音菩萨
+    // 2. 凡间两界山·刘家村完整主线历程追踪
+    if (mapId === 'liujiacun') {
+      if (storyPhase === 'liujiacun_start') {
+        return {
+          x: 12 * 32,
+          y: 11 * 32,
+          name: '镇山太保刘伯钦',
+          desc: '上前与刘伯钦对话求助'
+        };
+      }
+      if (storyPhase === 'liujiacun_find_mushrooms') {
+        return {
+          x: 12 * 32,
+          y: 20 * 32,
+          name: '野生青蘑菇',
+          desc: '在村中草地上寻找并采摘 2 朵野生青蘑菇'
+        };
+      }
+      if (storyPhase === 'liujiacun_mushrooms_collected') {
+        return {
+          x: 12 * 32,
+          y: 11 * 32,
+          name: '镇山太保刘伯钦',
+          desc: '向刘伯钦交付新鲜青蘑菇下锅'
+        };
+      }
+      if (storyPhase === 'liujiacun_go_cut_wood' || storyPhase === 'liujiacun_wood_gathering') {
+        return {
+          x: 6 * 32,
+          y: 15 * 32,
+          name: '两界山脚枯树精',
+          desc: '击倒西侧山脚 4 株枯树精取柴'
+        };
+      }
+      if (storyPhase === 'liujiacun_wood_collected') {
+        return {
+          x: 12 * 32,
+          y: 11 * 32,
+          name: '镇山太保刘伯钦',
+          desc: '向刘伯钦交付坚韧柴木煮汤疗伤'
+        };
+      }
+      if (storyPhase === 'liujiacun_rat_hunting') {
+        return {
+          x: 21 * 32,
+          y: 9 * 32,
+          name: '偷粮硕鼠',
+          desc: '在田垄粮仓周围消灭 4 只偷粮硕鼠'
+        };
+      }
+      if (storyPhase === 'liujiacun_rats_cleared') {
+        return {
+          x: 12 * 32,
+          y: 11 * 32,
+          name: '镇山太保刘伯钦',
+          desc: '向刘伯钦复命除害保粮'
+        };
+      }
+      if (storyPhase === 'liujiacun_go_changan' || storyPhase === 'liujiacun_hunted') {
+        return {
+          x: 36 * 32,
+          y: 14 * 32,
+          name: '东门官道传送门',
+          desc: '与刘伯钦一同启程前往大唐都城长安'
+        };
+      }
+    }
+
+    // 4. 大唐都城长安城主线目标追踪
     if (mapId === 'changan_city') {
+      if (storyPhase === 'liujiacun_go_changan' || storyPhase === 'changan_arrived') {
+        return {
+          x: 18 * 32,
+          y: 19 * 32,
+          name: '茶肆阿婆',
+          desc: '前往街边古亭茶肆向阿婆打探各方消息'
+        };
+      }
+      if (storyPhase === 'chentang_investigate') {
+        return {
+          x: 23 * 32,
+          y: 33 * 32,
+          name: '东南陈塘关官道',
+          desc: '由东南门前往东海陈塘关协助李靖总兵'
+        };
+      }
+      if (storyPhase === 'changan_meet_xuanzang') {
+        return {
+          x: 33 * 32,
+          y: 8 * 32,
+          name: '玄奘法师 (唐僧)',
+          desc: '化生寺拜见玄奘法师共商西行'
+        };
+      }
+      if (storyPhase === 'changan_meet_taizong') {
+        return {
+          x: 23 * 32,
+          y: 5 * 32,
+          name: '唐太宗·李世民',
+          desc: '金銮殿拜谒大唐太宗皇帝领受通关文牒'
+        };
+      }
+      if (storyPhase === 'changan_farewell') {
+        return {
+          x: 3 * 32,
+          y: 16 * 32,
+          name: '刘伯钦 (送行)',
+          desc: '城门口与刘伯钦互道珍重，启程两界山'
+        };
+      }
       return {
-        x: 21 * 32,
-        y: 6 * 32,
-        name: '玄奘法师 (唐僧)',
-        desc: '化生寺拜见玄奘法师'
+        x: 18 * 32,
+        y: 19 * 32,
+        name: '茶肆阿婆',
+        desc: '前往街市向茶肆阿婆打探消息'
       };
     }
 
@@ -299,6 +451,39 @@ class MiniMapEngine {
         y: 6 * 32,
         name: '观世音菩萨',
         desc: '紫竹潮音圣境，沐浴灵泉圆满功德'
+      };
+    }
+
+    // 20. 平顶山 -> 目标：巡山小钻风 / 银角大王 / 金角大王 / 太上老君
+    if (mapId === 'pingdingshan') {
+      if (storyPhase === 'baoxiang_cleared') return {
+        x: 864, y: 448, name: '巡山小钻风', desc: '智套莲花洞妖王虚实与五大法宝'
+      };
+      if (storyPhase === 'pingding_scout_cleared') return {
+        x: 544, y: 256, name: '银角大王', desc: '大破移山倒海之法，力挫银角大王'
+      };
+      if (storyPhase === 'pingding_silver_cleared') return {
+        x: 672, y: 224, name: '金角大王', desc: '决战莲花洞金角大王，降服二魔'
+      };
+      if (storyPhase === 'pingding_gold_cleared') return {
+        x: 608, y: 224, name: '太上老君', desc: '恭迎道祖收回仙童，受领九转玄都金丹'
+      };
+    }
+
+    // 21. 苍茫三岭支线伏魔引导
+    if (mapId === 'yehu_ling') {
+      return {
+        x: 608, y: 320, name: '玄风道长', desc: '【支线】苍茫三岭伏魔传，荡平妖狐血狼'
+      };
+    }
+    if (mapId === 'jiaolang_ling') {
+      return {
+        x: 608, y: 384, name: '阴风血狼', desc: '【支线】清缴峡谷血狼，夺回行商遗物'
+      };
+    }
+    if (mapId === 'heifeng_juebi') {
+      return {
+        x: 320, y: 448, name: '黑风修罗王', desc: '【支线Boss】决战万妖魔窟霸主'
       };
     }
 

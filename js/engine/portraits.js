@@ -99,20 +99,22 @@ class MasterPortraitEngine {
       'heixiong': 'bear',
       'shuo_shu': 'rat',
       'giant_rat': 'rat',
-      'pet_snake': 'snake'
+      'pet_snake': 'snake',
+      'huangfeng': 'huangfeng_guai'
     };
     this.modelPortraits = { dragon_king: 'aoguang', xiaobailong: 'xiaobailong',
       hu_xianfeng: 'hu_xianfeng', bull_demon: 'bull_demon', honghaier: 'honghaier',
       jinchi_elder: 'jinchi_elder', jinjiao: 'jinjiao', yinjiao: 'yinjiao',
-      wuchao_chanshi: 'wuchao_chanshi', tieshan: 'tieshan', turtle: 'turtle' };
+      wuchao_chanshi: 'wuchao_chanshi', tieshan: 'tieshan', turtle: 'turtle',
+      huangfeng_guai: 'huangfeng_guai' };
     Object.assign(this.roleIdAliases, { aoguang: 'dragon_king', longwang: 'dragon_king' });
   }
 
   // 规范化角色标识
   normalizeRoleId(rawId, title = '') {
-    if (!rawId) return 'heaven_general';
-    const s = String(rawId).toLowerCase();
-    const t = String(title).toLowerCase();
+    if (!rawId && !title) return 'heaven_general';
+    const s = String(rawId || '').toLowerCase();
+    const t = String(title || '').toLowerCase();
     if (this.modelPortraits[s]) return s;
     if (window.NpcArt?.ids.has(s)) return s;
     const creature = window.VisualIdentity?.aliases[s] || window.VisualIdentity?.resolveMonster(s);
@@ -124,6 +126,7 @@ class MasterPortraitEngine {
       'clam', 'crab', 'shrimp', 'dangpu_boss', 'yaopu_boss', 'blacksmith',
       'cha_apo', 'fisherman', 'nezha', 'lijing', 'change', 'juanlian', 'taibai',
       'zhu_bajie', 'sha_wujing', 'panda_hero', 'baigu_jing', 'huangpao_guai',
+      'huangfeng_guai',
       'wolf', 'rat', 'changan_hawker', 'changan_child', 'xuanzang', 'puti_zushi',
       'qixiannv', 'liuboqin'].includes(s)) return s;
 
@@ -154,6 +157,7 @@ class MasterPortraitEngine {
     if (s.includes('蚌') || s.includes('珍珠')) return 'clam';
     if (s.includes('蟹') || s.includes('金蟹')) return 'crab';
     if (s.includes('龙虾') || s.includes('虾兵') || s.includes('虾')) return 'shrimp';
+    if (s.includes('黄风') || s.includes('三昧神风') || s.includes('huangfeng') || t.includes('黄风') || t.includes('神风')) return 'huangfeng_guai';
     if (s.includes('黄袍') || s.includes('奎木狼')) return 'huangpao_guai';
     if (s.includes('狼') || s.includes('野狼') || s.includes('郊狼')) return 'wolf';
     if (s.includes('骨') || s.includes('尸') || s.includes('白骨')) return 'baigu_jing';
@@ -163,6 +167,10 @@ class MasterPortraitEngine {
     if (s.includes('野猪') || s.includes('猪妖')) return 'pig';
     if (s.includes('铁扇') || s.includes('罗刹')) return 'tieshan';
     if (s.includes('熊猫') || s.includes('panda') || s.includes('道长')) return 'panda_hero';
+    if (s.includes('老君') || s.includes('道德天尊') || s.includes('太上') || t.includes('老君') || t.includes('道祖')) return 'puti_zushi';
+    if (s.includes('钻风') || s.includes('xiaozuanfeng') || t.includes('钻风')) return 'changan_hawker';
+    if (s.includes('修罗') || s.includes('shura') || t.includes('修罗')) return 'yecha';
+    if (s.includes('玄风') || s.includes('散修') || t.includes('散修') || t.includes('玄修')) return 'puti_zushi';
     if (s.includes('菩提') || s.includes('祖师')) return 'puti_zushi';
     if (s.includes('大将') || s.includes('威灵') || s.includes('神将') || s.includes('heaven')) return 'heaven_general';
     if (s.includes('少侠') || s.includes('行者') || s.includes('剑侠') || s.includes('martial')) return 'martial_hero';
@@ -280,6 +288,12 @@ class MasterPortraitEngine {
       bgGrad.addColorStop(0.45, '#0284c7');
       bgGrad.addColorStop(0.8, '#075985');
       bgGrad.addColorStop(1, '#082f49');
+    } else if (roleId === 'huangfeng_guai') {
+      // 黄风大圣：八百里黄沙弥漫与金色狂风
+      bgGrad.addColorStop(0, '#fef08a');
+      bgGrad.addColorStop(0.35, '#d97706');
+      bgGrad.addColorStop(0.75, '#78350f');
+      bgGrad.addColorStop(1, '#291807');
     } else if (roleId === 'baigu_jing' || roleId === 'wolf' || roleId === 'bear' || roleId === 'huangpao_guai') {
       // 妖魔九幽：幽冥冷翠与紫黑煞气
       bgGrad.addColorStop(0, '#a7f3d0');

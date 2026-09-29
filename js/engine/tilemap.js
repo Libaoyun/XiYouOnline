@@ -659,32 +659,17 @@ class TilemapEngine {
         const wave = Math.sin(this.waterAnimTime * 2.4 + screenX * 0.08 + screenY * 0.08);
         const wave2 = Math.cos(this.waterAnimTime * 1.8 + screenX * 0.06 - screenY * 0.06);
 
-        // 1. 材质渐变底色
-        const g = ctx.createLinearGradient(screenX, screenY, screenX + s * 0.8, screenY + s);
-
+        // 1. 材质底色 (高性能纯色与流动光影填充，彻底杜绝逐瓦片创建 Gradient 引起的巨大掉帧)
         if (isLiusha) {
           // 八百里流沙河：金褐暗涌浊浪、鹅毛不浮浑浊流沙恶水
-          g.addColorStop(0, isDark ? '#451a03' : '#78350f');
-          g.addColorStop(0.5, isDark ? '#78350f' : '#92400e');
-          g.addColorStop(1, isDark ? '#270e01' : '#5c2205');
+          ctx.fillStyle = isDark ? '#451a03' : '#78350f';
         } else if (isUnderwater) {
           // 东海水下与水晶宫：纯净深邃宝蓝与群青光晕，绝不偏绿！
-          g.addColorStop(0, isDark ? '#082f49' : '#0369a1');
-          g.addColorStop(0.45, isDark ? '#0369a1' : '#0284c7');
-          g.addColorStop(1, isDark ? '#0c4a6e' : '#075985');
+          ctx.fillStyle = isDark ? '#082f49' : '#0369a1';
         } else {
           // 通用海面与清溪：纯净蔚蓝、水天一色
-          if (isDark) {
-            g.addColorStop(0, '#0369a1');
-            g.addColorStop(0.5, '#0284c7');
-            g.addColorStop(1, '#075985');
-          } else {
-            g.addColorStop(0, '#38bdf8'); // 晴空澄澈浅蓝 (摒弃偏绿的原 #2dd4bf)
-            g.addColorStop(0.4, '#0ea5e9'); // 晴空蔚蓝
-            g.addColorStop(1, '#0284c7'); // 湛蓝海深
-          }
+          ctx.fillStyle = isDark ? '#0284c7' : '#0ea5e9';
         }
-        ctx.fillStyle = g;
         ctx.fillRect(screenX, screenY, s, s);
 
         // 2. 水波涌动涟漪与折射光丝

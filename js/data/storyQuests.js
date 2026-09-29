@@ -281,13 +281,12 @@ window.GAME_DATA.STORY_DIALOGUES = {
         text: '将军，花果山急报：孙悟空反出天庭，仙桃与金丹也少了许多——兜率宫的账房还在数。陛下命李天王、哪吒领兵，请你即刻下界。',
         options: [
           {
-            text: '【☁️ 奉旨领兵，下界征讨东胜神洲·花果山】',
+            text: '【☁️ 奉旨领兵，从南天门下界征讨东胜神洲·花果山】',
             action: () => {
               if (window.Dialogue) window.Dialogue.close();
               if (window.App2D) {
                 window.App2D.storyPhase = 'heaven_huaguoshan';
-                window.App2D.loadMap('huaguoshan');
-                window.showGameMessage('☁️ 大军降临东胜神洲花果山！前方前锋天将正与妖群搏杀！', 'info', 3500);
+                window.showGameMessage('☁️ 奉旨领兵！请出南天门（向南行走）下界前往【花果山】平乱！', 'info', 4000);
               }
             }
           }
@@ -312,13 +311,12 @@ window.GAME_DATA.STORY_DIALOGUES = {
         text: '有一队猴将退入瀑布后的【水帘洞天】。李天王命将军进洞探查。水声盖得住脚步，也盖得住呼救，务必留神。',
         options: [
           {
-            text: '【🌊 领帅令，穿过飞瀑进入水帘洞天探查】',
+            text: '【🌊 领帅令，沿山路北上穿过飞瀑进入水帘洞天探查】',
             action: () => {
               if (window.Dialogue) window.Dialogue.close();
               if (window.App2D) {
                 window.App2D.storyPhase = 'heaven_huaguoshan_shuilien';
-                window.App2D.loadMap('huaguoshan_shuilien');
-                window.showGameMessage('🌊 穿过轰鸣飞瀑，踏入灵气缭绕的水帘洞天！', 'info', 3500);
+                window.showGameMessage('🌊 军情紧急！请沿山路向北前行，穿过瀑布进入【水帘洞天】！', 'info', 4000);
               }
             }
           }
@@ -461,13 +459,12 @@ window.GAME_DATA.STORY_DIALOGUES = {
         text: '威灵大将！齐天大圣已杀回花果山主峰！李天王传法旨：请大将速速走出水帘洞，返回花果山主山与哪吒、雷公结阵合围！',
         options: [
           {
-            text: '【⛰️ 走出水帘洞，返回花果山主山迎战大圣】',
+            text: '【⛰️ 领命走出水帘洞，返回花果山主山迎战大圣】',
             action: () => {
               if (window.Dialogue) window.Dialogue.close();
               if (window.App2D) {
                 window.App2D.storyPhase = 'heaven_final_wukong';
-                window.App2D.loadMap('huaguoshan');
-                window.showGameMessage('⛰️ 返回花果山主山！金箍棒神芒直冲九霄！', 'info', 3500);
+                window.showGameMessage('⛰️ 大圣杀回主山！请向南穿过洞口传送门返回【花果山】迎战！', 'info', 4000);
               }
             }
           }
@@ -1650,13 +1647,67 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '沙和尚',
         speakerTitle: '【卷帘归位】',
         speakerIcon: '🌊',
-        text: '原是恩公大将军与孙师兄！悟净有眼不识泰山！菩萨早先点化，令我在此静候师父！'
+        text: '哎呀！原是天庭当值的威灵大将军与齐天大圣孙师兄！悟净肉眼凡胎，竟冲撞了故人！观音菩萨早前曾摩顶受戒，教我在此静候师父！'
+      },
+      {
+        speaker: '猪八戒',
+        speakerTitle: '【喜出望外·火速甩担】',
+        speakerIcon: '🐗',
+        text: '哈哈哈！太好啦！终于来个老实本分的沙师弟！师父，这两大箱经担行李老猪从高老庄一路挑到流沙河，肩膀早磨出两寸厚的老茧了！沙师弟，往后这挑担牵马的头等苦差，可就全交给你啦！'
+      },
+      {
+        speaker: '八戒甩担',
+        speakerTitle: '【轰隆巨响】',
+        speakerIcon: '💥',
+        text: '【八戒二话不说，将两口重如山岳的大竹箱“咚”的一声结结实实砸在沙僧肩上！沙僧猝不及防，整个人被压得双腿打颤、额角青筋暴跳！】'
       },
       {
         speaker: '沙和尚',
-        speakerTitle: '【渡河成行】',
+        speakerTitle: '【瞠目结舌·满头冷汗】',
         speakerIcon: '🌊',
-        text: '弟子沙悟净拜见师父！弟子愿取下九项骷髅系红葫芦化作法船，渡师徒全队过河，至死不渝！',
+        text: '哎哟妈呀！师父、二位师兄，这担子怎的重如泰山？！当年在天庭给玉帝卷九万斤的黄金琉璃帘都没这么沉！这里面到底装了些啥乱七八糟的？！且容俺老沙倒出来好好盘盘！'
+      },
+      {
+        speaker: '沙和尚',
+        speakerTitle: '【翻出奇物·目瞪口呆】',
+        speakerIcon: '🌊',
+        text: '（沙僧从箱底翻出一个鎏金首饰盒，念出上面的字）“……【齐天大圣防风烟极品金睫毛】”？！大师兄！当年在太上老君八卦炉里被烟熏落下的火眼金睛迎风流泪，你……你私底下竟靠贴这金灿灿的假睫毛遮风挡尘？！'
+      },
+      {
+        speaker: '孙悟空',
+        speakerTitle: '【抓耳挠腮·猴脸通红】',
+        speakerIcon: '🐒',
+        text: '（大圣猴脸一红，急忙跳起来一把捂住沙僧的嘴）嘘——！呆子！休得大声嚷嚷！那是俺老孙在傲来国时尚仙铺特订的防风神器！大将军，这盒假睫毛你且替俺老孙好生收着，休教外人知晓！'
+      },
+      {
+        speaker: '沙和尚',
+        speakerTitle: '【义正言辞·查抄违禁】',
+        speakerIcon: '🌊',
+        text: '还有这底下……好浓烈的醇香酒气！整整齐齐码了三十大坛【清泉酒】！天蓬二师兄！你身为佛门受戒弟子，出家人不打诳语不沾荤腥，经担里怎会私藏整整三十大瓶陈年清泉美酒？！'
+      },
+      {
+        speaker: '猪八戒',
+        speakerTitle: '【满头大汗·面红耳赤】',
+        speakerIcon: '🐗',
+        text: '哎呀沙师弟！小点声、小点声！那哪是酒啊……那是俺老猪在乌斯藏化缘化来的……‘天然发酵甘露泉’！留着路上口渴润嗓子用的……'
+      },
+      {
+        speaker: '沙和尚',
+        speakerTitle: '【铁面无私·充公发奖】',
+        speakerIcon: '🌊',
+        text: '哼！出家人岂能破戒！此等犯戒之物断不可留在经担里！全没收了！威灵大将军一路降妖伏魔护佑师父劳苦功高，这【清泉酒】三十瓶便全赠予大将军路上恢复法力精力！'
+      },
+      {
+        speaker: '沙和尚',
+        speakerTitle: '【继续清仓·连连惊喜】',
+        speakerIcon: '🌊',
+        text: '咦？最底下还塞着一双八戒穿不下的行军靴【流沙逐风靴】，虽然旧了点，但施了疾风法咒，穿上健步如飞！还有八戒私藏的天山雪莲丹、还魂金丹与一大包碎银盘缠！大将军，这些宝贝刚好给你装备防身、补给周全！'
+      },
+      {
+        speaker: '沙和尚',
+        speakerTitle: '【挑担拜师·法船渡河】',
+        speakerIcon: '🌊',
+        text: '呼……箱子清空大半，老沙这肩膀顿时松快多了！弟子沙悟净拜见师父！弟子这就取下项下九个骷髅化作九宫法船，渡师徒全队浩浩荡荡飞渡八百里流沙河！',
         action: () => {
           window.App2D.joinShasengToParty();
         }
@@ -1875,6 +1926,271 @@ window.GAME_DATA.STORY_DIALOGUES = {
   baoxiang_king_reunion: {
     steps: [
       { speaker: '宝象国国王', speakerTitle: '【父女重逢】', text: '王儿平安归来，满城百姓皆为她点灯。大将军与西行圣僧的大恩，宝象国会代代记得。西去关门已开，请带上这一程的祝福。' }
+    ]
+  },
+
+  // =========================================================================
+  // 第十二回：平顶山·莲花洞主线剧情 (战小钻风、银角大王、金角大王与老君显圣)
+  // =========================================================================
+  xiaozuanfeng_talk: {
+    steps: [
+      {
+        speaker: '巡山小钻风',
+        speakerTitle: '【大王派我来巡山】',
+        speakerIcon: '🎺',
+        text: '大王派我来巡山，巡了南山巡北山~ 抓个和尚做晚餐，咿儿哟哦咿儿咿儿哟~'
+      },
+      {
+        speaker: '孙悟空',
+        speakerTitle: '【化身总钻风】',
+        speakerIcon: '🐒',
+        text: '呔！小钻风！俺乃莲花洞总钻风，奉大大王、二大王之命下山查哨！抓唐僧的宝贝准备得如何了？快如实向老哥汇报！'
+      },
+      {
+        speaker: '巡山小钻风',
+        speakerTitle: '【得意忘形】',
+        speakerIcon: '🎺',
+        text: '哎呀总钻风大哥！大大王金角有七星宝剑、芭蕉扇；二大王银角有紫金红葫芦、羊脂玉净瓶、幌金绳！五件法宝齐聚，纵是齐天大圣也难逃一劫！'
+      },
+      {
+        speaker: '猪八戒',
+        speakerTitle: '【馋涎欲滴】',
+        speakerIcon: '🐷',
+        text: '吸溜……猴哥！那紫金红葫芦里装的是陈年绍兴花雕还是西凤女儿红？若是好酒，俺老猪去给妖王拜寿换两壶尝尝！'
+      },
+      {
+        speaker: '巡山小钻风',
+        speakerTitle: '【大惊失色】',
+        speakerIcon: '🎺',
+        text: '等等……总钻风大哥怎么长着雷公嘴长毛，旁边还有个猪头和尚？！不好啦！是齐天大圣孙行者！来人啊，有奸细！小的们抄家伙！',
+        options: [
+          {
+            text: '【出招击退巡山精怪，直取莲花洞！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.triggerXiaozuanfengBattle();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  yinjiao_encounter: {
+    steps: [
+      {
+        speaker: '银角大王',
+        speakerTitle: '【莲花洞二大王】',
+        speakerIcon: '🥈',
+        text: '好个弼马温与天宫逆将，竟敢伤我巡山先锋！今日叫尔等见识见识我移山倒海之大神通！'
+      },
+      {
+        speaker: '孙悟空',
+        speakerTitle: '【齐天大圣】',
+        speakerIcon: '🐒',
+        text: '老孙行不更名坐不改姓，俺是者行孙！妖怪，你手里那羊脂玉净瓶与紫金红葫芦，敢叫俺一声么？'
+      },
+      {
+        speaker: '银角大王',
+        speakerTitle: '【祭起法宝】',
+        speakerIcon: '🥈',
+        text: '者行孙！我叫你一声，你敢应吗？！'
+      },
+      {
+        speaker: '威灵大将',
+        speakerTitle: '【护法破阵】',
+        speakerIcon: '🛡️',
+        text: '大圣小心！法宝吸纳神魂，不可应名！待本将协同大圣踏破移山压顶大阵，夺其净瓶！'
+      },
+      {
+        speaker: '银角大王',
+        speakerTitle: '【移山压顶】',
+        speakerIcon: '🥈',
+        text: '狂妄之徒！太山、峨眉山、须弥山——给本大王落！受死吧！',
+        options: [
+          {
+            text: '【大破移山压顶大阵，激战银角大王！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.triggerYinjiaoBattle();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  jinjiao_encounter: {
+    steps: [
+      {
+        speaker: '金角大王',
+        speakerTitle: '【莲花洞大大王】',
+        speakerIcon: '🥇',
+        text: '何方泼皮，敢重创我二弟！七星宝剑斩仙戮神，太玄芭蕉扇引动六丁神火！今日便将你们全队烧成飞灰！'
+      },
+      {
+        speaker: '孙悟空',
+        speakerTitle: '【火眼金睛】',
+        speakerIcon: '🐒',
+        text: '老倌儿家的童儿好大口气！老孙当年在八卦炉里都炼成了火眼金睛，还怕你这把小芭蕉扇？！大将，速破七星剑罡！'
+      },
+      {
+        speaker: '金角大王',
+        speakerTitle: '【暴怒出招】',
+        speakerIcon: '🥇',
+        text: '吃我七星剑煞与六丁神火！拿命来！',
+        options: [
+          {
+            text: '【迎战金角大王，力破七星宝剑与芭蕉真火！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.triggerJinjiaoBattle();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  pingdingshan_laojun_aftermath: {
+    steps: [
+      {
+        speaker: '太上老君',
+        speakerTitle: '【道德天尊·太清道祖】',
+        speakerIcon: '✨',
+        text: '大圣住手！莫伤童儿性命！'
+      },
+      {
+        speaker: '孙悟空',
+        speakerTitle: '【火眼辨真】',
+        speakerIcon: '🐒',
+        text: '老倌儿！你不在三十三天兜率宫烧丹炼汞，跑来这里包庇下界妖孽？！你这金炉、银炉童子偷了五件先天法宝作恶多端，你该当何罪！'
+      },
+      {
+        speaker: '太上老君',
+        speakerTitle: '【道德天尊·太清道祖】',
+        speakerIcon: '✨',
+        text: '大圣差矣！此非他们私自下凡，乃是南海观世音菩萨向老道连借了三次，特借二人下界化生妖魔，磨砺西行队伍九九八十一难之道心。如今火候已足，恶障已消，老道自当领他们回宫领罚。'
+      },
+      {
+        speaker: '威灵大将',
+        speakerTitle: '【天将悟道】',
+        speakerIcon: '🛡️',
+        text: '原来是道祖与菩萨深意。历经磨砺，取经队伍西行道心愈发坚若磐石。'
+      },
+      {
+        speaker: '太上老君',
+        speakerTitle: '【道德天尊·太清道祖】',
+        speakerIcon: '✨',
+        text: '善哉善哉！威灵大将大智大勇。老道特从袖中取出兜率宫至宝【九转玄都金丹】赐予大将，可洗髓易筋、大幅永久增进气血法力；再将这柄神兵【七星伏魔宝剑】赐予你斩妖卫道！去吧，前路苍茫，大道可期！',
+        options: [
+          {
+            text: '【恭谢太上道祖点化，领受九转金丹与七星神兵！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.grantLaojunGift();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  // =========================================================================
+  // 支线任务：【苍茫三岭伏魔传】剧情与交互
+  // =========================================================================
+  hermit_talk: {
+    steps: [
+      {
+        speaker: '玄风道长',
+        speakerTitle: '【隐世玄修】',
+        speakerIcon: '🧙‍♂️',
+        text: '无量天尊！老道乃终南山散修玄风。贫道在此静修，奈何这苍茫三岭妖魔横行：野狐岭青丘妖狐食人吸髓；郊狼岭群狼撕碎行商；深处黑风绝壁更有【黑风修罗王】自立为尊！敢问少侠可愿替天行道、荡平三岭恶氛？',
+        options: [
+          {
+            text: '【义不容辞！接下【苍茫三岭伏魔传】支线委托】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.startSanlingSideQuest();
+            }
+          },
+          {
+            text: '【询问当前伏魔进展与指引】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.checkSanlingSideQuestProgress();
+            }
+          },
+          {
+            text: '【在下尚有要事，稍后再来相助】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  sanling_fox_talk: {
+    steps: [
+      {
+        speaker: '青丘妖狐',
+        speakerTitle: '【凶恶妖狐】',
+        speakerIcon: '🦊',
+        text: '哪里来的凡人修者，敢打扰姑奶奶修炼！纳命来！',
+        options: [
+          {
+            text: '【斩除妖狐，夺取狐妖内丹！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              const npcId = (window.Dialogue && window.Dialogue.currentNpcId) || 'npc_sanling_fox_1';
+              window.App2D.triggerSanlingFoxBattle(npcId);
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  sanling_wolf_talk: {
+    steps: [
+      {
+        speaker: '阴风血狼',
+        speakerTitle: '【嗜血凶狼】',
+        speakerIcon: '🐺',
+        text: '嗷呜——！新鲜的生人血肉！撕碎他！',
+        options: [
+          {
+            text: '【诛灭血狼，夺回行商遗物！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              const npcId = (window.Dialogue && window.Dialogue.currentNpcId) || 'npc_sanling_wolf_1';
+              window.App2D.triggerSanlingWolfBattle(npcId);
+            }
+          }
+        ]
+      }
+    ]
+  },
+
+  heifeng_shura_encounter: {
+    steps: [
+      {
+        speaker: '黑风修罗王',
+        speakerTitle: '【万妖魔窟霸主】',
+        speakerIcon: '👹',
+        text: '桀桀桀！不知死活的凡人，竟敢连斩本王的野狐血狼，闯入黑风绝壁祭坛！今日正好拿你的金身道体，祭我修罗嗜血巨斧！',
+        options: [
+          {
+            text: '【荡平魔窟！决战黑风修罗王！】',
+            action: () => {
+              if (window.Dialogue) window.Dialogue.close();
+              window.App2D.triggerHeifengShuraBattle();
+            }
+          }
+        ]
+      }
     ]
   },
 
@@ -2605,6 +2921,15 @@ if (window.GAME_DATA) {
       subtitle: '波月洞深降奎木，宝象国里救天仙',
       seal: '星宿正果',
       triggerMap: 'baoxiangguo'
+    },
+    'chapter_11': {
+      id: 'chapter_11',
+      chapterNum: '第十一回',
+      title: '第十一回 · 平顶风云',
+      subtitle: '移山压顶智胜妖，五件至宝降双魔',
+      seal: '莲花伏魔',
+      triggerMap: 'pingdingshan',
+      triggerPhase: 'baoxiang_cleared'
     }
   };
 }

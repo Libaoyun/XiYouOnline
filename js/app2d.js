@@ -903,9 +903,12 @@ class GameApp2D {
 
     // 8. 宝象国黄袍怪与公主：必须在三打白骨精之后 (baihu_cleared 及之后) 出现
     if (npcId === 'npc_huangpao_guai' || npcId === 'npc_huangpao_boss') {
-      return currentWeight >= phaseWeights.baihu_cleared && currentWeight < phaseWeights.baoxiang_cleared;
+      return storyPhase === 'baoxiang_boss_ready';
     }
-    if (npcId === 'npc_baihuaxiu' || npcId === 'npc_baoxiang_king') {
+    if (npcId === 'npc_baihuaxiu') {
+      return currentWeight >= phaseWeights.baoxiang_seek_princess;
+    }
+    if (npcId === 'npc_baoxiang_king') {
       return currentWeight >= phaseWeights.baihu_cleared;
     }
 
@@ -980,10 +983,12 @@ class GameApp2D {
 
       // 太白金星：天庭老仙，始终接引
       if (npcId === 'npc_taibai') return true;
+      // 花果山人物不能因天宫地图中的旧占位配置提前登场。
+      if (npcId === 'npc_juling_shen' || npcId === 'npc_huaguo_monkey') return false;
 
       // 事件一：天蓬调戏嫦娥（开局出现，解围后天蓬被王母降旨贬猪胎退场）
       if (npcId === 'npc_tianpeng' || npcId === 'npc_change') {
-        return storyPhase === 'heaven_prologue' || storyPhase === 'heaven_pantao_start';
+        return storyPhase === 'heaven_pantao_start';
       }
 
       // 事件二：卷帘失手打碎琉璃盏（救嫦娥后登场，求情免死贬流沙河后退场）
@@ -1040,6 +1045,9 @@ class GameApp2D {
     }
     if (npcId === 'npc_liuboqin_changan') {
       return storyPhase === 'changan_farewell';
+    }
+    if (npcId === 'npc_xuanzang') {
+      return storyPhase === 'changan_meet_xuanzang';
     }
 
     // 常规市井生活 NPC（长安商人、医馆、老渔翁、茶肆阿婆、土地公等）：始终驻扎提供服务
@@ -1135,8 +1143,10 @@ class GameApp2D {
     // 严格主线任务感叹号唯一制：同一时刻全游戏只允许当前唯一步骤的 1 位 NPC 拥有金色感叹号！
     const MAIN_QUEST_TARGETS = {
       // 天宫序章三大因缘
-      'heaven_prologue': 'npc_tianpeng',
+      'heaven_prologue': 'npc_taibai',
+      'heaven_to_water_pavilion': null,
       'heaven_pantao_start': 'npc_tianpeng',
+      'heaven_to_lingxiao': null,
       'heaven_saved_change': 'npc_juanlian',
       'heaven_saved_juanlian': 'npc_tianbing_scout',
       'heaven_huaguoshan': 'npc_tianbing_scout',
@@ -1553,6 +1563,57 @@ class GameApp2D {
   // 统一传送门进入与等级门禁校验
   tryEnterPortal(p) {
     if (!p || this.isTransitioning) return;
+    const orderedPhases = [
+      'heaven_prologue', 'heaven_to_water_pavilion', 'heaven_pantao_start', 'heaven_to_lingxiao',
+      'heaven_saved_change', 'heaven_saved_juanlian', 'heaven_huaguoshan', 'heaven_huaguoshan_shuilien',
+      'heaven_huaguoshan_rescue', 'heaven_juling_defeated', 'heaven_final_wukong',
+      'heaven_yangjian_capture', 'heaven_tiangong_trial',
+      'liujiacun_start', 'liujiacun_find_mushrooms', 'liujiacun_mushrooms_collected',
+      'liujiacun_go_cut_wood', 'liujiacun_wood_gathering', 'liujiacun_wood_collected',
+      'liujiacun_rat_hunting', 'liujiacun_rats_cleared', 'liujiacun_go_changan',
+      'changan_arrived', 'chentang_investigate', 'chentang_defeat_hooligans',
+      'chentang_hooligans_done', 'chentang_boss_ready', 'chentang_boss_defeated',
+      'chentang_statue_investigate', 'donghai_yecha_ready', 'donghai_dragon_arrived',
+      'longgong_visit', 'chentang_guanyin_revelation', 'changan_meet_xuanzang',
+      'changan_meet_taizong', 'changan_farewell', 'wuxingshan_ready', 'wuxing_freed',
+      'yingchou_cleared', 'gaolao_cleared', 'huangfeng_cleared', 'liusha_cleared',
+      'wuzhuang_cleared', 'baihu_first_cleared', 'baihu_second_cleared', 'baihu_cleared',
+      'baoxiang_seek_princess', 'baoxiang_boss_ready', 'baoxiang_cleared',
+      'pingding_scout_cleared', 'pingding_silver_cleared', 'pingding_gold_cleared', 'pingding_cleared'
+    ];
+    const requiredPhase = {
+      changan_city: 'liujiacun_go_changan', chentangguan: 'chentang_investigate',
+      donghai_coast: 'donghai_yecha_ready', shuijinggong: 'longgong_visit',
+      longgong_palace: 'longgong_visit', wuxingshan: 'wuxingshan_ready',
+      yingchoujian: 'wuxing_freed', heifengshan: 'yingchou_cleared',
+      gaolaozhuang: 'yingchou_cleared', huangfengling: 'gaolao_cleared',
+      futushan: 'huangfeng_cleared', liushahe: 'huangfeng_cleared',
+      wuzhuangguan: 'liusha_cleared', baihuling: 'wuzhuang_cleared',
+      baigudong: 'wuzhuang_cleared', baoxiangguo: 'baihu_cleared',
+      pingdingshan: 'baoxiang_cleared', huoyundong: 'pingding_cleared'
+    };
+    const currentRank = orderedPhases.indexOf(this.storyPhase);
+    const minimumRank = orderedPhases.indexOf(requiredPhase[p.targetMap]);
+    const isWoodVisit = p.targetMap === 'wuxingshan' &&
+      ['liujiacun_go_cut_wood', 'liujiacun_wood_gathering', 'liujiacun_wood_collected'].includes(this.storyPhase);
+    if (minimumRank >= 0 && currentRank >= 0 && currentRank < minimumRank && !isWoodVisit) {
+      this.autoMovePath = [];
+      this.autoMoveTargetCallback = null;
+      const angle = Math.atan2(this.playerChar.y - p.y, this.playerChar.x - p.x);
+      const safe = this.ensurePlayerSafePosition(this.currentMapId,
+        p.x + Math.cos(angle) * 30, p.y + Math.sin(angle) * 30);
+      this.playerChar.x = safe.x;
+      this.playerChar.y = safe.y;
+      window.showGameMessage('前方道路尚未随主线开启。先完成当前任务，再来此处。', 'warning', 3500);
+      return;
+    }
+    if (p.targetMap === 'huaguoshan' && this.currentMapId === 'tiangong_palace' &&
+        !['heaven_huaguoshan', 'heaven_huaguoshan_shuilien', 'heaven_huaguoshan_rescue', 'heaven_juling_defeated', 'heaven_final_wukong'].includes(this.storyPhase)) {
+      this.autoMovePath = [];
+      this.playerChar.y = p.y - 30;
+      window.showGameMessage('南天门尚未接到出征帅令。先完成天宫值守。', 'warning', 3000);
+      return;
+    }
     
     // 关隘与练功区等级限制校验 (主线对应任务特许放行)
     const pLevel = (this.playerData && this.playerData.level) || (this.player && this.player.level) || 1;
@@ -1670,6 +1731,23 @@ class GameApp2D {
     }
     this._wasPlayerMoving = isMovingNow;
 
+    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_water_pavilion' &&
+        this.playerChar.x >= 420 && Math.abs(this.playerChar.y - 384) <= 82) {
+      this.storyPhase = 'heaven_pantao_start';
+      this.refreshMapNpcs();
+      window.showGameMessage('🌊 已到瑶池水阁。前方似乎有人争执，过去看看。', 'info', 3200);
+      return;
+    }
+
+    // 卷帘只在玩家真正走到凌霄殿前后登场；阶段可存档恢复。
+    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_lingxiao' &&
+        this.playerChar.x >= 640 && Math.abs(this.playerChar.y - 384) <= 82) {
+      this.storyPhase = 'heaven_saved_change';
+      this.refreshMapNpcs();
+      window.showGameMessage('🏛️ 已到凌霄殿前。殿中忽传琉璃碎响，快去查看！', 'info', 3200);
+      return;
+    }
+
     // 4. 摄像机跟随
     const mapPixelW = mapData.width * this.tilemap.tileSize;
     const mapPixelH = mapData.height * this.tilemap.tileSize;
@@ -1764,6 +1842,13 @@ class GameApp2D {
     if (npc.id === 'npc_baigujing') {
       npc.dialogueKey = this.storyPhase === 'baihu_first_cleared' ? 'baigujing_second_encounter' :
         this.storyPhase === 'baihu_second_cleared' ? 'baigujing_third_encounter' : 'baigujing_encounter';
+    }
+    if (npc.id === 'npc_changan_tea' && this.storyPhase !== 'changan_arrived') {
+      window.Dialogue.start({ steps: [{
+        speaker: '茶肆阿婆', speakerTitle: '【长安市井】',
+        text: '客官又来了？这壶茶还热着。路上遇到新鲜事，回来讲给我听，茶钱算你半价。'
+      }] });
+      return;
     }
     if (this.storyPhase === 'baoxiang_cleared' && npc.id === 'npc_baihuaxiu') {
       npc.dialogueKey = 'baihuaxiu_homecoming';
@@ -2756,24 +2841,27 @@ class GameApp2D {
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:440px;width:92%;">
+        <div class="modal-window inventory-panel" onclick="event.stopPropagation()">
           <div class="modal-header">
-            <span class="modal-title">🎒 仙家乾坤储物袋 (${this.inventory.slots.length}/${this.inventory.maxSlots})</span>
+            <span class="modal-title">乾坤行囊 <small>${this.inventory.slots.length}/${this.inventory.maxSlots} 格</small></span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body" style="padding:10px;">
+          <div class="modal-body inventory-body">
+            <div class="inventory-layout"><section class="inventory-equipment">
             <!-- 身上穿戴装备概览 -->
-            <div style="background:rgba(20,15,10,0.85);border:1px solid #5c4732;border-radius:8px;padding:8px;margin-bottom:10px;">
-              <div style="font-size:11px;font-weight:bold;color:#ffd700;margin-bottom:6px;display:flex;justify-content:space-between;">
-                <span>🛡️ 身上佩戴神装 (点击可卸下或查孔)</span>
-                <span style="font-size:10px;color:#aaa;">银两: ${this.playerData.silver} 两</span>
+            <div class="inventory-equipment-inner">
+              <div class="inventory-hero-preview">
+                <div class="inventory-hero-portrait">${window.Portraits ? window.Portraits.getPortraitSvg(this.playerData.appearance === 'heaven_general' ? 'heaven_general' : 'shaoxia', 62) : '⚔️'}</div>
+                <div><strong>${this.playerData.name}</strong><span>Lv.${this.playerData.level} · 当前装束</span></div>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;">
+              <div class="inventory-equipped-heading"><strong>身上装备</strong><span>银两 ${this.playerData.silver} 两</span></div>
+              <div class="inventory-equipped-tip">点击装备查看属性与宝石孔</div>
+              <div class="inventory-equipped-grid">
                 ${parts.map(p => {
                   const itemSlot = eq[p.key];
                   if (!itemSlot) {
                     return `
-                      <div style="background:rgba(0,0,0,0.4);border:1px dashed #554433;border-radius:6px;padding:4px;text-align:center;font-size:10px;color:#665544;">
+                      <div class="inventory-equipped-empty">
                         <div>[${p.name}]</div>
                         <div style="margin-top:2px;">未佩戴</div>
                       </div>
@@ -2783,19 +2871,21 @@ class GameApp2D {
                   const sockets = itemSlot.sockets || [null, null, null];
                   const socketIcons = sockets.map(g => g ? '💎' : '⚪').join('');
                   return `
-                    <div onclick="window.App2D.showEquippedDetail('${p.key}')" style="background:#2a1b0e;border:1px solid #c59b27;border-radius:6px;padding:4px;text-align:center;font-size:10px;cursor:pointer;">
-                      <div style="color:#ffd700;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    <button type="button" class="inventory-equipped-card" onclick="window.App2D.showEquippedDetail('${p.key}')">
+                      <div class="inventory-equipped-name">
                         ${baseIt.icon || '⚔️'}${baseIt.name || p.name}
                       </div>
-                      <div style="font-size:9px;color:#2ecc71;">+${itemSlot.star || 0}星 ${socketIcons}</div>
-                    </div>
+                      <div class="inventory-equipped-stars">+${itemSlot.star || 0}星 ${socketIcons}</div>
+                    </button>
                   `;
                 }).join('')}
               </div>
             </div>
 
+            </section><section class="inventory-contents">
+            <div class="inventory-section-heading">物品 <span>${items.length} 件</span></div>
             <!-- 分类切换 Tabs -->
-            <div style="display:flex;gap:4px;margin-bottom:8px;">
+            <div class="inventory-tabs">
               <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='all'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('all')">全部</button>
               <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='consumable'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('consumable')">💊药品</button>
               <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='equip'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('equip')">🛡️装备</button>
@@ -2804,7 +2894,7 @@ class GameApp2D {
             </div>
 
             <!-- 物品列表格 -->
-            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;max-height:220px;overflow-y:auto;padding-right:2px;">
+            <div class="inventory-item-grid">
               ${items.length === 0 ? `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#887766;font-size:11px;">此分类下暂无物品</div>` : ''}
               ${items.map(slot => {
                 const it = window.GAME_DATA.ITEMS[slot.itemId] || {};
@@ -2812,17 +2902,17 @@ class GameApp2D {
                 const sockets = (slot.equipData && slot.equipData.sockets) || [];
                 const sockStr = isEq ? sockets.map(g => g ? '💎' : '⚪').join('') : '';
                 return `
-                  <div onclick="window.App2D.showInventoryItemDetail('${slot.instanceId}')" style="background:#20140b;border:1px solid #4a331c;border-radius:6px;padding:6px 4px;text-align:center;cursor:pointer;position:relative;" title="${it.name}">
-                    <div style="font-size:22px;line-height:1;">${it.icon || '📦'}</div>
-                    <div style="font-size:10px;color:#ffd700;font-weight:bold;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  <button type="button" class="inventory-item-card" onclick="window.App2D.showInventoryItemDetail('${slot.instanceId}')" title="${it.name || '物品'}">
+                    <div class="inventory-item-icon">${it.icon || '📦'}</div>
+                    <div class="inventory-item-name">
                       ${it.name || '物品'}
                     </div>
-                    ${slot.count > 1 ? `<span style="position:absolute;bottom:2px;right:4px;font-size:9px;color:#7bed9f;font-weight:bold;">x${slot.count}</span>` : ''}
-                    ${isEq ? `<div style="font-size:8px;color:#2ecc71;">${sockStr}</div>` : ''}
-                  </div>
+                    ${slot.count > 1 ? `<span class="inventory-item-count">×${slot.count}</span>` : ''}
+                    ${isEq ? `<div class="inventory-item-sockets">${sockStr}</div>` : ''}
+                  </button>
                 `;
               }).join('')}
-            </div>
+            </div></section></div>
           </div>
         </div>
       </div>
@@ -2860,13 +2950,14 @@ class GameApp2D {
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:320px;">
+        <div class="modal-window item-detail-panel" onclick="event.stopPropagation()">
           <div class="modal-header">
             <span class="modal-title">${it.icon || '📦'} ${it.name}</span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body" style="font-size:11px;line-height:1.6;color:#fef0cd;">
-            <div style="color:#aaa;margin-bottom:8px;">${it.desc || '一件三界秘宝。'}</div>
+          <div class="modal-body item-detail-body">
+            <div class="item-detail-icon">${it.icon || '📦'}</div>
+            <div class="item-detail-description">${it.desc || '一件三界秘宝。'}</div>
             ${it.attrs ? `
               <div style="background:#1b120a;padding:6px;border-radius:4px;border:1px solid #443322;margin-bottom:8px;">
                 ${Object.entries(it.attrs).map(([k, v]) => `<div>${k.toUpperCase()}: +${v}</div>`).join('')}
@@ -3045,14 +3136,14 @@ class GameApp2D {
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:460px;width:94%;">
+        <div class="modal-window pet-panel" onclick="event.stopPropagation()">
           <div class="modal-header">
-            <span class="modal-title">🐾 随行仙宠管理 (${this.pets.length}只)</span>
+            <span class="modal-title">随行仙宠 <small>${this.pets.length} 位同伴</small></span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body" style="padding:10px;font-size:11px;color:#fef0cd;line-height:1.6;">
+          <div class="modal-body pet-body">
             <!-- 参战上限提示 -->
-            <div style="background:#20140b;border:1px solid #c59b27;border-radius:6px;padding:6px 10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+            <div class="pet-roster-summary">
               <div>
                 参战阵列：<span style="color:#ffd700;font-weight:bold;">${curCombatCount} / ${maxCombat} 只</span>
                 <span style="color:#aaa;font-size:10px;">(20/30/40级分别解锁1/2/3只)</span>
@@ -3061,7 +3152,7 @@ class GameApp2D {
             </div>
 
             <!-- 仙宠列表 -->
-            <div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+            <div class="pet-roster-list">
               ${this.pets.length === 0 ? `<div style="text-align:center;color:#887766;padding:20px;">暂无仙宠，可前往野外使用神符或法宝招降！</div>` : ''}
               ${this.pets.map(pet => {
                 const isActive = this.activeCombatPets.some(p => p.instanceId === pet.instanceId);
@@ -3088,14 +3179,14 @@ class GameApp2D {
                 };
 
                 return `
-                  <div style="background:#1a1109;border:1.5px solid ${isActive ? '#2ed573' : '#4a331c'};border-radius:8px;padding:8px 10px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                      <div style="display:flex;align-items:center;gap:8px;">
-                        <div style="width:34px;height:34px;border-radius:50%;border:1.5px solid #ffd700;overflow:hidden;background:#2d1a0d;box-shadow:0 0 8px rgba(255,215,0,0.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                          ${getPetPortrait(pet, 34)}
+                  <div class="pet-card ${isActive ? 'is-active' : ''}">
+                    <div class="pet-card-header">
+                      <div class="pet-identity">
+                        <div class="pet-portrait">
+                          ${getPetPortrait(pet, 52)}
                         </div>
                         <div>
-                          <div style="display:flex;align-items:center;gap:6px;">
+                          <div class="pet-name-row">
                             <span style="font-weight:bold;color:#fef0cd;font-size:12px;">${pet.name} (Lv.${pet.level})</span>
                             <span style="color:${qColor};font-weight:bold;font-size:10px;border:1px solid ${qColor};border-radius:4px;padding:0 4px;">【${pet.qualityName || '普通'}】</span>
                             ${pet.className && pet.className !== '无门派' ? `<span style="color:#d4af37;font-size:10px;">[${pet.className}]</span>` : ''}
@@ -3108,27 +3199,30 @@ class GameApp2D {
                       </label>
                     </div>
 
+                    <div class="pet-vitals">
+                      <div><span>气血 ${pet.hp}/${pet.maxHp}</span><i style="width:${Math.max(0, Math.min(100, pet.maxHp ? pet.hp / pet.maxHp * 100 : 0))}%;"></i></div>
+                      <div><span>法力 ${pet.mp}/${pet.maxMp}</span><i style="width:${Math.max(0, Math.min(100, pet.maxMp ? pet.mp / pet.maxMp * 100 : 0))}%;"></i></div>
+                    </div>
+
                     <!-- 属性指标 -->
-                    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:4px;font-size:10px;color:#ccc;background:rgba(0,0,0,0.3);padding:4px 6px;border-radius:4px;margin-bottom:6px;">
-                      <div>❤️ HP: <span style="color:${pet.hp<pet.maxHp?'#ff6b81':'#2ecc71'};font-weight:bold;">${pet.hp}/${pet.maxHp}</span></div>
-                      <div>💧 MP: <span style="color:#70a1ff;">${pet.mp}/${pet.maxMp}</span></div>
+                    <div class="pet-stats">
                       <div>⚔️ 攻: ${pet.atk}</div>
                       <div>🛡️ 防: ${pet.def}</div>
                       <div>💨 速: ${pet.spd}</div>
                       <div>🌟 成长: ${pet.growth}</div>
-                      <div style="grid-column:span 2;color:#ffd700;">
+                      <div class="pet-specialty" style="color:#ffd700;">
                         ${pet.classId ? `专精: ${pet.className}技能抗性+5%` : '暂无专精'}
                       </div>
                     </div>
 
                     <!-- 绝技与门派技能 -->
-                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-bottom:4px;">
+                    <div class="pet-skill-row">
                       <div style="color:#bbb;">
-                        ${hasSkill ? `绝技: <span style="color:#ffd700;font-weight:bold;">${pet.skills[0].name}</span> (${pet.skills[0].desc.slice(0, 18)}...)` : `
+                        ${hasSkill ? `绝技: <span style="color:#ffd700;font-weight:bold;">${pet.skills[0].name}</span> ${(pet.skills[0].desc || '').slice(0, 40)}` : `
                           <span style="color:#887766;">${pet.quality==='ordinary' ? '普通仙宠无法领悟绝技，仅能物理攻击' : (pet.quality==='sanxian' ? '散仙需修行至 Lv.10 开启灵窍' : '未领悟绝技')}</span>
                         `}
                       </div>
-                      <div style="display:flex;gap:4px;">
+                      <div class="pet-actions">
                         <button class="dialogue-opt-btn" style="padding:2px 6px;font-size:9px;background:#c59b27;color:#000;font-weight:bold;" onclick="window.App2D.openPetWashModal('${pet.instanceId}')">
                           🧴 洗炼
                         </button>
@@ -3144,7 +3238,7 @@ class GameApp2D {
                     </div>
 
                     <!-- 魔兽要诀被动特技槽位 (最多4槽) -->
-                    <div style="display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.4);padding:3px 6px;border-radius:4px;font-size:9px;">
+                    <div class="pet-passives">
                       <span style="color:#ffd700;font-weight:bold;">被动神技:</span>
                       ${[0, 1, 2, 3].map(slotIdx => {
                         const pass = (pet.passives && pet.passives[slotIdx]);
@@ -3509,7 +3603,7 @@ class GameApp2D {
     };
 
     this.start2DBattle([tianpengBoss], () => {
-      this.storyPhase = 'heaven_saved_change';
+      this.storyPhase = 'heaven_to_lingxiao';
       setTimeout(() => {
         if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.tianpeng_after_battle) {
           window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.tianpeng_after_battle);
@@ -4387,6 +4481,7 @@ class GameApp2D {
       this.storyPhase === 'baoxiang_seek_princess';
     if (!allowed) return;
     this.storyPhase = nextPhase;
+    if (typeof this.refreshMapNpcs === 'function') this.refreshMapNpcs();
     const target = this.npcs.find(n => n.id === targetNpcId);
     if (target) target.questStatus = 'available';
     this.interactedNpcSet.delete(targetNpcId);
@@ -6042,6 +6137,78 @@ class GameApp2D {
         ctx.ellipse(x, y + 10 - progress * 40, 24 * (1 - progress * 0.3), 12 * (1 - progress * 0.3), 0, 0, Math.PI * 2);
         ctx.stroke();
       }
+      else if (fx.type === 'sacrifice') {
+        // 舍生：血色交叉枪芒，与普攻的单弧剑光区分。
+        ctx.strokeStyle = `rgba(255, 85, 103, ${1 - progress})`;
+        ctx.shadowColor = '#ff304a'; ctx.shadowBlur = 20; ctx.lineWidth = 7 * (1 - progress) + 1;
+        for (const side of [-1, 1]) {
+          ctx.beginPath(); ctx.moveTo(x - 34, y + side * 30);
+          ctx.quadraticCurveTo(x + 4, y - side * 12, x + 38, y - side * 34); ctx.stroke();
+        }
+      }
+      else if (fx.type === 'buddha' || fx.type === 'palm') {
+        // 佛光是向心光轮；如来神掌是从上方压落的掌印。
+        ctx.strokeStyle = `rgba(255, 223, 124, ${1 - progress})`;
+        ctx.fillStyle = `rgba(255, 200, 69, ${(1 - progress) * 0.27})`;
+        ctx.shadowColor = '#ffd76e'; ctx.shadowBlur = 24; ctx.lineWidth = 3;
+        if (fx.type === 'buddha') {
+          for (let ring = 0; ring < 3; ring++) {
+            ctx.beginPath(); ctx.arc(x, y - 9, 13 + ring * 13 + progress * 16, 0, Math.PI * 2); ctx.stroke();
+          }
+          ctx.beginPath(); ctx.moveTo(x, y - 72); ctx.lineTo(x, y + 24); ctx.stroke();
+        } else {
+          ctx.save(); ctx.translate(x, y - 60 + progress * 54); ctx.scale(1 + progress * 0.4, 1 + progress * 0.4);
+          ctx.beginPath(); ctx.ellipse(0, 9, 20, 24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          for (let finger = -2; finger <= 2; finger++) {
+            ctx.beginPath(); ctx.roundRect(finger * 9 - 3, -24 - (2 - Math.abs(finger)) * 5, 7, 34, 4); ctx.fill(); ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+      else if (fx.type === 'poison' || fx.type === 'sand' || fx.type === 'mind' ||
+               fx.type === 'seal' || fx.type === 'bind' || fx.type === 'vanish' || fx.type === 'arcane') {
+        const colors = { poison: '#8cef69', sand: '#e8c486', mind: '#c996ff', seal: '#ffdf79',
+          bind: '#7cc7f6', vanish: '#b0f1ef', arcane: '#a7a5ff' };
+        const color = colors[fx.type];
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.shadowColor = color;
+        ctx.shadowBlur = 16; ctx.globalAlpha = Math.max(0, 1 - progress); ctx.lineWidth = 2.5;
+        if (fx.type === 'poison') {
+          for (let i = 0; i < 9; i++) {
+            const a = i * 2.4 + progress * 5;
+            const r = 8 + i * 2.6 + progress * 15;
+            ctx.beginPath(); ctx.arc(x + Math.cos(a) * r, y - 12 + Math.sin(a) * r - progress * 12, 2 + i % 3, 0, Math.PI * 2); ctx.fill();
+          }
+        } else if (fx.type === 'sand') {
+          for (let i = -3; i <= 3; i++) {
+            const yy = y + i * 9 - progress * 11;
+            ctx.beginPath(); ctx.moveTo(x - 54 + progress * 32, yy + 8);
+            ctx.quadraticCurveTo(x, yy - 17, x + 51 + progress * 8, yy - 4); ctx.stroke();
+          }
+        } else if (fx.type === 'mind') {
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath(); ctx.ellipse(x, y - 12, 10 + progress * 28 + i * 8, 5 + progress * 12 + i * 5,
+              progress * 2 + i * 1.05, 0, Math.PI * 2); ctx.stroke();
+          }
+        } else if (fx.type === 'seal') {
+          ctx.save(); ctx.translate(x, y - 12); ctx.rotate(progress * 0.7);
+          ctx.strokeRect(-25, -25, 50, 50); ctx.strokeRect(-17, -17, 34, 34);
+          ctx.beginPath(); ctx.moveTo(-19, 0); ctx.lineTo(19, 0); ctx.moveTo(0, -19); ctx.lineTo(0, 19); ctx.stroke(); ctx.restore();
+        } else if (fx.type === 'bind') {
+          for (let side of [-1, 1]) {
+            ctx.beginPath(); ctx.moveTo(x + side * 42, y - 44);
+            ctx.bezierCurveTo(x - side * 25, y - 27, x + side * 30, y - 4, x, y + 22); ctx.stroke();
+          }
+        } else if (fx.type === 'vanish') {
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath(); ctx.ellipse(x, y - 10 - i * 11, 23 + i * 7 + progress * 8, 8, 0, 0, Math.PI * 2); ctx.stroke();
+          }
+        } else {
+          for (let i = 0; i < 6; i++) {
+            const a = i * Math.PI / 3 + progress * 2;
+            ctx.beginPath(); ctx.moveTo(x, y - 10); ctx.lineTo(x + Math.cos(a) * 33, y - 10 + Math.sin(a) * 33); ctx.stroke();
+          }
+        }
+      }
 
       ctx.restore();
       return true;
@@ -6058,6 +6225,27 @@ class GameApp2D {
       startTime: Date.now(),
       duration: duration
     });
+  }
+
+  getBattleEffectType(step) {
+    const effects = {
+      sk_jg_shesheng: 'sacrifice', sk_jg_foguang: 'buddha',
+      sk_jg_ruxiang: 'palm', sk_jg_huti: 'shield',
+      sk_ym_leiting: 'thunder', sk_ym_wandu: 'poison',
+      sk_ym_sanmei: 'fire', sk_ym_feisha: 'sand',
+      sk_xr_luanhun: 'mind', sk_xr_fengyin: 'seal',
+      sk_xr_dingshen: 'bind', sk_xr_yinshen: 'vanish'
+    };
+    if (step.skillId && effects[step.skillId]) return effects[step.skillId];
+    const name = step.skillName || '';
+    if (/雷|电/.test(name)) return 'thunder';
+    if (/火|炎/.test(name)) return 'fire';
+    if (/毒|瘴/.test(name)) return 'poison';
+    if (/风|沙/.test(name)) return 'sand';
+    if (/水|冰|霜|海/.test(name)) return 'ice';
+    if (/斧|钉耙|棒|刀|剑|枪/.test(name)) return 'sacrifice';
+    if (step.skillId || name) return 'arcane';
+    return 'slash';
   }
 
   // 播放攻击者极速冲锋滑步击打与平滑归位动画 (A冲B 或 B冲A)
@@ -6260,18 +6448,16 @@ class GameApp2D {
             targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
           }
 
-          // 识别技能差异化法术特效类型
-          let skillType = 'slash'; // 默认普攻白色剑光
-          const logText = (step.text || '') + ((this.currentBattle.logs && this.currentBattle.logs.slice(-1)[0]) || '');
-          if (logText.includes('火') || logText.includes('炎') || logText.includes('凤')) skillType = 'fire';
-          else if (logText.includes('雷') || logText.includes('电') || logText.includes('霹雳')) skillType = 'thunder';
-          else if (logText.includes('冰') || logText.includes('水') || logText.includes('海') || logText.includes('霜')) skillType = 'ice';
-          else if (logText.includes('佛光') || logText.includes('舍生') || logText.includes('金刚') || logText.includes('破甲')) skillType = 'shield';
-          else if (logText.includes('吸血') || logText.includes('魔')) skillType = 'slash';
+          const skillType = this.getBattleEffectType(step);
 
-          // 极速冲锋突进到对方身前击打，并平滑倒退归位 (若非自损反噬)
+          // 近战突进；远程法术由施法位置引到目标，避免所有绝技都像普攻滑步。
           if (!isSelfAttacker && attackerEntity && targetEntity) {
-            await this.playDashAttackAnimation(attackerEntity, targetEntity, isAllyAttacker, skillType);
+            if (skillType === 'slash' || skillType === 'sacrifice') {
+              await this.playDashAttackAnimation(attackerEntity, targetEntity, isAllyAttacker, skillType);
+            } else if (targetEntity._battlePos) {
+              const pos = targetEntity._battlePos;
+              this.spawnBattleSkillEffect(skillType, pos.x, pos.y, 540);
+            }
           }
 
           // 受击飘字与震屏
@@ -6295,10 +6481,25 @@ class GameApp2D {
             this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
           }
         } else if (step.type === 'buff' || step.type === 'invis') {
-          const targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
-          if (targetEntity && targetEntity._battlePos) {
-            this.spawnBattleSkillEffect('shield', targetEntity._battlePos.x, targetEntity._battlePos.y, 400);
+          const targets = step.target === 'allies'
+            ? this.currentBattle.allies.filter(a => a.hp > 0 && a._battlePos)
+            : [this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0]];
+          for (const targetEntity of targets) {
+            if (!targetEntity?._battlePos) continue;
+            this.spawnBattleSkillEffect(this.getBattleEffectType(step) === 'slash' ? 'shield' : this.getBattleEffectType(step), targetEntity._battlePos.x, targetEntity._battlePos.y, 500);
             this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
+          }
+        } else if (step.type === 'cast' && step.targetIndex !== undefined) {
+          const targetEntity = this.currentBattle.enemies[step.targetIndex];
+          if (targetEntity?._battlePos) {
+            this.spawnBattleSkillEffect(this.getBattleEffectType(step), targetEntity._battlePos.x, targetEntity._battlePos.y, 500);
+          }
+        } else if (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex] &&
+                   ['luanhun', 'sealed', 'dingshen'].includes(step.type)) {
+          const targetEntity = this.currentBattle.enemies[step.targetIndex];
+          if (targetEntity._battlePos) {
+            this.spawnBattleSkillEffect(this.getBattleEffectType(step), targetEntity._battlePos.x, targetEntity._battlePos.y, 540);
+            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'damage');
           }
         } else if (step.text) {
           const targetEntity = (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex]) || this.currentBattle.allies[0];
@@ -7435,15 +7636,11 @@ class GameApp2D {
       return;
     }
     if (this.ghostQuest.completed) {
-      // 恶鬼已死，自动返回长安城钟馗处
-      this.loadMap('changan_city', { x: 18 * 32, y: 12 * 32 });
-      window.showGameMessage('✨ 地灵神行！已带你返回长安城钟馗天师面前，请点击复命领赏！', 'success');
+      this.guideToMap('changan_city', '钟馗天师');
       return;
     }
 
-    // 传送/寻路至目标场景
-    this.loadMap(this.ghostQuest.mapId, { x: 10 * 32, y: 10 * 32 });
-    window.showGameMessage(`✨ 神行金光闪烁！已抵达【${this.ghostQuest.mapName}】，恶鬼【${this.ghostQuest.targetName}】就在附近！`, 'success');
+    this.guideToMap(this.ghostQuest.mapId, this.ghostQuest.targetName);
   }
 
   // =========================================================================
@@ -7649,7 +7846,7 @@ class GameApp2D {
                 <div style="font-size:10px;color:#887766;margin-bottom:6px;">
                   前往长安城化生寺旁拜见【伏魔天师·钟馗】，即可领取今日除妖通缉令！
                 </div>
-                <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;background:#34495e;" onclick="window.App2D.loadMap('changan_city', {x:18*32, y:12*32})">
+                <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;background:#34495e;" onclick="window.App2D.guideToMap('changan_city', '钟馗天师')">
                   前往长安城钟馗处
                 </button>
               `}
@@ -7674,7 +7871,7 @@ class GameApp2D {
                 <div style="font-size:10px;color:#887766;margin-bottom:6px;">
                   前往长安城拜见【大唐镖头·程咬金】，支付 1000 两押金即可开启押运大唐朝廷军饷！
                 </div>
-                <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;background:#34495e;" onclick="window.App2D.loadMap('changan_city', {x:12*32, y:11*32})">
+                <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;background:#34495e;" onclick="window.App2D.guideToMap('changan_city', '大唐镖局')">
                   前往长安城大唐镖局
                 </button>
               `}
@@ -7692,7 +7889,7 @@ class GameApp2D {
               <div style="background:#150d06;border:1px solid #4a331c;border-radius:6px;padding:8px;">
                 <div style="font-weight:bold;color:#3498db;margin-bottom:4px;">🌊 东海借宝神针</div>
                 <div style="font-size:9px;color:#aaa;margin-bottom:6px;">东海龙宫大殿敖广借宝试炼，力战蛟龙夺神珍铁！</div>
-                <button class="dialogue-opt-btn" style="padding:2px 6px;font-size:9px;background:#2980b9;" onclick="window.App2D.loadMap('longgong_palace')">
+                <button class="dialogue-opt-btn" style="padding:2px 6px;font-size:9px;background:#2980b9;" onclick="window.App2D.guideToMap('longgong_palace', '东海龙宫')">
                   前往龙宫大殿
                 </button>
               </div>
@@ -7706,6 +7903,52 @@ class GameApp2D {
     v.insertAdjacentHTML('beforeend', modalHtml);
   }
 
+  // 跨地图引路只规划当前场景的下一道门，绝不直接装载目标地图跳过任务。
+  guideToMap(targetMapId, targetName = '目标场景') {
+    if (window.Dialogue) window.Dialogue.close();
+    document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+    if (this.currentMapId === targetMapId) {
+      window.showGameMessage(`已在【${targetName}】所在场景，请查看小地图继续寻找。`, 'info', 3000);
+      return;
+    }
+    const maps = window.GAME_DATA.MAPS_2D;
+    const visited = new Set([this.currentMapId]);
+    const queue = [{ mapId: this.currentMapId, firstPortal: null }];
+    let nextPortal = null;
+    for (let i = 0; i < queue.length && !nextPortal; i++) {
+      const node = queue[i];
+      for (const portal of maps[node.mapId]?.portals || []) {
+        if (!maps[portal.targetMap] || visited.has(portal.targetMap)) continue;
+        const firstPortal = node.firstPortal || portal;
+        if (portal.targetMap === targetMapId) {
+          nextPortal = firstPortal;
+          break;
+        }
+        visited.add(portal.targetMap);
+        queue.push({ mapId: portal.targetMap, firstPortal });
+      }
+    }
+    if (!nextPortal) {
+      window.showGameMessage(`尚无通往【${targetName}】的道路，请先推进当前剧情。`, 'warning', 3500);
+      return;
+    }
+    const mapData = maps[this.currentMapId];
+    const distance = Math.hypot(nextPortal.x - this.playerChar.x, nextPortal.y - this.playerChar.y);
+    if (distance < 25) {
+      this.tryEnterPortal(nextPortal);
+      return;
+    }
+    const path = this.pathfinding.findPath(mapData, this.tilemap,
+      this.playerChar.x, this.playerChar.y, nextPortal.x, nextPortal.y);
+    if (!path || !path.length) {
+      window.showGameMessage(`已找到前往【${targetName}】的方向，请沿当前场景道路前行。`, 'info', 3000);
+      return;
+    }
+    this.autoMovePath = path;
+    this.autoMoveTargetCallback = () => this.tryEnterPortal(nextPortal);
+    window.showGameMessage(`已为你标出通往【${targetName}】的下一道门。`, 'info', 3000);
+  }
+
   // 寻路追踪当前主线
   teleportToStoryLead() {
     const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
@@ -7716,9 +7959,11 @@ class GameApp2D {
       return;
     }
 
-    // 跨地图智能神行直达对应主线场景
+    // 跨地图逐门引路，传送门仍执行剧情与等级检查。
     const phaseMapMap = {
       heaven_prologue: { mapId: 'tiangong_palace', name: '九重天阙' },
+      heaven_to_water_pavilion: { mapId: 'tiangong_palace', name: '瑶池水阁' },
+      heaven_to_lingxiao: { mapId: 'tiangong_palace', name: '凌霄殿前' },
       liujiacun_start: { mapId: 'liujiacun', name: '两界山·刘家村' },
       liujiacun_hunted: { mapId: 'liujiacun', name: '刘家村东门' },
       changan_guided: { mapId: 'changan_city', name: '大唐都城长安' },
@@ -7732,13 +7977,12 @@ class GameApp2D {
       baihu_cleared: { mapId: 'baoxiangguo', name: '宝象国王都' },
       baoxiang_seek_princess: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
       baoxiang_boss_ready: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
-      baoxiang_cleared: { mapId: 'fangcunshan', name: '灵台方寸山' }
+      baoxiang_cleared: { mapId: 'pingdingshan', name: '平顶山' }
     };
 
     const targetInfo = phaseMapMap[this.storyPhase];
     if (targetInfo) {
-      this.loadMap(targetInfo.mapId);
-      window.showGameMessage(`✨ 地脉神行引路！已带你抵达当前主线所在地：【${targetInfo.name}】！`, 'success');
+      this.guideToMap(targetInfo.mapId, targetInfo.name);
     } else {
       window.showGameMessage('当前地图暂无主线标记，请沿八卦引路法阵前往临近地图！', 'info');
     }

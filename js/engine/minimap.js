@@ -43,6 +43,15 @@ class MiniMapEngine {
 
     // 1. 天宫序章三大因缘事件主线追踪
     if (mapId === 'tiangong_palace' && storyPhase && storyPhase.startsWith('heaven_')) {
+      if (storyPhase === 'heaven_prologue') {
+        return { x: 9 * 32, y: 13 * 32, name: '太白金星', desc: '先听太白金星交代仙宴值守' };
+      }
+      if (storyPhase === 'heaven_to_water_pavilion') {
+        return { x: 15 * 32, y: 12 * 32, name: '瑶池水阁', desc: '沿御道前往东侧水阁巡视' };
+      }
+      if (storyPhase === 'heaven_to_lingxiao') {
+        return { x: 22 * 32, y: 12 * 32, name: '凌霄殿前', desc: '沿东侧御道返回凌霄殿前值守' };
+      }
       if (storyPhase === 'heaven_saved_change') {
         return {
           x: 22 * 32,

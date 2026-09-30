@@ -1589,7 +1589,8 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
 
     // 8. 🛡️ 主线任务感叹号严格唯一制测试 (同一时刻全游戏只允许当前唯一步骤的 1 位 NPC 拥有金色感叹号)
     const testPhases = [
-      { sp: 'heaven_prologue', map: 'tiangong_palace', expectNpc: 'npc_tianpeng' },
+      { sp: 'heaven_prologue', map: 'tiangong_palace', expectNpc: 'npc_taibai' },
+      { sp: 'heaven_pantao_start', map: 'tiangong_palace', expectNpc: 'npc_tianpeng' },
       { sp: 'heaven_saved_change', map: 'tiangong_palace', expectNpc: 'npc_juanlian' },
       { sp: 'heaven_huaguoshan', map: 'huaguoshan', expectNpc: 'npc_tianbing_scout' },
       { sp: 'heaven_huaguoshan_shuilien', map: 'huaguoshan_shuilien', expectNpc: 'npc_chimao_mahou' },
@@ -3569,6 +3570,106 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     app.tryEnterPortal(ctgPortal);
     assert(enteredCtg === true, '奉主线招贤之命，长安城东南门准予通行前往陈塘关');
     app.loadMap = oldLoadMap;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 40. 天宫任务到场才刷新、战斗技能身份与行囊/仙宠视图
+  // ---------------------------------------------------------------------------
+  {
+    console.log('\n▶️ [测试 40] 天宫到场触发、技能差异化与行囊仙宠操作视图');
+    const app = window.App2D;
+    const story = window.GAME_DATA.STORY_DIALOGUES;
+    window.Dialogue.close();
+    app.isPaused = false;
+    app.currentBattle = null;
+    app.keysDown = {};
+    app.storyPhase = 'heaven_prologue';
+    app.loadMap('tiangong_palace');
+    assert(app.npcs.some(n => n.id === 'npc_taibai' && n.questStatus === 'available'), '开篇只有太白金星接引主线');
+    assert(!app.npcs.some(n => n.id === 'npc_tianpeng' || n.id === 'npc_juanlian'), '未受命巡视时天蓬与卷帘均未提前出现');
+    assert(!app.npcs.some(n => n.id === 'npc_juling_shen' || n.id === 'npc_huaguo_monkey'), '花果山人物不会出现在天宫');
+
+    story.pantao_intro.steps.at(-1).action();
+    window.Dialogue.close();
+    assert(app.storyPhase === 'heaven_to_water_pavilion', '太白交代后进入前往水阁阶段');
+    assert(!app.npcs.some(n => n.id === 'npc_tianpeng'), '未抵达水阁时天蓬仍不刷新');
+    let huaguoPortal = window.GAME_DATA.MAPS_2D.tiangong_palace.portals.find(p => p.targetMap === 'huaguoshan');
+    app.tryEnterPortal(huaguoPortal);
+    assert(app.currentMapId === 'tiangong_palace', '未领出征帅令不能跳过天宫任务去花果山');
+
+    app.playerChar.x = 480; app.playerChar.y = 384;
+    app.update();
+    assert(app.storyPhase === 'heaven_pantao_start' && app.npcs.some(n => n.id === 'npc_tianpeng'), '到水阁才触发天蓬与嫦娥事件');
+    assert(!app.npcs.some(n => n.id === 'npc_juanlian'), '天蓬事件阶段卷帘仍不出现');
+    app.storyPhase = 'heaven_to_lingxiao';
+    window.Dialogue.close();
+    app.refreshMapNpcs();
+    assert(!app.npcs.some(n => n.id === 'npc_juanlian'), '天蓬战后未到凌霄殿前卷帘仍不出现');
+    app.playerChar.x = 704; app.playerChar.y = 384;
+    app.update();
+    assert(app.storyPhase === 'heaven_saved_change' && app.npcs.some(n => n.id === 'npc_juanlian'), '抵达凌霄殿前才触发卷帘事件');
+    const target = app.minimap.getCurrentQuestTarget('tiangong_palace', 'heaven_saved_change', window.GAME_DATA.MAPS_2D.tiangong_palace);
+    assert(target && target.name === '卷帘大将', '小地图与当前任务人物保持一致');
+
+    app.storyPhase = 'liujiacun_find_mushrooms';
+    app.loadMap('liujiacun');
+    const changanGate = window.GAME_DATA.MAPS_2D.liujiacun.portals.find(p => p.targetMap === 'changan_city');
+    app.tryEnterPortal(changanGate);
+    assert(app.currentMapId === 'liujiacun', '蘑菇任务未完成不能由村门跳进长安');
+    const oldPathfinder = app.pathfinding;
+    app.pathfinding = { findPath: () => [{ x: changanGate.x, y: changanGate.y }] };
+    app.guideToMap('changan_city', '长安城');
+    assert(app.currentMapId === 'liujiacun' && app.autoMovePath.length === 1, '任务面板只引导走向入口，不直接跨地图瞬移');
+    app.pathfinding = oldPathfinder;
+    app.storyPhase = 'changan_arrived';
+    app.loadMap('changan_city');
+    const chentangGate = window.GAME_DATA.MAPS_2D.changan_city.portals.find(p => p.targetMap === 'chentangguan');
+    app.tryEnterPortal(chentangGate);
+    assert(app.currentMapId === 'changan_city', '未听阿婆讲陈塘海乱前不能越序出关');
+    app.storyPhase = 'baoxiang_cleared';
+    story.changan_tea_news.steps.at(-1).action();
+    assert(app.storyPhase === 'baoxiang_cleared', '回访阿婆不能把后期主线退回陈塘关');
+    story.xuanzang_talk.steps.at(-1).action();
+    assert(app.storyPhase === 'baoxiang_cleared', '旧对白不能把后期主线退回唐皇面圣');
+
+    app.storyPhase = 'baihu_cleared';
+    app.loadMap('baoxiangguo');
+    assert(app.npcs.some(n => n.id === 'npc_baoxiang_king') && !app.npcs.some(n => n.id === 'npc_baihuaxiu'), '未听国王委托时公主不提前现身');
+    app.advanceBaoxiangStory('baoxiang_seek_princess', 'npc_baihuaxiu');
+    assert(app.npcs.some(n => n.id === 'npc_baihuaxiu' && n.questStatus === 'available') && !app.npcs.some(n => n.id === 'npc_huangpao_boss'), '接令后公主才登场，妖王仍隐藏');
+    app.advanceBaoxiangStory('baoxiang_boss_ready', 'npc_huangpao_boss');
+    assert(app.npcs.some(n => n.id === 'npc_huangpao_boss' && n.questStatus === 'available'), '找到公主后妖王才登场且任务标记转移');
+
+    const visualIds = ['sk_jg_shesheng', 'sk_jg_foguang', 'sk_jg_ruxiang', 'sk_jg_huti',
+      'sk_ym_leiting', 'sk_ym_wandu', 'sk_ym_sanmei', 'sk_ym_feisha',
+      'sk_xr_luanhun', 'sk_xr_fengyin', 'sk_xr_dingshen', 'sk_xr_yinshen'];
+    const visuals = visualIds.map(skillId => app.getBattleEffectType({ skillId }));
+    assert(new Set(visuals).size === visualIds.length, '十二种人物绝技各有独立画面效果');
+    assert(app.getBattleEffectType({ type: 'damage' }) === 'slash', '普通攻击保持独立剑光');
+
+    const testPlayer = new window.Player({ name: '技能走查', classId: 'jingang', level: 50, hp: 3000, maxHp: 3000, mp: 5000, maxMp: 5000 });
+    const battle = new window.BattleEngine(testPlayer, [], [{ id: 'test_enemy', name: '试炼木桩', hp: 50000, maxHp: 50000, mp: 5000, maxMp: 5000, atk: 1, def: 0, spd: 1 }]);
+    const ally = battle.allies[0];
+    ally.isPlayer = false;
+    ally.skills = [{ id: 'sk_jg_foguang', name: '佛光普照', level: 1, mastery: 0 }];
+    const events = [];
+    await battle.handleSkillCast(ally, { skillId: 'sk_jg_foguang', targetIndex: 0 }, event => events.push(event));
+    assert(events.some(event => event.skillId === 'sk_jg_foguang' && event.type === 'damage'), '实际战斗结算回调携带真实技能编号');
+
+    let panelHtml = '';
+    const oldInsert = document.body.insertAdjacentHTML;
+    const oldPets = app.pets;
+    document.body.insertAdjacentHTML = (_, html) => { panelHtml = html; };
+    try {
+      app.openInventoryModal('all');
+      assert(panelHtml.includes('inventory-layout') && panelHtml.includes('inventory-item-grid'), '行囊使用分区及可读物品卡片');
+      app.pets = [window.PetSystem.createPet('baihua_she', false, 25)];
+      app.openPetManageModal();
+      assert(panelHtml.includes('pet-roster-list') && panelHtml.includes('pet-vitals'), '仙宠面板显示独立卡片与气血法力状态');
+    } finally {
+      app.pets = oldPets;
+      document.body.insertAdjacentHTML = oldInsert;
+    }
   }
 
   console.log('\n======================================================');

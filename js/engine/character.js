@@ -4205,26 +4205,48 @@ class CharacterRenderer {
   // =========================================================================
   static drawChanganChild(ctx, by, animTimer, direction) {
     ctx.save();
-    const windmillRot = animTimer * 0.4;
-    // 矮萌圆滚小身子
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath(); ctx.roundRect(-5, by - 4, 10, 11, 3); ctx.fill();
-    // 大红肚兜
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath(); ctx.moveTo(-4, by - 4); ctx.lineTo(4, by - 4); ctx.lineTo(0, by + 4); ctx.closePath(); ctx.fill();
-    // 圆滚小脑袋
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath(); ctx.arc(0, by - 9, 5, 0, Math.PI * 2); ctx.fill();
-    // 冲天小辫红头绳
-    ctx.fillStyle = '#09090b';
-    ctx.beginPath(); ctx.arc(0, by - 15, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ef4444'; ctx.fillRect(-1.5, by - 14, 3, 2);
-    // 高举旋转彩色风车
-    ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(7, by - 2); ctx.lineTo(7, by - 16); ctx.stroke();
-    ctx.save(); ctx.translate(7, by - 16); ctx.rotate(windmillRot);
-    ctx.fillStyle = '#ef4444'; ctx.fillRect(-3, -1, 6, 2);
-    ctx.fillStyle = '#38bdf8'; ctx.fillRect(-1, -3, 2, 6);
+    ctx.translate(0, by);
+    if (direction === 'left') ctx.scale(-1, 1);
+    const sway = Math.sin(animTimer * 0.11) * 0.5;
+    // 绑腿、软底布鞋与自然分开的站姿。
+    ctx.strokeStyle = '#6e4334'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-3, 4); ctx.lineTo(-4, 11); ctx.moveTo(3, 4); ctx.lineTo(4, 11); ctx.stroke();
+    ctx.fillStyle = '#34495b';
+    ctx.beginPath(); ctx.ellipse(-5, 12, 3, 1.7, 0, 0, Math.PI * 2); ctx.ellipse(5, 12, 3, 1.7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#dbc596'; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(-6, 10); ctx.lineTo(-2, 10); ctx.moveTo(2, 10); ctx.lineTo(6, 10); ctx.stroke();
+    // 月白短褂、朱红肚兜与下摆衣褶。
+    ctx.fillStyle = '#e8d7b0'; ctx.beginPath(); ctx.roundRect(-6, -5, 12, 12, 3); ctx.fill();
+    ctx.fillStyle = '#ba3d3a'; ctx.beginPath(); ctx.moveTo(-4, -5); ctx.lineTo(4, -5); ctx.lineTo(3, 6); ctx.lineTo(-3, 6); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#e7ac79'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(-3, -3); ctx.lineTo(3, 3); ctx.moveTo(3, -3); ctx.lineTo(-3, 3); ctx.stroke();
+    ctx.strokeStyle = '#dfb779'; ctx.beginPath(); ctx.moveTo(-5, 3); ctx.lineTo(-6, 7); ctx.moveTo(5, 3); ctx.lineTo(6, 7); ctx.stroke();
+    // 左手自然垂落，右手确实握住竹杆。
+    ctx.strokeStyle = '#d6a479'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-5, -3); ctx.lineTo(-8, 3); ctx.moveTo(5, -3); ctx.lineTo(8, -1); ctx.stroke();
+    ctx.fillStyle = '#edc397'; ctx.beginPath(); ctx.arc(-8, 4, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#9b713d'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(8, 5); ctx.lineTo(9, -16); ctx.stroke();
+    ctx.fillStyle = '#edc397'; ctx.beginPath(); ctx.arc(8, -1, 1.7, 0, Math.PI * 2); ctx.fill();
+    // 肉色面庞、眼眉、笑意与冲天辫。
+    ctx.fillStyle = '#e8b98d'; ctx.beginPath(); ctx.ellipse(0, -11, 5.5, 6.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#242735'; ctx.beginPath(); ctx.arc(0, -16, 5.4, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = '#282531'; ctx.lineWidth = 1.7;
+    ctx.beginPath(); ctx.moveTo(0, -16); ctx.quadraticCurveTo(4, -23, 2, -25 + sway); ctx.stroke();
+    ctx.fillStyle = '#bc4640'; ctx.beginPath(); ctx.arc(2, -21, 1.3, 0, Math.PI * 2); ctx.fill();
+    if (direction !== 'up') {
+      ctx.fillStyle = '#30313b'; ctx.fillRect(-3.1, -12, 1.2, 1.2); ctx.fillRect(1.9, -12, 1.2, 1.2);
+      ctx.strokeStyle = '#704d41'; ctx.lineWidth = 0.65;
+      ctx.beginPath(); ctx.moveTo(-3.7, -14); ctx.lineTo(-1.6, -14); ctx.moveTo(1.6, -14); ctx.lineTo(3.7, -14); ctx.moveTo(-1.5, -8); ctx.quadraticCurveTo(0, -6.5, 1.5, -8); ctx.stroke();
+    }
+    // 慢速四瓣绢布风车，以曲线取代十字色条。
+    ctx.save(); ctx.translate(9, -16); ctx.rotate(animTimer * 0.075);
+    const petals = ['#cf5648', '#d2aa60', '#638faf', '#81a990'];
+    for (let i = 0; i < 4; i++) {
+      ctx.save(); ctx.rotate(i * Math.PI / 2); ctx.fillStyle = petals[i];
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(7, -6, 8, -1); ctx.quadraticCurveTo(6, 2, 0, 0); ctx.fill(); ctx.restore();
+    }
+    ctx.fillStyle = '#e6d3a3'; ctx.beginPath(); ctx.arc(0, 0, 1.3, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
     ctx.restore();
   }

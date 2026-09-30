@@ -160,7 +160,14 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '太白金星',
         speakerTitle: '【天庭老仙】',
         speakerIcon: '👴',
-        text: '玉帝命你巡守南天门与瑶池水阁。桃子丢了尚能再种，人出了事可没法向王母交代。先去水阁看看吧。'
+        text: '玉帝命你巡守南天门与瑶池水阁。桃子丢了尚能再种，人出了事可没法向王母交代。先去东侧水阁看看吧。',
+        action: () => {
+          const app = window.App2D;
+          if (app && app.storyPhase === 'heaven_prologue') {
+            app.storyPhase = 'heaven_to_water_pavilion';
+            app.refreshMapNpcs();
+          }
+        }
       }
     ]
   },
@@ -221,8 +228,8 @@ window.GAME_DATA.STORY_DIALOGUES = {
         text: '多谢将军及时赶到。我已安然无事，今日之事也不该被一句“醉了”轻轻带过。凌霄殿前尚需值守，将军请去吧。',
         action: () => {
           if (window.App2D) {
-            window.App2D.storyPhase = 'heaven_saved_change';
-            window.showGameMessage('✨ 【因缘事件一完成】仗义解救嫦娥仙子！请前往凌霄殿前值守。', 'success', 3500);
+            window.App2D.storyPhase = 'heaven_to_lingxiao';
+            window.showGameMessage('✨ 嫦娥已平安。请沿东侧御道前往凌霄殿前值守。', 'success', 3500);
             window.App2D.refreshMapNpcs();
           }
         }
@@ -776,6 +783,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speakerIcon: '🌊',
         text: '说件正经的：东南的【陈塘关】海路被妖物截住，渔船回不来，岸上家人天天等。李总兵贴了榜文招人相助。你若有本事，去看看吧。',
         action: () => {
+          if (window.App2D.storyPhase !== 'changan_arrived') return;
           window.App2D.storyPhase = 'chentang_investigate';
           window.showGameMessage('🌊 探得东海陈塘关海妖作祟！请由长安东南门前往【陈塘关】！', 'info', 4000);
           window.App2D.refreshMapNpcs();
@@ -1155,6 +1163,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speakerIcon: '🧘‍♂️',
         text: '陛下正在金銮殿等候，要授通关文牒。西行路长，贫僧有经愿，你有护人之志；请随我一同面圣。',
         action: () => {
+          if (window.App2D.storyPhase !== 'changan_meet_xuanzang') return;
           window.App2D.storyPhase = 'changan_meet_taizong';
           window.showGameMessage('👑 请登上长安城顶部金銮宝殿，觐见唐太宗李世民陛下！', 'info', 4000);
           window.App2D.refreshMapNpcs();

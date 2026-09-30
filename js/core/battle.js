@@ -791,6 +791,10 @@ class BattleEngine {
       || (ally.skills && ally.skills[0]);
     if (!skill) return;
 
+    // 把真实施放的技能身份交给表现层；不能从最近一条战报猜测法术。
+    const onSkillStep = cb;
+    cb = onSkillStep ? (event) => onSkillStep({ ...event, skillId: skill.id, skillName: skill.name }) : null;
+
     skill.level = skill.level || 1;
     skill.mastery = (skill.mastery !== undefined) ? skill.mastery : (skill.proficiency || 0);
 
@@ -993,6 +997,7 @@ class BattleEngine {
 
       const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
       for (const e of hitTargets) {
+        if (cb) await cb({ type: 'cast', targetIndex: e.enemyIndex });
         if (Math.random() < calc.hitRate) {
           e.buffs = e.buffs || [];
           e.buffs.push({ id: 'luanhun', name: '混乱', duration: calc.duration });
@@ -1018,6 +1023,7 @@ class BattleEngine {
 
       const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
       for (const e of hitTargets) {
+        if (cb) await cb({ type: 'cast', targetIndex: e.enemyIndex });
         if (Math.random() < calc.hitRate) {
           e.buffs = e.buffs || [];
           e.buffs.push({ id: 'fengyin', name: '封印', duration: calc.duration, blocksAllActions: true });
@@ -1043,6 +1049,7 @@ class BattleEngine {
 
       const hitTargets = aliveEnemies.slice(0, calc.maxTargets);
       for (const e of hitTargets) {
+        if (cb) await cb({ type: 'cast', targetIndex: e.enemyIndex });
         if (Math.random() < calc.hitRate) {
           e.buffs = e.buffs || [];
           e.buffs.push({ id: 'dingshen', name: '定身', duration: calc.duration, breakOnDamage: true });
@@ -1121,9 +1128,18 @@ class BattleEngine {
     }
 
     const targetAlly = this.allies.find(a => a.id === action.targetId) || aliveAllies[0];
+    const skillName = action.type === 'skill'
+      ? (typeof action.skill === 'string' ? action.skill : action.skill?.name)
+      : null;
+    const isSkill = !!skillName && skillName !== '普通攻击';
 
     // 调用统一核心伤害计算公式
     const attackRes = BattleEngine.calculateAttackDamage(enemy, targetAlly);
+    // 敌方技能原先只被 AI 选中，结算时仍当普攻；现在保留原伤害体系并赋予独立招式。
+    if (isSkill && !['tianpeng_boss', 'wukong_havoc_boss'].includes(enemy.id) && !attackRes.isDodge) {
+      attackRes.damages = attackRes.damages.map(d => Math.max(1, Math.floor(d * 1.16)));
+      attackRes.totalDamage = attackRes.damages.reduce((sum, d) => sum + d, 0);
+    }
 
     // 1. 玩家/仙宠闪避判定
     if (attackRes.isDodge) {
@@ -1132,6 +1148,7 @@ class BattleEngine {
       if (cb) await cb({
         type: 'dodge',
         attacker: 'enemy_' + enemy.enemyIndex,
+        skillName: isSkill ? skillName : null,
         target: targetAlly.id,
         text: '闪避 MISS'
       });
@@ -1152,7 +1169,9 @@ class BattleEngine {
       if (window.Sound) window.Sound.playSuccess();
     }
 
-    let logMsg = `【${enemy.name}】凶猛扑击【${targetAlly.name}】！`;
+    let logMsg = isSkill
+      ? `【${enemy.name}】施展【${skillName}】攻向【${targetAlly.name}】！`
+      : `【${enemy.name}】凶猛扑击【${targetAlly.name}】！`;
     if (attackRes.isFatal) {
       logMsg += ` 竟触发【⚡致命一击】无视防御与物理抗性，贯穿造成 ${attackRes.damages[0]} 点纯正真实伤害！`;
     } else {
@@ -1170,6 +1189,7 @@ class BattleEngine {
     if (cb) await cb({
       type: didRevive ? 'revive' : 'damage',
       attacker: 'enemy_' + enemy.enemyIndex,
+      skillName: isSkill ? skillName : null,
       target: targetAlly.id,
       attackResult: attackRes,
       damage: attackRes.damages[0],

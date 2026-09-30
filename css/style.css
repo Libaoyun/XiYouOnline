@@ -1689,6 +1689,97 @@ body.modern-mode .game-viewport {
   background: #ffd700;
 }
 
+/* 行囊与仙宠：宽屏分栏，掌机视口纵向阅读，所有操作保持可点。 */
+.inventory-panel, .pet-panel {
+  width: min(96%, 740px);
+  max-height: 96%;
+  border-color: #bc924a;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #30251b, #171310 72%);
+  box-shadow: 0 16px 46px #000c, inset 0 1px #e2bd7540;
+}
+.pet-panel { width: min(96%, 650px); }
+.inventory-panel .modal-header, .pet-panel .modal-header {
+  padding: 12px 16px;
+  background: linear-gradient(90deg, #44301e, #241b16);
+}
+.inventory-panel .modal-title, .pet-panel .modal-title { font-size: 17px; letter-spacing: 1px; }
+.inventory-panel .modal-title small, .pet-panel .modal-title small {
+  font-size: 10px; font-weight: 400; color: #dcc99f; letter-spacing: 0;
+}
+.inventory-body, .pet-body { padding: 14px; color: #f6e9cc; line-height: 1.5; }
+.inventory-layout { display: grid; grid-template-columns: minmax(185px, 0.8fr) minmax(0, 1.6fr); gap: 14px; }
+.inventory-equipment-inner, .inventory-contents {
+  background: #120f0cb8; border: 1px solid #665037; border-radius: 9px; padding: 12px;
+}
+.inventory-equipment-inner { margin: 0; }
+.inventory-hero-preview { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 11px; border-bottom: 1px solid #6f563c; }
+.inventory-hero-portrait { width: 64px; height: 64px; flex: none; display: grid; place-items: center; overflow: hidden; border: 2px solid #c99b50; border-radius: 50%; background: #412519; }
+.inventory-hero-portrait svg { max-width: 100%; max-height: 100%; }
+.inventory-hero-preview strong { display: block; font-size: 13px; color: #f5daa4; }
+.inventory-hero-preview span { display: block; font-size: 10px; color: #baa889; }
+.inventory-equipped-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 3px; margin-bottom: 2px; color: #f3d390; font-size: 11px; }
+.inventory-equipped-heading span { color: #bfb09a; font-size: 10px; }
+.inventory-equipped-tip { color: #a89679; font-size: 10px; margin-bottom: 8px; }
+.inventory-equipped-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.inventory-equipped-card, .inventory-equipped-empty { min-height: 56px; padding: 7px 4px; border-radius: 6px; text-align: center; font: inherit; }
+.inventory-equipped-card { background: linear-gradient(#3c2a1c, #241a13); border: 1px solid #bc914e; cursor: pointer; color: #f8dfaa; }
+.inventory-equipped-card:hover, .inventory-equipped-card:focus-visible { border-color: #ffe3a0; outline: none; }
+.inventory-equipped-empty { border: 1px dashed #66533e; color: #9a886e; background: #18120eb8; font-size: 10px; }
+.inventory-equipped-name { font-size: 10px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.inventory-equipped-stars { font-size: 9px; color: #86d5a3; margin-top: 4px; }
+.inventory-section-heading { color: #f2d490; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.inventory-section-heading span { color: #ab9879; font-size: 11px; font-weight: 400; float: right; }
+.inventory-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.inventory-tabs .dialogue-opt-btn { flex: 1 1 70px !important; min-height: 30px; white-space: nowrap; }
+.inventory-item-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: 340px; overflow: auto; padding: 1px 3px 3px 1px; }
+.inventory-item-card {
+  min-height: 95px; position: relative; padding: 10px 5px 16px; text-align: center;
+  background: linear-gradient(160deg, #35271a, #201810); border: 1px solid #665039;
+  border-radius: 9px; color: #ffe5a6; cursor: pointer; font: inherit;
+}
+.inventory-item-card:hover, .inventory-item-card:focus-visible { border-color: #f5c96d; background: #43301c; outline: none; }
+.inventory-item-icon { font-size: 28px; line-height: 35px; }
+.inventory-item-name { font-size: 11px; line-height: 1.35; font-weight: 700; overflow-wrap: anywhere; }
+.inventory-item-count { position: absolute; bottom: 5px; right: 8px; color: #a8ecc5; font-size: 10px; }
+.inventory-item-sockets { font-size: 9px; color: #7eddad; }
+.item-detail-panel { width: min(94%, 370px); border-radius: 10px; }
+.item-detail-body { padding: 16px; font-size: 12px; line-height: 1.65; color: #f7ebcf; }
+.item-detail-icon { width: 58px; height: 58px; display: grid; place-items: center; font-size: 33px; border: 1px solid #bd914b; border-radius: 13px; background: #3b2919; margin-bottom: 12px; }
+.item-detail-description { color: #e3d3b9; margin-bottom: 13px; }
+.pet-roster-summary { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; padding: 9px 12px; border: 1px solid #8e6f41; border-radius: 8px; background: #221a13; margin-bottom: 12px; }
+.pet-roster-list { max-height: min(62vh, 490px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 3px; }
+.pet-roster-list::-webkit-scrollbar, .inventory-item-grid::-webkit-scrollbar { width: 6px; }
+.pet-roster-list::-webkit-scrollbar-track, .inventory-item-grid::-webkit-scrollbar-track { background: #17120f; }
+.pet-roster-list::-webkit-scrollbar-thumb, .inventory-item-grid::-webkit-scrollbar-thumb { background: #9a7339; border-radius: 6px; }
+.pet-card { padding: 12px; border: 1px solid #65513b; border-radius: 10px; background: linear-gradient(130deg, #30261e, #171411); }
+.pet-card.is-active { border-color: #75c29a; box-shadow: inset 3px 0 #75c29a; }
+.pet-card-header, .pet-identity, .pet-name-row { display: flex; align-items: center; gap: 10px; }
+.pet-card-header { justify-content: space-between; flex-wrap: wrap; }
+.pet-name-row { flex-wrap: wrap; gap: 4px; }
+.pet-portrait { width: 54px; height: 54px; flex: none; display: grid; place-items: center; border: 2px solid #cbaa6c; border-radius: 9px; overflow: hidden; background: #352616; }
+.pet-portrait svg, .pet-portrait img { max-width: 100%; max-height: 100%; }
+.pet-vitals { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 8px; }
+.pet-vitals>div { position: relative; height: 22px; padding: 3px 6px; background: #3a2520; border-radius: 5px; overflow: hidden; font-size: 10px; }
+.pet-vitals>div:nth-child(2) { background: #1e2d3d; }
+.pet-vitals i { position: absolute; left: 0; bottom: 0; height: 3px; background: #e5746d; }
+.pet-vitals>div:nth-child(2) i { background: #7ebfea; }
+.pet-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 8px; color: #dfcfb1; background: #15120fb8; border-radius: 6px; font-size: 11px; }
+.pet-specialty { grid-column: 1/-1; }
+.pet-skill-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 0; font-size: 11px; }
+.pet-actions, .pet-passives { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.pet-actions .dialogue-opt-btn { font-size: 11px !important; min-height: 28px; padding: 4px 9px !important; }
+.pet-passives { padding: 7px; background: #0f0d0bb8; border-radius: 6px; font-size: 10px; }
+@media (max-width: 560px) {
+  .inventory-layout { grid-template-columns: 1fr; }
+  .inventory-contents { order: 1; }
+  .inventory-equipment { order: 2; }
+  .inventory-item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
+  .pet-vitals { grid-template-columns: 1fr; }
+  .pet-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inventory-body, .pet-body { padding: 8px; }
+}
+
 /* 背包九宫格布局 */
 .inventory-grid {
   display: grid;

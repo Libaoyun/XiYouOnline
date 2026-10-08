@@ -316,7 +316,7 @@ class Character {
     const titleFontSize = bCfg.TITLE_FONT_SIZE || 12;
 
     // 根据是否骑乘动态抬高头顶基准点
-    const newFigure = this.type === 'player' || window.CreatureArt?.ids.has(this.appearance) || window.NpcArt?.ids.has(this.appearance);
+    const newFigure = this.type === 'player' || window.CreatureArt?.ids.has(this.appearance) || window.NpcArt?.ids.has(this.appearance) || CharacterRenderer.canDrawCustomMonster(this.appearance);
     const headTopY = screenY - (this.isRiding ? 52 : newFigure ? 43 : 24);
 
     // 4.1 任务感叹号指引 (主线金色 / 支线翡翠青玉色，带有华美呼吸浮动与倒三角令符徽宝)
@@ -631,6 +631,7 @@ class CharacterRenderer {
   static getCustomMonsterAsset(mId) {
     if (!mId) return null;
     const s = String(mId).toLowerCase();
+    if (window.MonsterModelArtMap?.[s]) return window.MonsterModelArtMap[s];
     if (window.MonsterArtMap && window.MonsterArtMap[s]) return window.MonsterArtMap[s];
     if (s.includes('yuanhou')) return 'assets/monsters/yuanhou_jiang.jpg';
     if (s.includes('mihou')) return 'assets/monsters/mihou_jiang.jpg';
@@ -687,7 +688,7 @@ class CharacterRenderer {
     }
 
     ctx.save();
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = assetPath.endsWith('.jpg') ? 10 : 2;
     ctx.shadowColor = assetPath.includes('jpg') ? 'rgba(255, 215, 0, 0.45)' : 'rgba(74, 222, 128, 0.4)';
 
     if (assetPath.endsWith('.jpg')) {
@@ -704,7 +705,7 @@ class CharacterRenderer {
       const targetH = 50;
       const aspect = img.naturalWidth / img.naturalHeight;
       const targetW = targetH * (aspect || 1);
-      ctx.drawImage(img, -targetW / 2, -targetH, targetW, targetH);
+      ctx.drawImage(img, -targetW / 2, 12 - targetH, targetW, targetH);
     }
     ctx.restore();
 
@@ -740,10 +741,13 @@ class CharacterRenderer {
     // 绘制脚底地面椭圆阴影
     const shadowW = isRiding ? 24 : 17;
     const shadowH = isRiding ? 9 : 7;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
-    ctx.beginPath();
-    ctx.ellipse(0, isRiding ? 14 : 12, shadowW, shadowH, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // 画皮仍以村民形貌示人；“脚下无影”是对白中可核对的线索。
+    if (!['baigu_maiden', 'baigu_granny', 'baigu_oldman'].includes(modelId)) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+      ctx.beginPath();
+      ctx.ellipse(0, isRiding ? 14 : 12, shadowW, shadowH, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // 呼吸浮动微动效
     const breath = Math.sin(animTimer * 0.18) * 1.5;
@@ -1325,7 +1329,7 @@ class CharacterRenderer {
     window.PlayerArt.draw(ctx, by, animTimer, direction, isMoving, false);
   }
 
-  static drawPandaHero(ctx, by, animTimer, direction, isActing, isMoving) {
+  static drawPandaHero(ctx, by, animTimer, direction, isActing, isMoving, mounted = false) {
     ctx.save();
     const flip = direction === 'left' ? -1 : 1;
     ctx.scale(flip, 1);
@@ -1341,7 +1345,7 @@ class CharacterRenderer {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
     ctx.beginPath();
     ctx.ellipse(0, 16, 14, 4.8, 0, 0, Math.PI * 2);
-    ctx.fill();
+    if (!mounted) ctx.fill();
 
     // ── 1. 后背斜负的青翠竹筒行囊与鲜嫩竹叶 (宗师气度，自然微拂) ──
     ctx.save();
@@ -1406,6 +1410,14 @@ class CharacterRenderer {
     ctx.restore();
 
     // ── 2. 沉稳平步的双腿与功夫鞋 (轻柔前后步幅，杜绝上蹿下跳) ──
+    if (mounted) {
+      for (const side of [-1, 1]) {
+        ctx.strokeStyle = '#0f172a';ctx.lineWidth = 6;ctx.lineCap = 'round';
+        ctx.beginPath();ctx.moveTo(side*5,7);ctx.lineTo(side*13,12);ctx.lineTo(side*12,22);ctx.stroke();
+        ctx.fillStyle='#1e293b';ctx.beginPath();ctx.ellipse(side*12+1,22,4.5,2,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#e8e4d9';ctx.fillRect(side*12-3,23,8,1);
+      }
+    } else {
     // 后腿
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
@@ -1431,6 +1443,8 @@ class CharacterRenderer {
     ctx.fillRect(1.5 - legSwing * 0.4, 14.5, 10, 3);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(1.5 - legSwing * 0.4, 16, 10, 1.8);
+
+    }
 
     // ── 3. 深蓝宗师长袍与白云斜襟 (高度平稳端正) ──
     const robeY = -7 + bodyBob;
@@ -2312,7 +2326,14 @@ class CharacterRenderer {
     ctx.restore();
 
     // 骑手保持与步行、头像同一衣冠身份。
-    window.PlayerArt.draw(ctx, horseY - 7, animTimer, 'right', false, riderAppearance === 'heaven_general', true);
+    if (/panda|xiongmao|xiong_mao/.test(riderAppearance)) {
+      // 沿用熊猫本体头脸和道袍，鞍位缩短下半身，保持上马身份。
+      ctx.save(); ctx.translate(-1, horseY - 7); ctx.scale(0.78, 0.78);
+      CharacterRenderer.drawPandaHero(ctx, 0, animTimer, 'right', false, false, true);
+      ctx.restore();
+    } else {
+      window.PlayerArt.draw(ctx, horseY - 7, animTimer, 'right', false, riderAppearance === 'heaven_general', true);
+    }
     ctx.restore();
   }
 

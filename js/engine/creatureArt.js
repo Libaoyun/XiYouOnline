@@ -2,7 +2,8 @@
 window.CreatureArt = {
   ids: new Set(['pig', 'fox', 'snake', 'bear', 'tiger', 'stone_monkey', 'yecha', 'skeleton', 'ghost',
     'scorpion', 'spider', 'centipede', 'lizard', 'bat', 'crane', 'eagle', 'elephant', 'lion',
-    'stone_spirit', 'tree', 'fire_spirit', 'water_wraith', 'demon_monk', 'demon_taoist']),
+    'stone_spirit', 'tree', 'fire_spirit', 'water_wraith', 'demon_monk', 'demon_taoist',
+    'fish', 'red_carp', 'black_fish', 'spirit_cat', 'cat_demon', 'rooster', 'sandworm', 'crystal_spirit']),
   draw(ctx, id, by = 0, time = 0, direction = 'right', moving = false) {
     ctx.save(); ctx.translate(0, by); if (direction === 'left') ctx.scale(-1, 1);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -23,7 +24,53 @@ window.CreatureArt = {
     const glaze = (base, light) => {
       const g = ctx.createLinearGradient(-16, -16, 16, 12); g.addColorStop(0, light); g.addColorStop(0.48, base); g.addColorStop(1, '#202330'); return g;
     };
-    if (['scorpion', 'spider', 'centipede'].includes(id)) {
+    if (['fish', 'red_carp', 'black_fish'].includes(id)) {
+      const carp = id === 'red_carp', dark = id === 'black_fish';
+      const skin = glaze(carp ? '#b46549' : dark ? '#34444b' : '#537f8b', carp ? '#ecc27d' : dark ? '#94a29d' : '#bcdbca');
+      const fin = carp ? '#cf9370' : dark ? '#687e82' : '#92b6b1';
+      shape([[-8,-3],[-21,-15+sway],[-17,-3],[-23,7+sway],[-8,2]], fin);
+      ellipse(0,-4,13,7,skin); shape([[-6,-10],[-1,-18],[7,-10]], fin);
+      shape([[-3,0],[3,8],[7,-1]], fin); eyes(8,-6,'#ecd3a0');
+      line([[10,-2],[13,-2]], '#d6c6aa', 0.8); line([[5,-10],[4,-6],[5,1]], fin, 1);
+      for (let row=0;row<3;row++) for (let col=0;col<5;col++) {
+        ctx.strokeStyle = carp ? '#f0ba81' : '#aac4bb'; ctx.lineWidth=0.55; ctx.beginPath();
+        ctx.arc(-8+col*3+row%2,-8+row*3,1.5,-0.8,0.8); ctx.stroke();
+      }
+      if (carp) { line([[12,-2],[16,1],[19,0]], '#f0d1a2', 0.7); line([[11,-1],[14,4]], '#f0d1a2', 0.7); }
+      if (id==='fish') { line([[-2,9],[4,9]], '#bad4cb', 0.7); ellipse(9,-12,1,1,'#b9d6d1'); }
+    } else if (id === 'spirit_cat' || id === 'cat_demon') {
+      const demon = id === 'cat_demon', fur = glaze(demon?'#504665':'#b6b9a6', demon?'#a78fb4':'#eee5cb');
+      ctx.strokeStyle=demon?'#776286':'#bdb6a1';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-8,3);
+      ctx.bezierCurveTo(-23,10,-27,-8,-18,-14+sway);ctx.stroke();
+      for(const side of [-1,1])line([[side*5,1],[side*(6+stride),11]], demon?'#4e435b':'#989f90',3);
+      ellipse(0,0,9,8,fur);ellipse(1,-13,8,7,fur);
+      shape([[-6,-17],[-7,-25],[0,-18]], demon?'#8b7797':'#d4c9b3');shape([[5,-18],[9,-25],[8,-15]],demon?'#8b7797':'#d4c9b3');
+      for(const side of [-1,1]) { eyes(side*3+1,-14,demon?'#d9bf87':'#a9c6a6');
+        line([[side*4,-10],[side*11,-12]], '#ddd3bf',0.6);line([[side*4,-9],[side*12,-9]], '#ddd3bf',0.6); }
+      shape([[0,-10],[3,-10],[1.5,-8]],'#a67979');line([[1.5,-8],[0,-6]],'#6c565d',0.7);
+      if(demon){shape([[-4,-3],[0,-6],[4,-3],[0,0]],'#c2ad85');line([[-4,2],[4,2]],'#a68768',1);}
+      else{ellipse(0,-4,2,2,'#c8b687');line([[0,-2],[0,1]],'#8e9d85',0.7);}
+    } else if (id === 'rooster') {
+      for(let i=0;i<4;i++){ctx.strokeStyle=i%2?'#55796a':'#394e61';ctx.lineWidth=2;ctx.beginPath();
+        ctx.moveTo(-7,0);ctx.bezierCurveTo(-22,-4,-26,-24+i*3,-12,-23+i*3+sway);ctx.stroke();}
+      ellipse(0,-1,9,10,glaze('#91704d','#e5c48c'));ellipse(6,-14,4.5,6,'#cbb88e');
+      for(let i=0;i<3;i++)ellipse(3+i*2,-20,1.8,2.5,'#ab5345');eyes(7,-15);
+      shape([[9,-14],[16,-12],[9,-10]],'#d4ae66');ellipse(8,-8,2,3,'#ad5a48');
+      line([[-3,7],[-4,13],[-8,14]],'#b59458',1.2);line([[4,7],[5,13],[9,14]],'#b59458',1.2);
+      line([[-6,-4],[-1,1],[3,3]],'#e0c88f',0.8);
+    } else if (id === 'sandworm') {
+      for(let i=0;i<7;i++){const x=-17+i*5,y=7-Math.sin(i*0.65)*8;
+        ellipse(x,y,4.8,5,glaze('#987441','#ddbd7e'));line([[x-2,y-2],[x+2,y-2]],'#f0d99a',0.7);}
+      ellipse(16,-1,5.5,6,'#af965d');ellipse(18,-2,3.5,3.5,'#4b3731');
+      for(let i=0;i<5;i++){const a=i*Math.PI*2/5;shape([[18+Math.cos(a)*4,-2+Math.sin(a)*4],[18+Math.cos(a)*2,-2+Math.sin(a)*2],[19+Math.cos(a+0.3)*4,-2+Math.sin(a+0.3)*4]],'#eee1b7');}
+    } else if (id === 'crystal_spirit') {
+      for(const side of [-1,1]){line([[side*5,4],[side*7,11]],'#615471',3);line([[side*7,-9],[side*14,-2]],'#8b78a8',4);}
+      shape([[-9,5],[-12,-9],[-6,-15],[4,-14],[10,-6],[9,5],[0,10]],glaze('#765c91','#c7afd6'));
+      shape([[-6,-15],[-5,-27],[1,-31],[5,-21],[4,-14]],'#9f8bba');
+      shape([[-11,-6],[-15,-18],[-10,-23],[-5,-13]],'#8d75a4');
+      line([[-6,-14],[0,-7],[4,-14]],'#e3d3e9',0.8);line([[0,-7],[0,8]],'#c3aacf',0.7);
+      eyes(-3,-6,'#e8dbb4');eyes(3,-6,'#e8dbb4');
+    } else if (['scorpion', 'spider', 'centipede'].includes(id)) {
       const spider = id === 'spider', long = id === 'centipede';
       const count = long ? 8 : 4;
       for (let i = 0; i < count; i++) {

@@ -14,6 +14,17 @@ class MiniMapEngine {
   getCurrentQuestTarget(mapId, storyPhase, mapData) {
     if (!mapData) return null;
 
+    if (mapId === 'wuzhuangguan') {
+      if (storyPhase !== 'liusha_cleared') return null;
+      const npc = (window.App2D?.currentMapId === mapId && window.App2D.npcs?.find(n => n.id === 'npc_zhenyuanzi')) ||
+        mapData.npcs?.find(n => n.id === 'npc_zhenyuanzi');
+      if (!npc) return null;
+      const events = window.App2D?.playerData?.storyEvents || {};
+      return { npcId: npc.id, x: npc.x, y: npc.y, name: npc.name,
+        desc: events.wuzhuang_tree_restored ? '宝树已救活，整理行囊后向镇元大仙领取赠礼' :
+          events.wuzhuang_trial_won ? '交手已止，与镇元大仙共商救树' : '与镇元大仙说明毁树之事，承担救树之责' };
+    }
+
     // 🌟 动态感叹号精确附着保证：若当前地图有唯一挂着主线感叹号的 NPC，绝对以其真实像素坐标为准！
     // 彻底根治李靖与感叹号分离的错位 Bug！
     if (window.App2D && window.App2D.currentMapId === mapId && window.App2D.npcs) {
@@ -335,16 +346,6 @@ class MiniMapEngine {
       };
     }
 
-    // 10. 万寿山·五庄观 -> 目标：人参果树与镇元大仙
-    if (mapId === 'wuzhuangguan') {
-      return {
-        x: 11 * 32,
-        y: 6 * 32,
-        name: '镇元大仙人参果树',
-        desc: '拜访地仙之祖偷尝草还丹'
-      };
-    }
-
     // 11. 陈塘关 -> 目标精准绑定 (李靖、混混、头目、观音雕像、显圣观音)
     if (mapId === 'chentangguan') {
       if (storyPhase === 'chentang_defeat_hooligans') {
@@ -558,7 +559,7 @@ class MiniMapEngine {
         const tile = mapData.tiles[r][c];
         let color = '#2c3e50';
 
-        if (tile === 'heaven_floor') color = '#ecf0f1';
+        if (tile === 'heaven_floor') color = mapData.id === 'wuzhuangguan' ? '#99a397' : '#ecf0f1';
         else if (tile === 'cloud_void') color = '#0a0d14';
         else if (tile === 'heaven_pillar') color = '#f39c12';
         else if (tile === 'grass') color = window.App2D?.tilemap?.biomes[mapData.id]?.base || '#27ae60';

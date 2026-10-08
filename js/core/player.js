@@ -15,6 +15,8 @@ class Player {
     this.homeResidence = initData.homeResidence || null; // 定居地（如 'changan_city'）
     this.appearance = initData.appearance || 'heaven_general';
     this.storyRewards = { ...(initData.storyRewards || {}) };
+    // 剧情事件与领取记录分开：救树成功不等于赠礼已经装入行囊。
+    this.storyEvents = { ...(initData.storyEvents || {}) };
     this.storyBonuses = { hp: 0, mp: 0, def: 0, mdef: 0, ...(initData.storyBonuses || {}) };
     this.sideQuests = initData.sideQuests || {};
 

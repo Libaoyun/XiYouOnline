@@ -3337,6 +3337,9 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
     assert(app.inventory.getItemCount('qingquan_jiu') === 29, '清泉酒正确扣减1瓶');
 
     // 8. 验证五庄观镇元大仙赠宝
+    app.storyPhase = 'liusha_cleared';
+    app.playerData.storyEvents.wuzhuang_trial_won = true;
+    app.restoreWuzhuangTree();
     app.grantZhenyuanziGift();
     assert(app.inventory.getItemCount('renshen_guo') === 2, '五庄观通关获得镇元子赠予【草还丹·人参果】×2');
     assert(app.inventory.getItemCount('eq_am_hunyuan') === 1, '五庄观通关获得镇元子赠予【混元一气锦襕道袍】×1');
@@ -5040,6 +5043,7 @@ console.log('\n▶️ [测试 4] 左右阵营战斗、①②③速度决序、�
 
   await require('./test_shanhai.js')(assert);
   await require('./test_presentation.js')(assert);
+  await require('./test_visual_identity.js')(assert);
 
   console.log('\n======================================================');
   console.log(`🎉 全部自动化测试执行完毕！通过率: ${passedTests}/${totalTests} (${totalTests ? (passedTests / totalTests * 100).toFixed(1) : 0}%)`);

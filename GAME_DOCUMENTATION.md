@@ -1,16 +1,39 @@
 # 《汉风西游》正统2D神话RPG全景技术架构与项目交接白皮书
 > **PROJECT HANDOFF & COMPREHENSIVE ARCHITECTURE SPECIFICATION (FOR AI DEVELOPERS)**
 > 
-> *版本 (Version)*: 6.2.1-UI-FLOW-GUARDS
+> *版本 (Version)*: 6.3.0-VISUAL-STORY-IDENTITY
 > *工程定位*: 正统怀旧 MRP 2D 自由探索与回合制神话 RPG（《汉风西游》殿堂级复刻升维版）  
 > *技术栈*: 原生 HTML5 / Canvas API / Modern CSS3 / Node.js 极简静态服务（零第三方外部大引擎包袱）  
 > *代码仓库*: `https://github.com/Libaoyun/XiYouOnline.git` (分支: `develop`)  
 > *本地服务*: `http://localhost:5173/` (运行终端: `pnpm dev` 或 `node server.js`)  
-> *自动化测试*: `node test_suite.js`（2026-10-07：1628/1628 项断言，100% 通过）
+> *自动化测试*: `node test_suite.js`（2026-10-08：1694/1694 项断言通过）
 
 ---
 
-## 2026-10-07 展示与交互修复（当前接手入口）
+## 2026-10-08 人物身份、场景叙事与五庄观流程（当前接手入口）
+
+以当前 `index.html` 加载的 `js/` 为实现依据。本轮在更新后的 1628 项基线上继续打磨，当前 1694 项通过；主线仍闭环到平顶山第十一回。
+
+| 范围 | 已落地内容 |
+| --- | --- |
+| 物种身份 | `VisualIdentity.resolveUnit(unit)` 优先读取 `templateId`（支持战斗包装对象的 `entity.templateId`）；仙宠改名不改变物种模型。宠物表旧键 `sha_wujing` 是巡海夜叉，剧情规范角色 `sha_wujing` 是沙悟净，必须按上下文区分。 |
+| 头像入口 | 仙宠管理、洗炼、属性面板、战斗、山海经均接入 `getUnitVisualId`；背包玩家头像跟随实际装束，熊猫不回退普通侠客。50 种凡兽已明确归属外观族类，尚不等于每一物种都有独立美术。 |
+| 全身资产 | 六阶猕猴／猿猴使用独立透明 SVG 全身图，普通／兵级另有头像 SVG，两个将级原 JPG 头像保留。`MonsterModelArtMap` 与头像资产分开，不能把圆框画像直接拉伸成场上身体。 |
+| 新绘制 | `CreatureArt` 从 24 扩至 32 类，新增鱼仙、红鲤、黑鱼、灵猫、猫妖、妖鸡、沙虫、紫晶怪。镇元、老君、唐太宗、翠兰、玄风与三重画皮共新增 8 个 `NpcArt` 身份（总计 12）。模型和头像共用原生 Canvas 绘制。熊猫骑乘仍是熊猫，并使用屈腿骑姿。 |
+| 场景 | 五庄观灰绿石坪、素墙与青瓦收敛金纹；四块人参果树瓦片共享一棵树，倒伏／复生随剧情事件改变。水纹相位使用世界坐标，岸线邻接勾边；白骨洞稀疏残车轮与布条呼应守灯人见闻。碰撞与传送配置保留。 |
+| 画皮 | `baigu_maiden` / `baigu_granny` / `baigu_oldman` 随三阶段出场，地图、名册、对白一致。初见使用人印和村民衣冠，脚下无影成为可观察的线索；第三次揭露才出现白骨夫人真身头像。 |
+| 奖励与存档 | `Player.storyEvents` 保存交手／救树事件；`storyRewards.wuzhuang_gift` 只标记赠礼到账。整批入包成功才提交经验、银两及下一阶段。满包可回镇元处重领；读档不要求重新打架，不重复发奖。明确完成旧档迁移标记，战后断点旧档恢复交手资格。 |
+| 引路与趣味 | 五庄观待领奖提示与事件同步，通关后移除旧坐标标记；流沙完成追踪前往五庄观，白骨岭中间阶段也支持跨图引路。玄风“补鞋比符快”与守灯人“不据残物妄断生死”为可选闲聊；救树／生死冲突保留严肃因果。 |
+
+### 后续代码约定
+
+- 仙宠必须携带 `templateId`，使用 `App2D.getUnitVisualId`；NPC 新增具名外观时调用 `getNpcPortraitRoleId`。不要在每个面板重新写中文名称猜测链。
+- 全身资源写入 `MonsterModelArtMap`，头像写入 `Portraits.customMonsterImages`。猴族 SVG 可用 `node scratch/build_monkey_models.cjs` 重建。
+- 非奖励剧情事件存 `playerData.storyEvents`，并随完整存档保存；奖励复用 `Player.claimStoryReward`。救树与领取不能共用一个完成标记。
+- `TilemapEngine.render(ctx, map, camera, sceneState)` 的第四参数可提供 `ginsengTree`，值为 `healthy` / `fallen` / `restored`。渲染不修改地图或存档；阶段判断由 `App2D.getWuzhuangTreeState()` 提供。
+- 加入五庄观之后的新主线阶段时，同步维护 `hasCompletedWuzhuang` 的旧档兼容列表。需要补齐的功能、验收方式见 [NEXT_AI_HANDOFF.md](NEXT_AI_HANDOFF.md) 顶部。
+
+## 2026-10-07 展示与交互修复（历史）
 
 本轮保留现有剧情、五行数值、50/12/15 物种名册和山海经绿白灰三态，主要修复真实浏览器中暴露的展示与操作问题。入口仍是 `index.html` 加载的 `js/`，并行 `src/` 不是当前游戏运行入口。
 

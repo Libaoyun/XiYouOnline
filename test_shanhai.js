@@ -211,9 +211,9 @@ module.exports = async function (assert) {
     const oldPet = Pet.createPet('baihua_she', true, 10, false);
     delete oldPet.gender; delete oldPet.masterLessonLearned;
     oldPet.skills = [{ id: 'sk_pet_tianlei', name: '天雷引', level: 1 }];
-    const oldFixture = { ...app, playerData: new window.Player(), playerChar: new window.Character({ type: 'player' }), pets: [],
+    const oldFixture = Object.assign(Object.create(app), { playerData: new window.Player(), playerChar: new window.Character({ type: 'player' }), pets: [],
       inventory: new window.Inventory([]), mountSystem: { mounts: {}, activeMountId: null, isRiding: false },
-      loadMap() {}, ensurePlayerSafePosition(_map, x, y) { return { x, y }; } };
+      loadMap() {}, ensurePlayerSafePosition(_map, x, y) { return { x, y }; } });
     try {
       window.SaveManager.loadGameFullState = () => ({ mapId: 'liujiacun', storyPhase: 'liujiacun_rat_hunting',
         pets: [oldPet], activeCombatPetIds: [oldPet.instanceId] });

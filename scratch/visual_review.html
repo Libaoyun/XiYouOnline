@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><base href="/"><title>视觉身份验收</title>
+<style>body{margin:20px;background:#1b2831;color:#e5dcc7;font:16px sans-serif}section{display:flex;flex-wrap:wrap;gap:12px}article{width:168px;padding:8px;border:1px solid #776c58;background:#30404a;text-align:center;border-radius:8px}canvas{display:block;margin:auto}img{display:inline-block!important}h2{font-size:20px}p{margin:8px 0;font-size:13px}</style>
+<h2>NPC · 真实头像与全身</h2><section id="npcs"></section>
+<h2>猴族 · 普通 / 兵 / 将</h2><section id="monkeys"></section>
+<h2>凡兽 · 不再错误绘成人形</h2><section id="creatures"></section>
+<h2>熊猫骑手与侠客</h2><section id="players"></section>
+<h2>白虎岭 · 三重村民画皮</h2><section id="disguises"></section>
+<h2>五庄观 · 宝树状态</h2><section id="trees"></section>
+<script src="/js/engine/visualIdentity.js"></script><script src="/js/engine/creatureArt.js"></script>
+<script src="/js/engine/npcArt.js"></script><script src="/js/engine/playerArt.js"></script>
+<script src="/js/engine/character.js"></script><script src="/js/engine/portraits.js"></script>
+<script src="/js/engine/tilemap.js"></script>
+<script>
+const jobs=[];
+function card(section,id,label,options={}){
+  const a=document.createElement('article'),c=document.createElement('canvas');c.width=168;c.height=180;
+  a.innerHTML='<p>'+label+'</p>'+Portraits.getPortraitSvg(options.riderAppearance||id,64);a.append(c);document.getElementById(section).append(a);
+  jobs.push(()=>{const ctx=c.getContext('2d');ctx.clearRect(0,0,168,180);CharacterRenderer.drawModel(ctx,84,130,id,{scale:2.5,animTimer:1,...options});});
+}
+for(const id of ['zhenyuanzi','taishang_laojun','tangtaizong','gaocuilan','xuanfeng_daoshi'])card('npcs',id,id);
+for(const id of ['mihou','mihou_bing','mihou_jiang','yuanhou','yuanhou_bing','yuanhou_jiang'])card('monkeys',id,id);
+for(const id of ['fish','red_carp','black_fish','spirit_cat','cat_demon','rooster','sandworm','crystal_spirit'])card('creatures',id,id);
+card('players','mount_knight','熊猫骑乘',{riderAppearance:'panda_hero'});card('players','panda_hero','熊猫步行');card('players','martial_hero','青衣侠客');
+for(const id of ['baigu_maiden','baigu_granny','baigu_oldman'])card('disguises',id,id);
+for(const state of ['fallen','restored']){
+  const a=document.createElement('article'),c=document.createElement('canvas');c.width=168;c.height=180;
+  a.innerHTML='<p>'+state+'</p>';a.append(c);document.getElementById('trees').append(a);
+  const t=new TilemapEngine(),map={id:'wuzhuangguan',tiles:[['ginseng_tree','ginseng_tree'],['ginseng_tree','ginseng_tree']]};t.waterAnimTime=1;
+  jobs.push(()=>{const ctx=c.getContext('2d');ctx.clearRect(0,0,168,180);ctx.save();ctx.translate(20,20);ctx.scale(2,2);
+    for(let r=0;r<2;r++)for(let col=0;col<2;col++)t.renderTile(ctx,'ginseng_tree',col*32,r*32,col,r,map,{ginsengTree:state});ctx.restore();});
+}
+function frame(){jobs.forEach(f=>f());requestAnimationFrame(frame)}frame();
+</script></html>

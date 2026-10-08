@@ -122,11 +122,11 @@ class MasterPortraitEngine {
     };
     this.customMonsterImages = {
       'yuanhou_jiang': 'assets/monsters/yuanhou_jiang.jpg',
-      'yuanhou_bing': 'assets/monsters/yuanhou_jiang.jpg',
-      'yuanhou': 'assets/monsters/yuanhou_jiang.jpg',
+      'yuanhou_bing': 'assets/monsters/yuanhou_bing_portrait.svg',
+      'yuanhou': 'assets/monsters/yuanhou_portrait.svg',
       'mihou_jiang': 'assets/monsters/mihou_jiang.jpg',
-      'mihou_bing': 'assets/monsters/mihou_jiang.jpg',
-      'mihou': 'assets/monsters/mihou_jiang.jpg',
+      'mihou_bing': 'assets/monsters/mihou_bing_portrait.svg',
+      'mihou': 'assets/monsters/mihou_portrait.svg',
       'kushu_jing': 'assets/monsters/kushu_jing.jpg',
       'shuyao': 'assets/monsters/shuyao.svg',
       'tree': 'assets/monsters/kushu_jing.jpg',
@@ -139,6 +139,11 @@ class MasterPortraitEngine {
       'wolf': 'assets/monsters/wolf_wild.svg'
     };
     if (typeof window !== 'undefined') window.MonsterArtMap = this.customMonsterImages;
+    window.MonsterModelArtMap = {};
+    for (const family of ['mihou', 'yuanhou']) for (const suffix of ['', '_bing', '_jiang']) {
+      const id = family + suffix;
+      window.MonsterModelArtMap[id] = `assets/monsters/${id}_model.svg`;
+    }
     this.modelPortraits = { dragon_king: 'aoguang', xiaobailong: 'xiaobailong',
       hu_xianfeng: 'hu_xianfeng', bull_demon: 'bull_demon', honghaier: 'honghaier',
       jinchi_elder: 'jinchi_elder', jinjiao: 'jinjiao', yinjiao: 'yinjiao',
@@ -154,6 +159,9 @@ class MasterPortraitEngine {
     const t = String(title || '').toLowerCase();
     if (this.modelPortraits[s]) return s;
     if (window.NpcArt?.ids.has(s)) return s;
+    // 从名册传来的纯物种 ID 在这里接入；沙悟净对白的旧规范 ID 单独保留。
+    const speciesRole = s !== 'sha_wujing' && window.VisualIdentity?.speciesAppearances[s];
+    if (speciesRole && speciesRole !== s) return this.normalizeRoleId(speciesRole, title);
     const creature = window.VisualIdentity?.aliases[s] || window.VisualIdentity?.resolveMonster(s);
     if (window.VisualIdentity?.aliases[s]) return creature;
     if (window.CreatureArt?.ids.has(creature)) return creature;
@@ -176,6 +184,11 @@ class MasterPortraitEngine {
     if (this.roleIdAliases[s]) return this.roleIdAliases[s];
 
     // 名称与称号语义智能推断
+    if (s.includes('镇元')) return 'zhenyuanzi';
+    if (s.includes('老君') || s.includes('道德天尊') || t.includes('兜率')) return 'taishang_laojun';
+    if (s.includes('唐太宗') || s.includes('李世民')) return 'tangtaizong';
+    if (s.includes('高翠兰')) return 'gaocuilan';
+    if (s.includes('玄风')) return 'xuanfeng_daoshi';
     if (s.includes('观音') || s.includes('菩萨') || t.includes('观音')) return 'guanyin';
     if (s.includes('悟空') || s.includes('大圣') || s.includes('弼马温') || t.includes('齐天')) return 'sun_wukong';
     if (s.includes('哪吒') || t.includes('哪吒')) return 'nezha';

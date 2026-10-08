@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>汉风西游 - 正统2D自由探索与西游大闹天宫复刻版</title>
+  <meta name="description"
+    content="正统复刻《汉风西游》2D自由行走探索RPG：威灵显赫大将军天宫执勤，御马监选坐骑，蟠桃园采摘仙桃经验飞升，暗助孙悟空大闹天宫，贬落凡尘刘家村，随刘伯钦打猎，长安见玄奘菩萨，五行山揭帖破封救大圣！">
+  <meta name="keywords" content="汉风西游, 威灵显赫大将军, 孙悟空大闹天宫, 蟠桃园, 御马监, 刘伯钦, 五行山, 2DRPG, 冒泡社区怀旧">
+  <link rel="stylesheet" href="css/style.css?v=5.5.0">
+</head>
+
+<body class="modern-mode">
+
+  <!-- 顶部模式切换与全局控制栏 -->
+  <header class="top-nav">
+    <div class="brand-title">
+      <span class="brand-name">📿 西游Online</span>
+      <!-- <span class="brand-badge">MRP神话</span> -->
+    </div>
+    <!-- 玩家实时状态简报 HUD -->
+    <div id="player-hud" class="top-player-hud" onclick="window.App2D.openPlayerProfileModal()"
+      title="点击打开人物属性与潜能面板 (按C键)" style="display:flex;align-items:center;gap:8px;">
+      <div id="hud-avatar-circle" class="hud-avatar-circle"
+        style="width:26px;height:26px;border-radius:50%;border:1.5px solid #ffd700;overflow:hidden;background:#2a1a0c;display:flex;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,215,0,0.4);flex-shrink:0;">
+      </div>
+      <span id="hud-player-name" class="hud-player-name">威灵大将 (Lv.50)</span>
+      <div class="hud-hp-group">
+        <span class="hud-label-hp">HP</span>
+        <div class="hud-hp-track">
+          <div id="hud-hp-bar" class="hud-hp-fill" style="width:100%;"></div>
+        </div>
+      </div>
+      <div class="hud-silver-group">
+        <span class="hud-coin">🪙</span>
+        <span id="hud-silver" class="hud-silver-val">15000 两</span>
+      </div>
+    </div>
+    <nav class="nav-controls">
+      <button id="top-restart-btn" onclick="window.App2D.restartGame()" class="nav-btn nav-btn-restart"
+        title="放弃当前所有历练与属性，格式化恢复到游戏最开始">
+        🔄 重新开始
+      </button>
+      <button id="top-save-btn" onclick="window.App2D.saveManualProgress()" class="nav-btn nav-btn-save"
+        title="立即手动保存历练进度">
+        <span id="save-status-indicator" style="color:#2ed573;font-size:10px;">●</span> 存档
+      </button>
+      <button id="toggle-sound-btn" class="nav-btn" title="一键开启或关闭复古 8-bit 音效">
+        🔇 音效:关
+      </button>
+      <button id="toggle-mode-btn" class="nav-btn" title="在经典按键机与大屏模式之间切换">
+        📱 掌机
+      </button>
+      <button id="top-menu-btn" onclick="window.App2D.toggleFoldableMenu()" class="nav-btn nav-btn-menu-highlight"
+        title="展开/收起系统主菜单 (快捷键: M)">
+        📜 菜单
+      </button>
+    </nav>
+  </header>
+
+  <!-- 主舞台布局 -->
+  <main class="main-stage">
+    <!-- 经典 MTK 实体按键功能机外壳 -->
+    <div class="phone-device" id="phone-device">
+      <!-- 听筒微孔 -->
+      <div class="phone-speaker"></div>
+      <div class="phone-logo">HANFENG · WESTWARD 2D</div>
+
+      <!-- 手机液晶显示屏框架 -->
+      <div class="phone-screen-frame">
+        <!-- 2D 游戏视口宿主 -->
+        <div class="game-viewport" id="game-viewport" style="position:relative;">
+          <!-- 场景标题悬浮浮条 (右上角) -->
+          <div style="position:absolute;top:8px;right:8px;z-index:10;display:flex;gap:6px;">
+            <span class="scene-location-badge" id="scene-location-text">🏯 天宫·南天门与凌霄宝殿</span>
+            <button onclick="window.App2D.openOrdealQuestModal()" id="quest-ordeal-btn" class="nav-btn"
+              style="padding:2px 8px;font-size:11px;background:rgba(35,20,10,0.92);border-color:#ffd700;color:#fce7b2;box-shadow:0 0 6px rgba(255,215,0,0.35);cursor:pointer;"
+              title="查看西行八十一难与当前主线目标 (快捷键: Q)">
+              📜 历练 [Q]
+            </button>
+            <button onclick="window.App2D.toggleSceneRosterModal()" id="scene-roster-btn" class="nav-btn"
+              style="padding:2px 8px;font-size:11px;background:rgba(20,15,10,0.85);border-color:#ffd700;"
+              title="查看当前场景NPC与野怪生灵名册 (快捷键: Tab)">
+              📜 名册 [Tab]
+            </button>
+            <button onclick="window.App2D.toggleMountRiding()" id="quick-ride-btn" class="nav-btn"
+              style="padding:2px 8px;font-size:11px;background:rgba(20,15,10,0.85);border-color:#ffd700;">
+              🏇 状态:骑乘中
+            </button>
+          </div>
+
+          <!-- 场景切换平滑过渡黑幕层 (走动0.75s/对话1.0s) -->
+          <div id="scene-transition-overlay" class="scene-transition-overlay"></div>
+
+          <!-- 2D 真实游戏地图 Canvas 画布 (大屏高清默认 760x580) -->
+          <canvas id="game-canvas" width="760" height="580"></canvas>
+
+          <!-- 回合战斗无缝全屏层 -->
+          <div id="battle-screen-layer"></div>
+
+          <!-- 📜 全局乾坤折叠主菜单 (支持 M 键与顶部/底部菜单按钮呼出) -->
+          <div id="foldable-menu-modal" class="foldable-menu-overlay" style="display:none;"
+            onclick="if(event.target === this) window.App2D.toggleFoldableMenu(false)">
+            <div class="foldable-menu-drawer" onclick="event.stopPropagation()">
+              <div class="menu-drawer-header">
+                <div class="menu-drawer-title">
+                  <span class="title-emblem">📿</span>
+                  <span class="title-text">三界乾坤 · 仙府典藏阁</span>
+                  <span class="title-sub">[按 M 或 Esc 关闭]</span>
+                </div>
+                <button class="menu-drawer-close" onclick="window.App2D.toggleFoldableMenu(false)"
+                  title="关闭菜单 (Esc)">✕</button>
+              </div>
+
+              <div class="menu-drawer-body">
+                <!-- 分类一：本尊修为 (Hero Cultivation) -->
+                <div class="menu-category-section">
+                  <div class="menu-category-header">
+                    <span class="cat-icon">⚡</span>
+                    <span class="cat-title">【本尊仙途】</span>
+                    <span class="cat-desc">属性加点、乾坤法宝、门派绝技、降魔历练</span>
+                  </div>
+                  <div class="menu-tiles-grid menu-tiles-grid-4col">
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openPlayerProfileModal(); window.App2D.toggleFoldableMenu(false);"
+                      title="查看五维属性与潜能加点 (按C键)">
+                      <div class="tile-icon-box">📜</div>
+                      <div class="tile-info">
+                        <div class="tile-name">人物属性 <span class="tile-key">[C]</span></div>
+                        <div class="tile-sub">五维潜能 · 仙阶战力</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openInventoryModal('all'); window.App2D.toggleFoldableMenu(false);"
+                      title="打开乾坤储物袋与装备 (按B键)">
+                      <div class="tile-icon-box">🎒</div>
+                      <div class="tile-info">
+                        <div class="tile-name">乾坤行囊 <span class="tile-key">[B]</span></div>
+                        <div class="tile-sub">法宝丹药 · 宝石镶嵌</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openClassSelectModal(); window.App2D.toggleFoldableMenu(false);"
+                      title="查看与切换三大门派绝技 (按K键)">
+                      <div class="tile-icon-box">☯️</div>
+                      <div class="tile-info">
+                        <div class="tile-name">门派绝技 <span class="tile-key">[K]</span></div>
+                        <div class="tile-sub">佛门道家 · 仙术神通</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openQuestTrackerModal(); window.App2D.toggleFoldableMenu(false);"
+                      title="查看正统西游主线与钟馗抓鬼任务 (按Q键)">
+                      <div class="tile-icon-box">📖</div>
+                      <div class="tile-info">
+                        <div class="tile-name">降魔历练 <span class="tile-key">[Q]</span></div>
+                        <div class="tile-sub">主线指引 · 钟馗抓鬼</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 分类二：仙宠坐骑 (Mounts & Cultivation) -->
+                <div class="menu-category-section">
+                  <div class="menu-category-header">
+                    <span class="cat-icon">🐎</span>
+                    <span class="cat-title">【御兽仙缘】</span>
+                    <span class="cat-desc">神驹疾行、随行仙宠、御马驯养、蟠桃延寿</span>
+                  </div>
+                  <div class="menu-tiles-grid menu-tiles-grid-4col">
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openPetManageModal(); window.App2D.toggleFoldableMenu(false);"
+                      title="随行仙宠领悟绝技与出战设置 (按P键)">
+                      <div class="tile-icon-box">🐾</div>
+                      <div class="tile-info">
+                        <div class="tile-name">随行仙宠 <span class="tile-key">[P]</span></div>
+                        <div class="tile-sub">仙兽助阵 · 天赋绝技</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.toggleMountRiding(); window.App2D.toggleFoldableMenu(false);"
+                      title="上下神驹疾驰 (按R键)">
+                      <div class="tile-icon-box">🏇</div>
+                      <div class="tile-info">
+                        <div class="tile-name">上下神驹 <span class="tile-key">[R]</span></div>
+                        <div class="tile-sub">腾云驾雾 · 疾步如风</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openMountModal(); window.App2D.toggleFoldableMenu(false);"
+                      title="御马监神驹驯养加成 (按3键)">
+                      <div class="tile-icon-box">🐴</div>
+                      <div class="tile-info">
+                        <div class="tile-name">御马驯养 <span class="tile-key">[3]</span></div>
+                        <div class="tile-sub">御马监驯化 · 属性加持</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.openPeachModal(); window.App2D.toggleFoldableMenu(false);"
+                      title="天庭蟠桃胜境采摘仙桃 (按1键)">
+                      <div class="tile-icon-box">🍑</div>
+                      <div class="tile-info">
+                        <div class="tile-name">天庭蟠桃 <span class="tile-key">[1]</span></div>
+                        <div class="tile-sub">瑶池胜境 · 采摘飞升</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 分类三：江湖系统与偏好 (Settings & Options) -->
+                <div class="menu-category-section">
+                  <div class="menu-category-header">
+                    <span class="cat-icon">⚙️</span>
+                    <span class="cat-title">【三界典籍】</span>
+                    <span class="cat-desc">进度保存、视界切换、八音仙乐</span>
+                  </div>
+                  <div class="menu-tiles-grid menu-tiles-grid-4col">
+                    <div class="menu-tile-card"
+                      onclick="window.App2D.saveAutoProgress(); window.showGameMessage('💾 历练进度已手动保存！', 'success'); window.App2D.toggleFoldableMenu(false);"
+                      title="保存当前西行进度">
+                      <div class="tile-icon-box">💾</div>
+                      <div class="tile-info">
+                        <div class="tile-name">即刻存档</div>
+                        <div class="tile-sub">保存等级、装备与历练</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="document.getElementById('toggle-mode-btn').click(); window.App2D.toggleFoldableMenu(false);"
+                      title="切换掌机与大屏模式">
+                      <div class="tile-icon-box">📱</div>
+                      <div class="tile-info">
+                        <div class="tile-name">视界模式</div>
+                        <div class="tile-sub">掌机外壳 / 沉浸大屏</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card"
+                      onclick="document.getElementById('toggle-sound-btn').click(); window.App2D.updateMenuSoundLabel();"
+                      title="一键开启或关闭8-bit音效">
+                      <div class="tile-icon-box">🔇</div>
+                      <div class="tile-info">
+                        <div class="tile-name" id="menu-sound-label">八音仙乐: 关</div>
+                        <div class="tile-sub">复古 8-Bit 经典音效</div>
+                      </div>
+                    </div>
+                    <div class="menu-tile-card danger-tile"
+                      onclick="window.App2D.restartGame(); window.App2D.toggleFoldableMenu(false);" title="清空历练档案重新开始">
+                      <div class="tile-icon-box">🔄</div>
+                      <div class="tile-info">
+                        <div class="tile-name">重入轮回</div>
+                        <div class="tile-sub">清空存档 · 重新启程</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 底部操作与提示 -->
+              <div class="menu-drawer-footer">
+                <span>💡 仙家小提示：在任意场景按 <kbd class="kbd-badge">M</kbd> 键均可秒速展开/收起此主菜单</span>
+                <button class="menu-footer-close-btn" onclick="window.App2D.toggleFoldableMenu(false)">收起菜单
+                  [Esc]</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 实体九宫格与五维物理键盘区 (支持触屏点击、实体按键与键盘映射) -->
+      <div class="phone-keypad">
+        <div class="control-key-row">
+          <!-- 左软键 -->
+          <button class="softkey" id="key-soft-left" onclick="window.App2D.interactNearby()" title="交谈/确定">
+            <span>交谈</span>
+            <span style="font-size:8px;color:#89a;">(Space)</span>
+          </button>
+
+          <!-- 五维方向键 (上下左右控制 2D 走动) -->
+          <div class="dpad">
+            <button class="dpad-btn dpad-up" id="dpad-up" title="上移">▲</button>
+            <button class="dpad-btn dpad-down" id="dpad-down" title="下移">▼</button>
+            <button class="dpad-btn dpad-left" id="dpad-left" title="左移">◀</button>
+            <button class="dpad-btn dpad-right" id="dpad-right" title="右移">▶</button>
+            <button class="dpad-btn dpad-ok" id="dpad-ok" title="互动确认">OK</button>
+          </div>
+
+          <!-- 右软键 -->
+          <button class="softkey" id="key-soft-right" onclick="window.Dialogue ? window.Dialogue.close() : null"
+            title="关闭/返回">
+            <span>返回</span>
+            <span style="font-size:8px;color:#89a;">(Esc)</span>
+          </button>
+        </div>
+
+        <!-- 经典九宫格按键矩阵 (2468也可控制移动，5互动) -->
+        <div class="numpad-grid">
+          <button class="num-btn" id="key-1" onclick="window.App2D.openPeachModal()"><span
+              class="num-main">1🍑</span><span class="num-sub">吃蟠桃</span></button>
+          <button class="num-btn" id="key-2"><span class="num-main">2▲</span><span class="num-sub">向上走</span></button>
+          <button class="num-btn" id="key-3" onclick="window.App2D.openMountModal()"><span
+              class="num-main">3🐎</span><span class="num-sub">坐骑驯养</span></button>
+          <button class="num-btn" id="key-4"><span class="num-main">4◀</span><span class="num-sub">向左走</span></button>
+          <button class="num-btn" id="key-5"><span class="num-main">5★</span><span class="num-sub">交谈互动</span></button>
+          <button class="num-btn" id="key-6"><span class="num-main">6▶</span><span class="num-sub">向右走</span></button>
+          <button class="num-btn" id="key-7" onclick="window.App2D.toggleMountRiding()"><span
+              class="num-main">7🏇</span><span class="num-sub">上下马</span></button>
+          <button class="num-btn" id="key-8"><span class="num-main">8▼</span><span class="num-sub">向下走</span></button>
+          <button class="num-btn" id="key-9" onclick="window.Dialogue ? window.Dialogue.close() : null"><span
+              class="num-main">9✕</span><span class="num-sub">关闭弹窗</span></button>
+          <button class="num-btn" onclick="window.Sound.playBeep()"><span class="num-main">*</span><span
+              class="num-sub">锁定</span></button>
+          <button class="num-btn" onclick="window.App2D.interactNearby()"><span class="num-main">0</span><span
+              class="num-sub">空格互动</span></button>
+          <button class="num-btn" onclick="window.Sound.playBeep()"><span class="num-main">#</span><span
+              class="num-sub">静音</span></button>
+        </div>
+      </div>
+
+      <!-- 大屏沉浸模式专属底部古典快捷工具栏 -->
+      <div class="modern-bottom-bar">
+        <!-- 主菜单折叠入口 -->
+        <button id="btn-toggle-bottom-menu" class="mrp-menu-trigger-btn" onclick="window.App2D.toggleFoldableMenu()"
+          title="打开三界主菜单 (快捷键: M)">
+          <span class="menu-icon">📜</span>
+          <span class="menu-label">主菜单</span>
+          <span class="menu-hotkey">[M]</span>
+        </button>
+
+        <!-- 跑马灯传音/操作指引条 -->
+        <div class="bottom-lore-ticker">
+          <span class="ticker-tag">💡 西行秘鉴</span>
+          <span class="ticker-scroll" id="bottom-ticker-text">点击 [主菜单] 或按 [M] 展开全部功能 | [Space] 对话NPC | [R] 快捷乘骑神驹 | [B]
+            背包 | [C] 属性</span>
+        </div>
+
+        <!-- 常用快捷操作按钮组 -->
+        <div class="bottom-quick-bar">
+          <button class="quick-action-btn" onclick="window.App2D.openPlayerProfileModal()"
+            title="打开人物状态与个人信息面板 (快捷键: C)">
+            <span>📜</span> 状态 <span class="kbd-sub">[C]</span>
+          </button>
+          <button class="quick-action-btn" onclick="window.App2D.interactNearby()" title="与附近NPC或场景物体互动 (快捷键: Space)">
+            <span>💬</span> 互动 <span class="kbd-sub">[Space]</span>
+          </button>
+          <button class="quick-action-btn" onclick="window.App2D.toggleMountRiding()" title="翻身上马疾驰或下马步行 (快捷键: R)">
+            <span>🏇</span> 坐骑 <span class="kbd-sub">[R]</span>
+          </button>
+          <button class="quick-action-btn" onclick="window.App2D.openInventoryModal('all')" title="打开仙家乾坤袋 (快捷键: B)">
+            <span>🎒</span> 背包 <span class="kbd-sub">[B]</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 消息与提示组件 -->
+  <script src="js/engine/toast.js?v=5.5.0"></script>
+
+  <!-- 游戏基础数据 -->
+  <script src="js/data/classes.js?v=5.5.0"></script>
+  <script src="js/core/skills.js?v=5.5.0"></script>
+  <script src="js/data/pets.js?v=5.5.0"></script>
+  <script src="js/data/items.js?v=5.5.0"></script>
+  <script src="js/engine/visualIdentity.js?v=5.6.0"></script>
+  <script src="js/engine/creatureArt.js?v=5.6.0"></script>
+  <script src="js/engine/playerArt.js?v=5.6.0"></script>
+  <script src="js/engine/npcArt.js?v=5.6.0"></script>
+  <script src="js/data/maps2d.js?v=5.5.0"></script>
+  <script src="js/data/shanhaiSpecies.js?v=5.7.0"></script>
+  <script src="js/data/storyQuests.js?v=5.5.0"></script>
+
+  <!-- 核心逻辑与音效 -->
+  <script src="js/core/audio.js?v=5.5.0"></script>
+  <script src="js/core/player.js?v=5.5.0"></script>
+  <script src="js/core/petSystem.js?v=5.5.0"></script>
+  <script src="js/core/shanhai.js?v=5.7.0"></script>
+  <script src="js/core/mountSystem.js?v=5.5.0"></script>
+  <script src="js/core/peachGarden.js?v=5.5.0"></script>
+  <script src="js/core/inventory.js?v=5.5.0"></script>
+  <script src="js/core/forge.js?v=5.5.0"></script>
+  <script src="js/core/battle.js?v=5.5.0"></script>
+  <script src="js/core/chat.js?v=5.5.0"></script>
+  <script src="js/core/save.js?v=5.5.0"></script>
+
+  <!-- 2D 引擎组件与国风立绘系统 -->
+  <script src="js/engine/portraits.js?v=5.5.0"></script>
+  <script src="js/engine/pathfinding.js?v=5.5.0"></script>
+  <script src="js/engine/tilemap.js?v=5.5.0"></script>
+  <script src="js/engine/camera.js?v=5.5.0"></script>
+  <script src="js/engine/minimap.js?v=5.5.0"></script>
+  <script src="js/engine/particleSystem.js?v=5.5.0"></script>
+  <script src="js/engine/character.js?v=5.5.0"></script>
+  <script src="js/engine/dialogue.js?v=5.5.0"></script>
+
+  <!-- 2D 汉风西游主调度程序 -->
+  <script src="js/app2d.js?v=5.5.0"></script>
+
+</body>
+
+</html>

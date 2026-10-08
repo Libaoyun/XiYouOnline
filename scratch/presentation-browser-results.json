@@ -1,0 +1,1067 @@
+{
+  "desktop": {
+    "viewport": {
+      "x": 225,
+      "y": 89,
+      "w": 830,
+      "h": 580,
+      "scrollW": 828,
+      "clientW": 828,
+      "scrollH": 583,
+      "clientH": 578
+    },
+    "roster": {
+      "x": 280,
+      "y": 144.11502075195312,
+      "w": 720,
+      "h": 480.0000305175781,
+      "scrollW": 716,
+      "clientW": 716,
+      "scrollH": 476,
+      "clientH": 476
+    },
+    "header": {
+      "x": 282,
+      "y": 146.11502075195312,
+      "w": 716,
+      "h": 45,
+      "scrollW": 716,
+      "clientW": 716,
+      "scrollH": 43,
+      "clientH": 43
+    },
+    "body": {
+      "x": 282,
+      "y": 275.1150207519531,
+      "w": 716,
+      "h": 347.0000305175781,
+      "scrollW": 716,
+      "clientW": 716,
+      "scrollH": 347,
+      "clientH": 347
+    },
+    "list": {
+      "x": 282,
+      "y": 275.1150207519531,
+      "w": 270,
+      "h": 347.0000305175781,
+      "scrollW": 254,
+      "clientW": 254,
+      "scrollH": 2799,
+      "clientH": 347
+    },
+    "detail": {
+      "x": 552,
+      "y": 275.1150207519531,
+      "w": 446,
+      "h": 347.0000305175781,
+      "scrollW": 431,
+      "clientW": 431,
+      "scrollH": 598,
+      "clientH": 347
+    },
+    "picker": null,
+    "target": null,
+    "confirm": null,
+    "documentW": 1280,
+    "screenW": 1280,
+    "pickerOpen": {
+      "viewport": {
+        "x": 225,
+        "y": 89,
+        "w": 830,
+        "h": 580,
+        "scrollW": 828,
+        "clientW": 828,
+        "scrollH": 578,
+        "clientH": 578
+      },
+      "roster": {
+        "x": 280,
+        "y": 139,
+        "w": 720,
+        "h": 480,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 476,
+        "clientH": 476
+      },
+      "header": {
+        "x": 282,
+        "y": 141,
+        "w": 716,
+        "h": 45,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 43,
+        "clientH": 43
+      },
+      "body": {
+        "x": 282,
+        "y": 270,
+        "w": 716,
+        "h": 347,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 347,
+        "clientH": 347
+      },
+      "list": {
+        "x": 282,
+        "y": 270,
+        "w": 270,
+        "h": 347,
+        "scrollW": 254,
+        "clientW": 254,
+        "scrollH": 2799,
+        "clientH": 347
+      },
+      "detail": {
+        "x": 552,
+        "y": 270,
+        "w": 446,
+        "h": 347,
+        "scrollW": 431,
+        "clientW": 431,
+        "scrollH": 598,
+        "clientH": 347
+      },
+      "picker": {
+        "x": 420,
+        "y": 251.25,
+        "w": 440,
+        "h": 255.5,
+        "scrollW": 436,
+        "clientW": 436,
+        "scrollH": 252,
+        "clientH": 252
+      },
+      "target": null,
+      "confirm": null,
+      "documentW": 1280,
+      "screenW": 1280
+    },
+    "confirmOpen": {
+      "viewport": {
+        "x": 225,
+        "y": 89,
+        "w": 830,
+        "h": 580,
+        "scrollW": 828,
+        "clientW": 828,
+        "scrollH": 578,
+        "clientH": 578
+      },
+      "roster": {
+        "x": 280,
+        "y": 139,
+        "w": 720,
+        "h": 480,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 476,
+        "clientH": 476
+      },
+      "header": {
+        "x": 282,
+        "y": 141,
+        "w": 716,
+        "h": 45,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 43,
+        "clientH": 43
+      },
+      "body": {
+        "x": 282,
+        "y": 270,
+        "w": 716,
+        "h": 347,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 347,
+        "clientH": 347
+      },
+      "list": {
+        "x": 282,
+        "y": 270,
+        "w": 270,
+        "h": 347,
+        "scrollW": 254,
+        "clientW": 254,
+        "scrollH": 2799,
+        "clientH": 347
+      },
+      "detail": {
+        "x": 552,
+        "y": 270,
+        "w": 446,
+        "h": 347,
+        "scrollW": 431,
+        "clientW": 431,
+        "scrollH": 598,
+        "clientH": 347
+      },
+      "picker": {
+        "x": 420,
+        "y": 251.25,
+        "w": 440,
+        "h": 255.5,
+        "scrollW": 436,
+        "clientW": 436,
+        "scrollH": 252,
+        "clientH": 252
+      },
+      "target": null,
+      "confirm": {
+        "x": 480,
+        "y": 263.15625,
+        "w": 320,
+        "h": 293.6875,
+        "scrollW": 318,
+        "clientW": 318,
+        "scrollH": 292,
+        "clientH": 292
+      },
+      "documentW": 1280,
+      "screenW": 1280
+    },
+    "confirmOnTop": true,
+    "cancelClosed": true,
+    "pickerClosed": true,
+    "bookRetained": true,
+    "battle": {
+      "viewport": {
+        "x": 222.625,
+        "y": 86.625,
+        "w": 834.75,
+        "h": 580,
+        "scrollW": 833,
+        "clientW": 833,
+        "scrollH": 578,
+        "clientH": 578
+      },
+      "roster": null,
+      "header": null,
+      "body": null,
+      "list": null,
+      "detail": null,
+      "picker": null,
+      "target": {
+        "x": 510,
+        "y": 268.125,
+        "w": 260,
+        "h": 227,
+        "scrollW": 256,
+        "clientW": 256,
+        "scrollH": 223,
+        "clientH": 223
+      },
+      "confirm": null,
+      "documentW": 1280,
+      "screenW": 1280
+    },
+    "battleConfirmVisible": true
+  },
+  "phone": {
+    "viewport": {
+      "x": 18.625,
+      "y": 105.625,
+      "w": 352.75,
+      "h": 560,
+      "scrollW": 351,
+      "clientW": 351,
+      "scrollH": 558,
+      "clientH": 558
+    },
+    "roster": {
+      "x": 28.390625,
+      "y": 145.625,
+      "w": 333.203125,
+      "h": 480,
+      "scrollW": 329,
+      "clientW": 329,
+      "scrollH": 476,
+      "clientH": 476
+    },
+    "header": {
+      "x": 30.390625,
+      "y": 147.625,
+      "w": 329.203125,
+      "h": 37,
+      "scrollW": 329,
+      "clientW": 329,
+      "scrollH": 35,
+      "clientH": 35
+    },
+    "body": {
+      "x": 30.390625,
+      "y": 268.625,
+      "w": 329.203125,
+      "h": 355,
+      "scrollW": 329,
+      "clientW": 329,
+      "scrollH": 355,
+      "clientH": 355
+    },
+    "list": {
+      "x": 30.390625,
+      "y": 268.625,
+      "w": 329.203125,
+      "h": 80,
+      "scrollW": 314,
+      "clientW": 314,
+      "scrollH": 1412,
+      "clientH": 79
+    },
+    "detail": {
+      "x": 30.390625,
+      "y": 348.625,
+      "w": 329.203125,
+      "h": 275,
+      "scrollW": 314,
+      "clientW": 314,
+      "scrollH": 653,
+      "clientH": 275
+    },
+    "picker": null,
+    "target": null,
+    "confirm": null,
+    "documentW": 390,
+    "screenW": 390,
+    "pickerOpen": {
+      "viewport": {
+        "x": 17,
+        "y": 104,
+        "w": 356,
+        "h": 560,
+        "scrollW": 354,
+        "clientW": 354,
+        "scrollH": 558,
+        "clientH": 558
+      },
+      "roster": {
+        "x": 26.84375,
+        "y": 144,
+        "w": 336.296875,
+        "h": 480,
+        "scrollW": 332,
+        "clientW": 332,
+        "scrollH": 476,
+        "clientH": 476
+      },
+      "header": {
+        "x": 28.84375,
+        "y": 146,
+        "w": 332.296875,
+        "h": 37,
+        "scrollW": 332,
+        "clientW": 332,
+        "scrollH": 35,
+        "clientH": 35
+      },
+      "body": {
+        "x": 28.84375,
+        "y": 267,
+        "w": 332.296875,
+        "h": 355,
+        "scrollW": 332,
+        "clientW": 332,
+        "scrollH": 355,
+        "clientH": 355
+      },
+      "list": {
+        "x": 28.84375,
+        "y": 267,
+        "w": 332.296875,
+        "h": 80,
+        "scrollW": 317,
+        "clientW": 317,
+        "scrollH": 1412,
+        "clientH": 79
+      },
+      "detail": {
+        "x": 28.84375,
+        "y": 347,
+        "w": 332.296875,
+        "h": 275,
+        "scrollW": 317,
+        "clientW": 317,
+        "scrollH": 653,
+        "clientH": 275
+      },
+      "picker": {
+        "x": 26,
+        "y": 248,
+        "w": 338,
+        "h": 272,
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 268,
+        "clientH": 268
+      },
+      "target": null,
+      "confirm": null,
+      "documentW": 390,
+      "screenW": 390
+    },
+    "confirmOpen": {
+      "viewport": {
+        "x": 17,
+        "y": 104,
+        "w": 356,
+        "h": 560,
+        "scrollW": 354,
+        "clientW": 354,
+        "scrollH": 558,
+        "clientH": 558
+      },
+      "roster": {
+        "x": 26.84375,
+        "y": 144,
+        "w": 336.296875,
+        "h": 480,
+        "scrollW": 332,
+        "clientW": 332,
+        "scrollH": 476,
+        "clientH": 476
+      },
+      "header": {
+        "x": 28.84375,
+        "y": 146,
+        "w": 332.296875,
+        "h": 37,
+        "scrollW": 332,
+        "clientW": 332,
+        "scrollH": 35,
+        "clientH": 35
+      },
+      "body": {
+        "x": 28.84375,
+        "y": 267,
+        "w": 332.296875,
+        "h": 355,
+        "scrollW": 332,
+        "clientW": 332,
+        "scrollH": 355,
+        "clientH": 355
+      },
+      "list": {
+        "x": 28.84375,
+        "y": 267,
+        "w": 332.296875,
+        "h": 80,
+        "scrollW": 317,
+        "clientW": 317,
+        "scrollH": 1412,
+        "clientH": 79
+      },
+      "detail": {
+        "x": 28.84375,
+        "y": 347,
+        "w": 332.296875,
+        "h": 275,
+        "scrollW": 317,
+        "clientW": 317,
+        "scrollH": 653,
+        "clientH": 275
+      },
+      "picker": {
+        "x": 26,
+        "y": 248,
+        "w": 338,
+        "h": 272,
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 268,
+        "clientH": 268
+      },
+      "target": null,
+      "confirm": {
+        "x": 35,
+        "y": 275.15625,
+        "w": 320,
+        "h": 293.6875,
+        "scrollW": 318,
+        "clientW": 318,
+        "scrollH": 292,
+        "clientH": 292
+      },
+      "documentW": 390,
+      "screenW": 390
+    },
+    "confirmOnTop": true,
+    "cancelClosed": true,
+    "pickerClosed": true,
+    "bookRetained": true,
+    "battle": {
+      "viewport": {
+        "x": 18.609375,
+        "y": 105.609375,
+        "w": 352.78125,
+        "h": 560,
+        "scrollW": 351,
+        "clientW": 351,
+        "scrollH": 558,
+        "clientH": 558
+      },
+      "roster": null,
+      "header": null,
+      "body": null,
+      "list": null,
+      "detail": null,
+      "picker": null,
+      "target": {
+        "x": 65,
+        "y": 285.609375,
+        "w": 260,
+        "h": 227,
+        "scrollW": 256,
+        "clientW": 256,
+        "scrollH": 223,
+        "clientH": 223
+      },
+      "confirm": null,
+      "documentW": 390,
+      "screenW": 390
+    },
+    "battleConfirmVisible": true
+  },
+  "small": {
+    "viewport": {
+      "x": 17,
+      "y": 104,
+      "w": 271,
+      "h": 358,
+      "scrollW": 269,
+      "clientW": 269,
+      "scrollH": 356,
+      "clientH": 356
+    },
+    "roster": {
+      "x": 24.71875,
+      "y": 111,
+      "w": 255.546875,
+      "h": 344,
+      "scrollW": 252,
+      "clientW": 252,
+      "scrollH": 340,
+      "clientH": 340
+    },
+    "header": {
+      "x": 26.71875,
+      "y": 113,
+      "w": 251.546875,
+      "h": 37,
+      "scrollW": 252,
+      "clientW": 252,
+      "scrollH": 35,
+      "clientH": 35
+    },
+    "body": {
+      "x": 26.71875,
+      "y": 264,
+      "w": 251.546875,
+      "h": 189,
+      "scrollW": 252,
+      "clientW": 252,
+      "scrollH": 189,
+      "clientH": 189
+    },
+    "list": {
+      "x": 26.71875,
+      "y": 264,
+      "w": 251.546875,
+      "h": 80,
+      "scrollW": 237,
+      "clientW": 237,
+      "scrollH": 1592,
+      "clientH": 79
+    },
+    "detail": {
+      "x": 26.71875,
+      "y": 344,
+      "w": 251.546875,
+      "h": 109,
+      "scrollW": 237,
+      "clientW": 237,
+      "scrollH": 845,
+      "clientH": 109
+    },
+    "picker": null,
+    "target": null,
+    "confirm": null,
+    "documentW": 305,
+    "screenW": 320,
+    "pickerOpen": {
+      "viewport": {
+        "x": 17,
+        "y": 104,
+        "w": 271,
+        "h": 358,
+        "scrollW": 269,
+        "clientW": 269,
+        "scrollH": 356,
+        "clientH": 356
+      },
+      "roster": {
+        "x": 24.71875,
+        "y": 111,
+        "w": 255.546875,
+        "h": 344,
+        "scrollW": 252,
+        "clientW": 252,
+        "scrollH": 340,
+        "clientH": 340
+      },
+      "header": {
+        "x": 26.71875,
+        "y": 113,
+        "w": 251.546875,
+        "h": 37,
+        "scrollW": 252,
+        "clientW": 252,
+        "scrollH": 35,
+        "clientH": 35
+      },
+      "body": {
+        "x": 26.71875,
+        "y": 264,
+        "w": 251.546875,
+        "h": 189,
+        "scrollW": 252,
+        "clientW": 252,
+        "scrollH": 189,
+        "clientH": 189
+      },
+      "list": {
+        "x": 26.71875,
+        "y": 264,
+        "w": 251.546875,
+        "h": 80,
+        "scrollW": 237,
+        "clientW": 237,
+        "scrollH": 1592,
+        "clientH": 79
+      },
+      "detail": {
+        "x": 26.71875,
+        "y": 344,
+        "w": 251.546875,
+        "h": 109,
+        "scrollW": 237,
+        "clientW": 237,
+        "scrollH": 845,
+        "clientH": 109
+      },
+      "picker": {
+        "x": 26,
+        "y": 113,
+        "w": 253,
+        "h": 340,
+        "scrollW": 249,
+        "clientW": 249,
+        "scrollH": 336,
+        "clientH": 336
+      },
+      "target": null,
+      "confirm": null,
+      "documentW": 305,
+      "screenW": 320
+    },
+    "confirmOpen": {
+      "viewport": {
+        "x": 17,
+        "y": 104,
+        "w": 271,
+        "h": 358,
+        "scrollW": 269,
+        "clientW": 269,
+        "scrollH": 356,
+        "clientH": 356
+      },
+      "roster": {
+        "x": 24.71875,
+        "y": 111,
+        "w": 255.546875,
+        "h": 344,
+        "scrollW": 252,
+        "clientW": 252,
+        "scrollH": 340,
+        "clientH": 340
+      },
+      "header": {
+        "x": 26.71875,
+        "y": 113,
+        "w": 251.546875,
+        "h": 37,
+        "scrollW": 252,
+        "clientW": 252,
+        "scrollH": 35,
+        "clientH": 35
+      },
+      "body": {
+        "x": 26.71875,
+        "y": 264,
+        "w": 251.546875,
+        "h": 189,
+        "scrollW": 252,
+        "clientW": 252,
+        "scrollH": 189,
+        "clientH": 189
+      },
+      "list": {
+        "x": 26.71875,
+        "y": 264,
+        "w": 251.546875,
+        "h": 80,
+        "scrollW": 237,
+        "clientW": 237,
+        "scrollH": 1592,
+        "clientH": 79
+      },
+      "detail": {
+        "x": 26.71875,
+        "y": 344,
+        "w": 251.546875,
+        "h": 109,
+        "scrollW": 237,
+        "clientW": 237,
+        "scrollH": 845,
+        "clientH": 109
+      },
+      "picker": {
+        "x": 26,
+        "y": 113,
+        "w": 253,
+        "h": 340,
+        "scrollW": 249,
+        "clientW": 249,
+        "scrollH": 336,
+        "clientH": 336
+      },
+      "target": null,
+      "confirm": {
+        "x": 8.5,
+        "y": 127.5625,
+        "w": 288,
+        "h": 312.875,
+        "scrollW": 286,
+        "clientW": 286,
+        "scrollH": 311,
+        "clientH": 311
+      },
+      "documentW": 305,
+      "screenW": 320
+    },
+    "confirmOnTop": true,
+    "cancelClosed": true,
+    "pickerClosed": true,
+    "bookRetained": true,
+    "battle": {
+      "viewport": {
+        "x": 17,
+        "y": 104,
+        "w": 271,
+        "h": 358,
+        "scrollW": 269,
+        "clientW": 269,
+        "scrollH": 356,
+        "clientH": 356
+      },
+      "roster": null,
+      "header": null,
+      "body": null,
+      "list": null,
+      "detail": null,
+      "picker": null,
+      "target": {
+        "x": 22.5,
+        "y": 182.5,
+        "w": 260,
+        "h": 227,
+        "scrollW": 256,
+        "clientW": 256,
+        "scrollH": 223,
+        "clientH": 223
+      },
+      "confirm": null,
+      "documentW": 305,
+      "screenW": 320
+    },
+    "battleConfirmVisible": true
+  },
+  "landscape": {
+    "viewport": {
+      "x": 20.1875,
+      "y": 62.1875,
+      "w": 788.625,
+      "h": 270,
+      "scrollW": 787,
+      "clientW": 787,
+      "scrollH": 268,
+      "clientH": 268
+    },
+    "roster": {
+      "x": 54.5,
+      "y": 67.1875,
+      "w": 720,
+      "h": 260,
+      "scrollW": 716,
+      "clientW": 716,
+      "scrollH": 256,
+      "clientH": 256
+    },
+    "header": {
+      "x": 56.5,
+      "y": 69.1875,
+      "w": 716,
+      "h": 45,
+      "scrollW": 716,
+      "clientW": 716,
+      "scrollH": 43,
+      "clientH": 43
+    },
+    "body": {
+      "x": 56.5,
+      "y": 198.1875,
+      "w": 716,
+      "h": 127,
+      "scrollW": 716,
+      "clientW": 716,
+      "scrollH": 127,
+      "clientH": 127
+    },
+    "list": {
+      "x": 56.5,
+      "y": 198.1875,
+      "w": 270,
+      "h": 127,
+      "scrollW": 254,
+      "clientW": 254,
+      "scrollH": 2799,
+      "clientH": 127
+    },
+    "detail": {
+      "x": 326.5,
+      "y": 198.1875,
+      "w": 446,
+      "h": 127,
+      "scrollW": 431,
+      "clientW": 431,
+      "scrollH": 598,
+      "clientH": 127
+    },
+    "picker": null,
+    "target": null,
+    "confirm": null,
+    "documentW": 829,
+    "screenW": 844,
+    "pickerOpen": {
+      "viewport": {
+        "x": 21,
+        "y": 63,
+        "w": 787,
+        "h": 270,
+        "scrollW": 785,
+        "clientW": 785,
+        "scrollH": 268,
+        "clientH": 268
+      },
+      "roster": {
+        "x": 54.5,
+        "y": 68,
+        "w": 720,
+        "h": 260,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 256,
+        "clientH": 256
+      },
+      "header": {
+        "x": 56.5,
+        "y": 70,
+        "w": 716,
+        "h": 45,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 43,
+        "clientH": 43
+      },
+      "body": {
+        "x": 56.5,
+        "y": 199,
+        "w": 716,
+        "h": 127,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 127,
+        "clientH": 127
+      },
+      "list": {
+        "x": 56.5,
+        "y": 199,
+        "w": 270,
+        "h": 127,
+        "scrollW": 254,
+        "clientW": 254,
+        "scrollH": 2799,
+        "clientH": 127
+      },
+      "detail": {
+        "x": 326.5,
+        "y": 199,
+        "w": 446,
+        "h": 127,
+        "scrollW": 431,
+        "clientW": 431,
+        "scrollH": 598,
+        "clientH": 127
+      },
+      "picker": {
+        "x": 194.5,
+        "y": 72,
+        "w": 440,
+        "h": 252,
+        "scrollW": 436,
+        "clientW": 436,
+        "scrollH": 248,
+        "clientH": 248
+      },
+      "target": null,
+      "confirm": null,
+      "documentW": 829,
+      "screenW": 844
+    },
+    "confirmOpen": {
+      "viewport": {
+        "x": 21,
+        "y": 63,
+        "w": 787,
+        "h": 270,
+        "scrollW": 785,
+        "clientW": 785,
+        "scrollH": 268,
+        "clientH": 268
+      },
+      "roster": {
+        "x": 54.5,
+        "y": 68,
+        "w": 720,
+        "h": 260,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 256,
+        "clientH": 256
+      },
+      "header": {
+        "x": 56.5,
+        "y": 70,
+        "w": 716,
+        "h": 45,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 43,
+        "clientH": 43
+      },
+      "body": {
+        "x": 56.5,
+        "y": 199,
+        "w": 716,
+        "h": 127,
+        "scrollW": 716,
+        "clientW": 716,
+        "scrollH": 127,
+        "clientH": 127
+      },
+      "list": {
+        "x": 56.5,
+        "y": 199,
+        "w": 270,
+        "h": 127,
+        "scrollW": 254,
+        "clientW": 254,
+        "scrollH": 2799,
+        "clientH": 127
+      },
+      "detail": {
+        "x": 326.5,
+        "y": 199,
+        "w": 446,
+        "h": 127,
+        "scrollW": 431,
+        "clientW": 431,
+        "scrollH": 598,
+        "clientH": 127
+      },
+      "picker": {
+        "x": 194.5,
+        "y": 72,
+        "w": 440,
+        "h": 252,
+        "scrollW": 436,
+        "clientW": 436,
+        "scrollH": 248,
+        "clientH": 248
+      },
+      "target": null,
+      "confirm": {
+        "x": 254.5,
+        "y": 48.15625,
+        "w": 320,
+        "h": 293.6875,
+        "scrollW": 318,
+        "clientW": 318,
+        "scrollH": 292,
+        "clientH": 292
+      },
+      "documentW": 829,
+      "screenW": 844
+    },
+    "confirmOnTop": true,
+    "cancelClosed": true,
+    "pickerClosed": true,
+    "bookRetained": true,
+    "battle": {
+      "viewport": {
+        "x": 20.1875,
+        "y": 62.1875,
+        "w": 788.625,
+        "h": 270,
+        "scrollW": 787,
+        "clientW": 787,
+        "scrollH": 268,
+        "clientH": 268
+      },
+      "roster": null,
+      "header": null,
+      "body": null,
+      "list": null,
+      "detail": null,
+      "picker": null,
+      "target": {
+        "x": 284.5,
+        "y": 88.6875,
+        "w": 260,
+        "h": 227,
+        "scrollW": 256,
+        "clientW": 256,
+        "scrollH": 223,
+        "clientH": 223
+      },
+      "confirm": null,
+      "documentW": 829,
+      "screenW": 844
+    },
+    "battleConfirmVisible": true
+  },
+  "pickerFreezesMovement": true,
+  "pickerTabClosed": true,
+  "listScrollRetained": true,
+  "previewHasClick": false,
+  "previewNoAction": true,
+  "cardClickNoAction": true,
+  "confirmSubmitted": true,
+  "errors": [],
+  "failures": []
+}

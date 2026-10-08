@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgSheyao" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2e1065"/>
+      <stop offset="55%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#090514"/>
+    </radialGradient>
+    <linearGradient id="purpleScales" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="40%" stop-color="#9333ea"/>
+      <stop offset="80%" stop-color="#581c87"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+    <radialGradient id="venomGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e879f9"/>
+      <stop offset="70%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <filter id="purpleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="36" fill="url(#bgSheyao)"/>
+  <circle cx="256" cy="256" r="180" fill="url(#venomGlow)" opacity="0.35"/>
+
+  <!-- Giant Cobra Hood & Lower Tail Coil -->
+  <path d="M120 440 C80 360 160 300 240 330 C320 360 410 320 400 420 C390 480 200 480 120 440 Z"
+        fill="url(#purpleScales)" stroke="#e879f9" stroke-width="2.5"/>
+
+  <!-- Cobra Hood Spread -->
+  <path d="M150 170 C100 220 130 330 200 350 C240 360 272 360 312 350 C382 330 412 220 362 170 C330 130 182 130 150 170 Z"
+        fill="url(#purpleScales)" stroke="#a855f7" stroke-width="3"/>
+  <ellipse cx="256" cy="245" rx="52" ry="75" fill="#3b0764" stroke="#c084fc" stroke-width="2"/>
+  <!-- Hood Eyespots (Menacing Pattern) -->
+  <ellipse cx="190" cy="230" rx="22" ry="34" fill="#581c87" stroke="#f43f5e" stroke-width="2.5"/>
+  <circle cx="190" cy="230" r="10" fill="#f43f5e" filter="url(#purpleGlow)"/>
+  <ellipse cx="322" cy="230" rx="22" ry="34" fill="#581c87" stroke="#f43f5e" stroke-width="2.5"/>
+  <circle cx="322" cy="230" r="10" fill="#f43f5e" filter="url(#purpleGlow)"/>
+
+  <!-- Head & Crown -->
+  <path d="M210 150 Q256 95 302 150 Q310 180 286 210 Q256 225 226 210 Q202 180 210 150 Z"
+        fill="#f3e8ff" stroke="#9333ea" stroke-width="2.5"/>
+
+  <!-- Dark Headdress & Horns -->
+  <path d="M210 135 Q190 70 220 50 Q240 90 256 110 Q272 90 292 50 Q322 70 302 135 Z"
+        fill="#581c87" stroke="#e879f9" stroke-width="2"/>
+  <polygon points="256,40 248,65 264,65" fill="#f43f5e" filter="url(#purpleGlow)"/>
+
+  <!-- Demon Eyes -->
+  <ellipse cx="236" cy="165" rx="8" ry="6" fill="#f43f5e" filter="url(#purpleGlow)"/>
+  <ellipse cx="276" cy="165" rx="8" ry="6" fill="#f43f5e" filter="url(#purpleGlow)"/>
+  <line x1="236" y1="160" x2="236" y2="170" stroke="#2e1065" stroke-width="2.5"/>
+  <line x1="276" y1="160" x2="276" y2="170" stroke="#2e1065" stroke-width="2.5"/>
+
+  <!-- Fangs & Mouth -->
+  <path d="M242 195 Q256 200 270 195" fill="none" stroke="#581c87" stroke-width="2"/>
+  <polygon points="244,195 248,206 250,195" fill="#ffffff"/>
+  <polygon points="268,195 264,206 262,195" fill="#ffffff"/>
+
+  <!-- Venom Orbs Floating -->
+  <circle cx="120" cy="130" r="7" fill="#a855f7" filter="url(#purpleGlow)"/>
+  <circle cx="390" cy="140" r="9" fill="#c084fc" filter="url(#purpleGlow)"/>
+  <circle cx="380" cy="380" r="6" fill="#f43f5e" filter="url(#purpleGlow)"/>
+
+  <!-- Border Frame -->
+  <rect x="12" y="12" width="488" height="488" rx="28" fill="none" stroke="#a855f7" stroke-width="3" opacity="0.75"/>
+  <rect x="18" y="18" width="476" height="476" rx="22" fill="none" stroke="#f43f5e" stroke-width="1.2" opacity="0.8"/>
+
+  <g transform="translate(48, 52)">
+    <rect x="-24" y="-16" width="60" height="32" rx="6" fill="#4c1d95" stroke="#c084fc" stroke-width="1.5"/>
+    <text x="6" y="6" font-family="sans-serif" font-size="16" font-weight="bold" fill="#fdf4ff" text-anchor="middle">蛇 妖</text>
+  </g>
+</svg>

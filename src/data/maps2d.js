@@ -199,7 +199,7 @@ export const MAPS_2D = {
     ],
     monsters: [],
     portals: [
-      { x: 10 * 32, y: 14 * 32, targetMap: 'tiangong_palace', targetX: 18 * 32, targetY: 13 * 32, name: '返回【凌霄宝殿】' }
+      { x: 10 * 32, y: 14 * 32, targetMap: 'tiangong_yuma', targetX: 18 * 32, targetY: 13 * 32, name: '前往【御马监】' }
     ]
   },
 

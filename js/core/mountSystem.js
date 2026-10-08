@@ -114,14 +114,60 @@ class MountSystem {
   }
 }
 
-// 经典西游坐骑图鉴
+// 经典西游坐骑图鉴 (按职业专属划分：金刚-龙马，神仙-飞剑，妖魔-狮子)
 MountSystem.TEMPLATES = {
+  long_ma: {
+    id: 'long_ma',
+    name: '天界龙马',
+    tier: '金刚专属',
+    reqClass: 'jingang',
+    reqClassName: '金刚',
+    icon: '🐎',
+    desc: '通灵龙马，雪白龙鳞，坚如金刚，金刚门派专属神驹。',
+    baseHp: 380,
+    baseAtk: 40,
+    speedBonus: 0.60
+  },
+  feijian: {
+    id: 'feijian',
+    name: '青云飞剑',
+    tier: '神仙专属',
+    reqClass: 'xianren',
+    reqClassName: '神仙',
+    icon: '🗡️',
+    desc: '通天飞剑，御剑凌虚，出尘飘逸，神仙门派专属坐骑。',
+    baseHp: 300,
+    baseAtk: 55,
+    speedBonus: 0.65
+  },
+  yan_shi: {
+    id: 'yan_shi',
+    name: '狂焰赤狮',
+    tier: '妖魔专属',
+    reqClass: 'yaomo',
+    reqClassName: '妖魔',
+    icon: '🦁',
+    desc: '烈火金睛狮，四蹄生赤焰，凶煞威武，妖魔门派专属异兽。',
+    baseHp: 320,
+    baseAtk: 65,
+    speedBonus: 0.65
+  },
+  zhuri_cong: {
+    id: 'zhuri_cong',
+    name: '避水金睛金骢',
+    tier: '厚土神驹',
+    icon: '🦄',
+    desc: '麒麟血脉金骢宝马，生机浩荡，护元增血。',
+    baseHp: 480,
+    baseAtk: 30,
+    speedBonus: 0.55
+  },
   xuelong_ma: {
     id: 'xuelong_ma',
     name: '天界雪龙马',
     tier: '灵品龙驹',
     icon: '🐎',
-    desc: '产自天庭御马监的通灵神驹，身披雪白龙鳞，脚踏流云，不仅迅捷无比，更能护主御敌。',
+    desc: '天庭通灵神驹，雪白龙鳞，护主御敌。',
     baseHp: 300,
     baseAtk: 40,
     speedBonus: 0.60
@@ -131,27 +177,17 @@ MountSystem.TEMPLATES = {
     name: '踏火赤焰兽',
     tier: '狂品异兽',
     icon: '🦁',
-    desc: '四蹄生烈焰的洪荒奇兽，性格狂烈暴虐，大幅增强乘骑者的杀伐攻伐之威。',
+    desc: '四蹄烈焰奇兽，性烈威猛，增幅攻伐。',
     baseHp: 220,
     baseAtk: 65,
     speedBonus: 0.65
-  },
-  zhuri_cong: {
-    id: 'zhuri_cong',
-    name: '避水金睛金骢',
-    tier: '厚土神驹',
-    icon: '🦄',
-    desc: '传说中拥有麒麟血脉的金骢宝马，鬃毛金黄，生机浩荡，具有强大的护元增血之效。',
-    baseHp: 480,
-    baseAtk: 30,
-    speedBonus: 0.55
   },
   qitian_shenlong: {
     id: 'qitian_shenlong',
     name: '九天翱翔五爪金龙',
     tier: '上古神龙',
     icon: '🐉',
-    desc: '【三界至尊神骑】龙啸九天，万妖臣服！赋予乘骑者排山倒海般的神力和无尽生机！',
+    desc: '三界至尊神龙，龙啸九天，万妖臣服。',
     baseHp: 1200,
     baseAtk: 180,
     speedBonus: 0.85

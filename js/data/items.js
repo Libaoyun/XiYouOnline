@@ -12,7 +12,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '💊',
     price: 80,
-    desc: '闯荡江湖必备的止血外伤药，使用后恢复 300 点气血。',
+    desc: '止血伤药，使用后恢复 300 点气血。',
     effect: { hp: 300 }
   },
   dahuan_dan: {
@@ -21,7 +21,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '🔴',
     price: 350,
-    desc: '名贵秘药，调理五脏六腑，使用后恢复 1200 点气血。',
+    desc: '名贵秘药，使用后恢复 1200 点气血。',
     effect: { hp: 1200 }
   },
   foshou: {
@@ -30,7 +30,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '🍃',
     price: 60,
-    desc: '蕴含清凉甘露的灵果，使用后恢复 150 点法力精力。',
+    desc: '灵果甘露，使用后恢复 150 点法力。',
     effect: { mp: 150 }
   },
   biling_dan: {
@@ -39,7 +39,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '🔵',
     price: 400,
-    desc: '道家纯阳真火炼制，使用后恢复 600 点法力。',
+    desc: '纯阳金丹，使用后恢复 600 点法力。',
     effect: { mp: 600 }
   },
   jiuzhuan_dan: {
@@ -48,7 +48,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '⭐',
     price: 2000,
-    desc: '太上老君兜率宫所出极品金丹！战斗中复活倒地目标并恢复 800 点气血。',
+    desc: '极品金丹，复活倒地目标并恢复 800 点气血。',
     effect: { revive: true, hp: 800 }
   },
   feixing_fu: {
@@ -57,7 +57,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '📜',
     price: 150,
-    desc: '仙家神符，念诵咒语可在弹指间瞬移返回繁华的【长安城】。',
+    desc: '仙家神符，使用后瞬移返回长安城。',
     effect: { teleport: 'changan' }
   },
 
@@ -68,7 +68,7 @@ window.GAME_DATA.ITEMS = {
     type: 'pet_item',
     icon: '🏺',
     price: 1500,
-    desc: '观音菩萨玉净瓶中的圣水甘露。可对召唤兽进行彻底洗髓，重置等级为0并洗练出全新极品资质与技能！',
+    desc: '观音圣水，洗髓仙宠，重置为0级并刷新资质技能。',
     effect: { washPet: true }
   },
   qianghua_shi: {
@@ -77,7 +77,7 @@ window.GAME_DATA.ITEMS = {
     type: 'forge_item',
     icon: '💎',
     price: 1000,
-    desc: '蕴含地脉精金之力的奇石，用于在长安铁匠铺对装备进行升星强化（+1 ~ +12）。',
+    desc: '地脉精金，装备升星强化（+1 ~ +12）。',
     effect: { enhance: true }
   },
   dingxing_shi: {
@@ -86,7 +86,7 @@ window.GAME_DATA.ITEMS = {
     type: 'forge_item',
     icon: '🔮',
     price: 3000,
-    desc: '古老神石，强化高星级装备时使用，可防止强化失败时发生掉级或破损！',
+    desc: '古老神石，强化时防止装备掉星或破损。',
     effect: { protect: true }
   },
 
@@ -98,7 +98,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📕',
     price: 5000,
     skill: '必杀',
-    desc: '记载猛兽必杀绝技的残卷，可让召唤兽领悟【必杀】技能。'
+    desc: '魔兽残卷，领悟【必杀】技能。'
   },
   book_lianji: {
     id: 'book_lianji',
@@ -107,7 +107,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📘',
     price: 8000,
     skill: '连击',
-    desc: '记载连续追击步法的神卷，可让召唤兽领悟【连击】技能。'
+    desc: '神卷步法，领悟【连击】技能。'
   },
   book_xixue: {
     id: 'book_xixue',
@@ -116,7 +116,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📙',
     price: 7500,
     skill: '吸血',
-    desc: '记载修罗嗜血功法的秘籍，可让召唤兽领悟【吸血】技能。'
+    desc: '修罗功法，领悟【吸血】技能。'
   },
   book_shenyousheng: {
     id: 'book_shenyousheng',
@@ -125,7 +125,7 @@ window.GAME_DATA.ITEMS = {
     icon: '👑',
     price: 20000,
     skill: '高级神佑复生',
-    desc: '三界梦寐以求的顶级神书，死亡时有35%几率满血复活！'
+    desc: '顶级神书，领悟【高级神佑复生】。'
   },
 
   // 更多仙家秘药
@@ -135,7 +135,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '❄️',
     price: 1200,
-    desc: '采自昆仑天山之巅万年雪莲，服用后迅速治愈重创，恢复 3000 点气血。',
+    desc: '天山雪莲，使用后恢复 3000 点气血。',
     effect: { hp: 3000 }
   },
   zisang_lu: {
@@ -144,7 +144,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '🧪',
     price: 1000,
-    desc: '蕴含西王母瑶池清气，服用后神清气爽，恢复 1200 点法力精力。',
+    desc: '瑶池清露，使用后恢复 1200 点法力。',
     effect: { mp: 1200 }
   },
 
@@ -155,7 +155,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '💎',
     price: 3000,
-    desc: '坚逾玄金的佛门神石，镶嵌后大幅提升抗物理普攻能力（抗普攻物理 +5%）。',
+    desc: '佛门神石，镶嵌增加抗物理普攻 +5%。',
     bonus: { res_phy: 0.05 }
   },
   gem_sheli: {
@@ -164,7 +164,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '📿',
     price: 3200,
-    desc: '高僧圆寂所化舍利，浩然清心，镶嵌后显著降低舍生取义受创（抗舍生 +6%）。',
+    desc: '高僧舍利，镶嵌增加抗舍生 +6%。',
     bonus: { res_shesheng: 0.06 }
   },
   gem_pilei: {
@@ -173,7 +173,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '⚡',
     price: 3200,
-    desc: '蕴含导雷仙纹的神珠，镶嵌后有效削弱九天神雷伤害（抗雷霆 +6%）。',
+    desc: '雷纹神珠，镶嵌增加抗雷霆 +6%。',
     bonus: { res_leiting: 0.06 }
   },
   gem_dingfeng: {
@@ -182,7 +182,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '🌪️',
     price: 3200,
-    desc: '西斯灵吉菩萨秘宝定风珠碎片，镶嵌后可抵御狂飙席卷（抗飞沙 +6%）。',
+    desc: '定风宝珠，镶嵌增加抗飞沙 +6%。',
     bonus: { res_feisha: 0.06 }
   },
   gem_qingxin: {
@@ -191,7 +191,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '🪷',
     price: 3500,
-    desc: '万年寒玉髓雕琢，凝神定魄，镶嵌后降低被强行封印的几率（抗封印 +8%）。',
+    desc: '凝神寒玉，镶嵌增加抗封印 +8%。',
     bonus: { res_fengyin: 0.08 }
   },
   gem_dingshen: {
@@ -200,7 +200,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '🧿',
     price: 3500,
-    desc: '铭刻破禁符咒的宝玉，镶嵌后降低被定身咒禁锢的几率（抗定身 +8%）。',
+    desc: '破禁宝玉，镶嵌增加抗定身 +8%。',
     bonus: { res_dingshen: 0.08 }
   },
   gem_hongmanao: {
@@ -209,7 +209,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '🔴',
     price: 2500,
-    desc: '如烈火般绚烂的玛瑙，镶嵌后锋芒毕露，直接提升物理攻击力（攻击 +25）。',
+    desc: '纯阳玛瑙，镶嵌增加物理攻击 +25。',
     bonus: { atk: 25 }
   },
   gem_yueliang: {
@@ -218,7 +218,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '🌕',
     price: 2500,
-    desc: '吸收皎洁月华的灵石，坚硬如铁，镶嵌后提升厚重甲胄防御（防御 +20）。',
+    desc: '月华灵石，镶嵌增加物理防御 +20。',
     bonus: { def: 20 }
   },
   gem_guangmang: {
@@ -227,7 +227,7 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '✨',
     price: 2600,
-    desc: '生生不息的光明之石，镶嵌后极大拓宽气血元海（气血上限 +150）。',
+    desc: '生生灵石，镶嵌增加气血上限 +150。',
     bonus: { hp: 150 }
   },
   gem_heibaoshi: {
@@ -236,18 +236,18 @@ window.GAME_DATA.ITEMS = {
     type: 'gem',
     icon: '⚫',
     price: 2800,
-    desc: '深邃轻灵的暗夜灵石，镶嵌后身轻如燕抢占先机（出手速度 +8）。',
+    desc: '暗夜灵石，镶嵌增加出手速度 +8。',
     bonus: { spd: 8 }
   },
 
   // === 杂物与法宝道具系列 ===
   silver_gourd: {
     id: 'silver_gourd',
-    name: '紫竹银葫芦',
+    name: '收仙银壶（紫竹银葫芦）',
     type: 'misc',
     icon: '🍶',
     price: 800,
-    desc: '落伽山紫竹灵木所铸法宝银葫芦！战斗中招降【散仙】级野怪必备法宝，成功率高达 70%！'
+    desc: '紫竹法宝，招降【散仙】灵物成功率高。'
   },
   gold_gourd: {
     id: 'gold_gourd',
@@ -255,7 +255,7 @@ window.GAME_DATA.ITEMS = {
     type: 'misc',
     icon: '🏺',
     price: 2500,
-    desc: '太上老君盛丹的上古通灵至宝！战斗中招降【金仙】级圣兽必备极品法宝，成功率高达 60%！'
+    desc: '上古至宝，招降【金仙】神兽成功率高。'
   },
   talent_pill: {
     id: 'talent_pill',
@@ -263,6 +263,7 @@ window.GAME_DATA.ITEMS = {
     type: 'consumable',
     icon: '🔮',
     price: 3500,
+    effect: { talentPoints: 50, target: 'jinxian_pet' },
     desc: '上古九转仙气淬炼的天赋宝丹！喂食【金仙】品阶仙宠使用，单次永久增加 50 点元神变身天赋点 (上限 5000 点)！'
   },
   changan_huji: {
@@ -271,7 +272,7 @@ window.GAME_DATA.ITEMS = {
     type: 'misc',
     icon: '📜',
     price: 0,
-    desc: '长安府衙所颁发的定居户籍文牒。持有可随时在各地土地神处“一键返回居住地”。'
+    desc: '大唐户籍，在土地神处可一键返回居住地。'
   },
   jin_liu_lu: {
     id: 'jin_liu_lu',
@@ -279,7 +280,7 @@ window.GAME_DATA.ITEMS = {
     type: 'misc',
     icon: '🧴',
     price: 1500,
-    desc: '三界通灵琼浆圣水！可在仙宠界面对任意仙宠进行【洗炼重铸】，将其重置为Lv.1幼年灵宠并彻底刷新资质与成长率，有机会洗出高成长绝品宝宝！'
+    desc: '琼浆圣水，洗髓仙宠，重置为1级并刷新资质。'
   },
   meteor_iron: {
     id: 'meteor_iron',
@@ -287,7 +288,7 @@ window.GAME_DATA.ITEMS = {
     type: 'misc',
     icon: '🪨',
     price: 800,
-    desc: '九天外坠落的星辰神铁，蕴含先天淬炼精气。可在长安城李铁匠处对装备进行【精炼强化】，大幅提升基础攻击与防御！'
+    desc: '星辰神铁，在李铁匠处精炼装备提升攻防。'
   },
   bishui_zhu: {
     id: 'bishui_zhu',
@@ -295,7 +296,7 @@ window.GAME_DATA.ITEMS = {
     type: 'misc',
     icon: '🔮',
     price: 5000,
-    desc: '东海龙宫镇海至宝，佩之入汪洋深渊如履平地，散发温润水灵护罩，受水系法术伤害减免 30%。'
+    desc: '龙宫至宝，受水系法术伤害减免 30%。'
   },
   // 1. 武器
   dinghai_shenzhen: {
@@ -487,45 +488,122 @@ window.GAME_DATA.ITEMS = {
     desc: '镶嵌北斗七星石髓，光华流转，蕴藏磅礴生机元气。'
   },
 
-  // 6. 项链
-  eq_nk_yu: {
-    id: 'eq_nk_yu',
-    name: '苍玉挂坠',
+  // 6. 项链 (挂链装备：赋予玩家五行属性，附加法力值与抗性、暴击、致命、反震、反击等属性)
+  eq_nk_gold: {
+    id: 'eq_nk_gold',
+    name: '【金】破天纯金链',
     type: 'equip',
     slot: 'necklace',
+    element: 'gold',
+    reqLevel: 0,
+    icon: '📿',
+    price: 450,
+    quality: 'green',
+    attrs: { mp: 180, matk: 30, mdef: 15 },
+    resists: { phy: 8, shesheng: 8 },
+    critRate: 0.06,
+    fatalRate: 0.03,
+    counterAttackRate: 0.05,
+    desc: '【金属性挂链】纯阳庚金淬炼神链，佩戴后赋予主人五行【金】属性！加法力值与物理抗性、抗舍生、暴击率与致命率！'
+  },
+  eq_nk_yu: {
+    id: 'eq_nk_yu',
+    name: '【木】苍玉碧波坠',
+    type: 'equip',
+    slot: 'necklace',
+    element: 'wood',
     reqLevel: 0,
     icon: '📿',
     price: 150,
     quality: 'white',
-    attrs: { matk: 15, mdef: 10 },
-    desc: '东海温玉雕琢而成的挂饰，平心静气。'
+    attrs: { mp: 160, matk: 20, mdef: 12 },
+    resists: { phy: 6, shesheng: 6 },
+    critRate: 0.04,
+    counterAttackRate: 0.05,
+    desc: '【木属性挂链】东海神木温玉雕琢而成的古朴挂坠，佩戴后赋予主人五行【木】属性！增加法力元海、抗性与反击率。'
+  },
+  eq_nk_water: {
+    id: 'eq_nk_water',
+    name: '【水】沧浪避水珠',
+    type: 'equip',
+    slot: 'necklace',
+    element: 'water',
+    reqLevel: 5,
+    icon: '📿',
+    price: 650,
+    quality: 'green',
+    attrs: { mp: 200, hp: 120, matk: 25 },
+    resists: { phy: 8, shesheng: 8 },
+    counterShockRate: 0.06,
+    critRate: 0.04,
+    desc: '【水属性挂链】东海灵蚌孕育的避水宝珠，佩戴后赋予主人五行【水】属性！提升法力气血与反震率！'
+  },
+  eq_nk_fire: {
+    id: 'eq_nk_fire',
+    name: '【火】离火朱雀锁',
+    type: 'equip',
+    slot: 'necklace',
+    element: 'fire',
+    reqLevel: 10,
+    icon: '📿',
+    price: 1500,
+    quality: 'blue',
+    attrs: { mp: 240, matk: 45, mdef: 25 },
+    resists: { phy: 8, shesheng: 10 },
+    critRate: 0.08,
+    fatalRate: 0.04,
+    counterShockRate: 0.05,
+    desc: '【火属性挂链】天界离火灵髓精炼挂饰，佩戴后赋予主人五行【火】属性！大幅提升法力、暴击率与反震率！'
+  },
+  eq_nk_earth: {
+    id: 'eq_nk_earth',
+    name: '【土】戊土玄黄坠',
+    type: 'equip',
+    slot: 'necklace',
+    element: 'earth',
+    reqLevel: 10,
+    icon: '📿',
+    price: 1500,
+    quality: 'blue',
+    attrs: { mp: 260, hp: 200, def: 25 },
+    resists: { phy: 12, shesheng: 12 },
+    counterShockRate: 0.08,
+    counterAttackRate: 0.05,
+    desc: '【土属性挂链】昆仑神山厚土精魄所铸挂坠，佩戴后赋予主人五行【土】属性！极大提升气血法力与反震抗性！'
   },
   eq_nk_dinghun: {
     id: 'eq_nk_dinghun',
-    name: '九转定魂珠',
+    name: '【土】九转定魂珠',
     type: 'equip',
     slot: 'necklace',
+    element: 'earth',
     reqLevel: 35,
     icon: '🔮',
     price: 8500,
     quality: 'purple',
-    attrs: { matk: 95, mdef: 80, mp: 300 },
-    desc: '地府泰山石敢当所炼魂珠，牢锁神魂，大幅激发元神法力。'
+    attrs: { matk: 95, mdef: 80, mp: 400 },
+    resists: { phy: 14, shesheng: 15, fengyin: 10 },
+    counterShockRate: 0.10,
+    desc: '【土属性挂链】地府泰山石敢当所炼魂珠，佩戴后赋予主人五行【土】属性！牢锁神魂，大幅激发元神法力与反震抗性。'
   },
 
   // === 剧情战利特级神装 ===
   eq_ring_baigu: {
     id: 'eq_ring_baigu',
-    name: '千年白骨幽魂戒',
+    name: '【金】千年白骨幽魂戒',
     type: 'equip',
     slot: 'necklace',
+    element: 'gold',
     reqLevel: 40,
     icon: '💍',
     price: 15000,
     quality: 'gold',
-    attrs: { matk: 85, mdef: 70, hp: 350 },
+    attrs: { matk: 85, mdef: 70, hp: 350, mp: 350 },
     resists: { phy: 8, shesheng: 8, leiting: 8, fengyin: 8 },
-    desc: '白虎岭白骨夫人万年尸骨精元凝结之宝戒，通体幽光森森，令佩戴者全技能抗性与体魄大幅提升！'
+    critRate: 0.10,
+    fatalRate: 0.05,
+    counterShockRate: 0.06,
+    desc: '【金属性挂链】白虎岭白骨夫人万年尸骨精元凝结之宝戒，佩戴赋予五行【金】属性！令佩戴者全技能抗性、法力与体魄大幅提升！'
   },
   eq_wp_lengyue: {
     id: 'eq_wp_lengyue',
@@ -550,7 +628,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📕',
     price: 8000,
     quality: 'gold',
-    desc: '太古魔兽相传之秘卷！仙宠研习后领悟【高级必杀】，物理攻击时拥有 25% 几率触发暴击，造成 1.8 倍毁灭打击！'
+    desc: '研习领悟【高级必杀】，25%几率触发暴击（1.8倍伤害）。'
   },
   book_high_vampire: {
     id: 'book_high_vampire',
@@ -561,7 +639,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📗',
     price: 8500,
     quality: 'gold',
-    desc: '九幽修罗嗜血之术！仙宠研习后领悟【高级吸血】，物理攻击命中时将造成伤害的 35% 瞬间转化为自身气血！'
+    desc: '研习领悟【高级吸血】，物理攻击将 35% 伤害转化为气血。'
   },
   book_high_rebirth: {
     id: 'book_high_rebirth',
@@ -572,7 +650,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📘',
     price: 12000,
     quality: 'gold',
-    desc: '瑶池神树涅槃之真谛！仙宠研习后领悟【高级神佑复生】，战斗中遭受致命伤害阵亡时有 40% 几率圣光涅槃，满血原地复活！'
+    desc: '研习领悟【高级神佑】，阵亡时 40% 几率满血复活。'
   },
   book_high_speed: {
     id: 'book_high_speed',
@@ -583,7 +661,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📙',
     price: 6000,
     quality: 'purple',
-    desc: '金翅大鹏御风神术！仙宠研习后领悟【高级敏捷】，基础出手速度额外提升 30 点，决胜抢占先机！'
+    desc: '研习领悟【高级敏捷】，基础出手速度提升 30 点。'
   },
   book_high_sneak: {
     id: 'book_high_sneak',
@@ -594,7 +672,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📜',
     price: 7000,
     quality: 'purple',
-    desc: '无形无相偷袭之妙法！仙宠研习后领悟【高级偷袭】，物理伤害额外永久提升 15%，且出手不受任何反击反震！'
+    desc: '研习领悟【高级偷袭】，物理伤害提升 15%，免受反击反震。'
   },
 
   // === 运镖任务信物 ===
@@ -605,7 +683,7 @@ window.GAME_DATA.ITEMS = {
     icon: '📦',
     price: 0,
     quality: 'blue',
-    desc: '长安总督衙门与大唐镖局所托之重金军饷，需沿陆路历经艰险送达前方要塞关隘，中途切莫遗失！'
+    desc: '大唐朝廷军饷信物，需护送至前方关隘。'
   },
 
   // === 主线任务道具 ===
@@ -616,7 +694,7 @@ window.GAME_DATA.ITEMS = {
     icon: '🍄',
     price: 10,
     quality: 'white',
-    desc: '在刘家村草地上采摘的新鲜野生青蘑菇，香气扑鼻，乃生火做饭的极佳食材。'
+    desc: '刘家村野生青蘑菇，鲜嫩食材。'
   },
   item_dry_wood: {
     id: 'item_dry_wood',
@@ -625,7 +703,7 @@ window.GAME_DATA.ITEMS = {
     icon: '🪵',
     price: 15,
     quality: 'white',
-    desc: '五行山脚百年枯树精所掉落的干燥硬木，耐烧火旺，刘猎户烧柴做饭必不可少。'
+    desc: '五行山百年枯树硬柴，耐烧火旺。'
   },
 
   // === 东海龙宫初级神装全套 (东海龙王敖广赔罪所赠) ===
@@ -679,15 +757,19 @@ window.GAME_DATA.ITEMS = {
   },
   longgong_necklace: {
     id: 'longgong_necklace',
-    name: '龙珠凝霜佩',
+    name: '【水】龙珠凝霜佩',
     type: 'equip',
     slot: 'necklace',
+    element: 'water',
     reqLevel: 5,
     icon: '📿',
     price: 1600,
     quality: 'blue',
-    attrs: { hp: 220, matk: 38, mp: 150 },
-    desc: '嵌有深渊千年水龙宝珠，温润凝神，极大拓宽气血与法力元海！'
+    attrs: { hp: 220, matk: 38, mp: 250 },
+    resists: { phy: 10, shesheng: 10 },
+    critRate: 0.05,
+    counterShockRate: 0.06,
+    desc: '【水属性挂链】嵌有深渊千年水龙宝珠，佩戴后赋予主人五行【水】属性！极大拓宽气血与法力元海，提升抗舍生与反震率！'
   },
 
   // === 流沙河行李清缴奇珍与信物 ===
@@ -698,7 +780,7 @@ window.GAME_DATA.ITEMS = {
     icon: '🍶',
     price: 150,
     quality: 'blue',
-    desc: '猪八戒私藏在经担底下的陈年美酒，被沙和尚搜缴没收。出家人不沾荤腥，正好赠予大将军。饮用后甘醇清爽，瞬间恢复 250 点法力精力！',
+    desc: '八戒私藏陈年美酒，使用后恢复 250 点法力。',
     effect: { mp: 250 }
   },
   liusha_speed_boots: {
@@ -720,7 +802,7 @@ window.GAME_DATA.ITEMS = {
     icon: '✨',
     price: 999,
     quality: 'purple',
-    desc: '齐天大圣在八卦炉中熏出火眼金睛后，特意在傲来国订制的极品防风烟纯金假睫毛！大圣被发现后满脸通红，严令小将军绝不可外传。'
+    desc: '傲来国订制纯金防风假睫毛，大圣趣怪奇珍。'
   },
 
   // === 万寿山五庄观至宝 ===
@@ -731,7 +813,7 @@ window.GAME_DATA.ITEMS = {
     icon: '👶',
     price: 30000,
     quality: 'gold',
-    desc: '万寿山五庄观镇元大仙镇观之宝！三千年一开花，三千年一结果，闻一闻活三百六十岁，吃一个得寿四万七千年！服用后永久提升 1500 点气血上限与 800 点法力上限，并瞬间恢复全部气血与法力！',
+    desc: '五庄观人参果。永久提升 1500 气血与 800 法力上限，并补满状态。',
     effect: { hp: 99999, mp: 99999, maxHpBonus: 1500, maxMpBonus: 800 }
   },
   eq_am_hunyuan: {
@@ -755,7 +837,7 @@ window.GAME_DATA.ITEMS = {
     icon: '💊',
     price: 50000,
     quality: 'gold',
-    desc: '太上老君兜率宫以六丁神火淬炼九九八十一天的无上九转圣丹！吞服后易筋洗髓、脱胎换骨，永久提升 2000 点气血上限与 1000 点法力上限，并瞬间补满气血精力！',
+    desc: '兜率宫九转圣丹。永久提升 2000 气血与 1000 法力上限，并补满状态。',
     effect: { hp: 99999, mp: 99999, maxHpBonus: 2000, maxMpBonus: 1000 }
   },
   eq_wp_qixing: {
@@ -777,7 +859,7 @@ window.GAME_DATA.ITEMS = {
     icon: '🍶',
     price: 8888,
     quality: 'gold',
-    desc: '昆仑山下一缕仙藤结成的太玄至宝！太上老君盛丹之宝，叫人一声若敢应答，便教其神魂俱颤。金角大王落败后老君所留之法宝灵蕴信物。'
+    desc: '老君紫金红葫芦灵蕴，降伏金角后所留信物。'
   },
 
   // === 苍茫三岭支线伏魔战利与道具 ===
@@ -800,7 +882,7 @@ window.GAME_DATA.ITEMS = {
     icon: '🔮',
     price: 500,
     quality: 'blue',
-    desc: '野狐岭作恶青丘妖狐体内凝聚的妖气内丹，带有淡淡红雾，是向玄风道长复命的凭据。'
+    desc: '青丘妖狐内丹，向玄风道长复命的凭据。'
   },
   shangren_jinnang: {
     id: 'shangren_jinnang',
@@ -809,7 +891,7 @@ window.GAME_DATA.ITEMS = {
     icon: '💼',
     price: 800,
     quality: 'blue',
-    desc: '从郊狼岭恶狼利齿下夺回的过往客商行囊，记录着行商被劫的线索，向玄风道长交付可破狼患。'
+    desc: '客商失落行囊，交付玄风道长可破狼患。'
   }
 };
 

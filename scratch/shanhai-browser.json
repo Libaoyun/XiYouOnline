@@ -1,0 +1,65 @@
+{
+  "collection": {
+    "revealed": 1,
+    "cancelPreserved": true,
+    "pets": 1,
+    "survivor": true,
+    "active": 0,
+    "collected": 1,
+    "saved": true
+  },
+  "capture": {
+    "ordinaryIdentity": true,
+    "noUnselectedPet": true,
+    "captured": true,
+    "closed": true,
+    "petIsRat": true,
+    "kills": 1,
+    "collected": 1
+  },
+  "rewards": {
+    "fullPreserved": true,
+    "silver": 1,
+    "sanxian": 1,
+    "jinxian": 1,
+    "count": 50,
+    "saved": true
+  },
+  "lesson": {
+    "chooser": true,
+    "learned": true,
+    "femaleSkill": true,
+    "once": true,
+    "allocated": true,
+    "gender": "female"
+  },
+  "mobile": {
+    "fitsViewport": true,
+    "fitsScreen": true,
+    "detailOverflow": false,
+    "paused": true,
+    "rect": {
+      "x": 48.34375,
+      "y": 136.84375,
+      "width": 293.3125,
+      "height": 426
+    },
+    "viewport": {
+      "x": 39.625,
+      "y": 129.84375,
+      "width": 310.75,
+      "height": 440
+    }
+  },
+  "reload": {
+    "map": "changan_shendan",
+    "collected": 50,
+    "rewardSaved": true,
+    "learned": true,
+    "gender": "female",
+    "potential": 1,
+    "skills": 1,
+    "active": 0
+  },
+  "errors": []
+}

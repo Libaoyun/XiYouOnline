@@ -1,0 +1,28 @@
+{
+  "dialogue": {
+    "phase": "heaven_to_water_pavilion",
+    "repeated": true,
+    "reopened": true,
+    "trialCorrect": false
+  },
+  "transition": {
+    "map": "liujiacun",
+    "locked": false,
+    "overlay": "scene-transition-overlay"
+  },
+  "battle": {
+    "victory": {
+      "wins": 1,
+      "closed": true,
+      "paused": false,
+      "layer": "none"
+    },
+    "defeat": {
+      "losses": 1,
+      "closed": true,
+      "paused": false,
+      "hp": 3720
+    }
+  },
+  "errors": []
+}

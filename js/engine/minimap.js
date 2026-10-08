@@ -20,7 +20,17 @@ class MiniMapEngine {
       const activeQuestNpc = window.App2D.npcs.find(n => n.questStatus === 'available');
       if (activeQuestNpc) {
         let qDesc = `与【${activeQuestNpc.name}】对话推进主线`;
-        if (mapId === 'chentangguan') {
+        if (mapId === 'tiangong_palace') {
+          if (activeQuestNpc.id === 'npc_taibai') {
+            qDesc = (storyPhase === 'heaven_tiangong_trial') ? '凌霄宝殿听候玉帝圣旨公审发落' : '先听太白金星交代仙宴值守';
+          } else if (activeQuestNpc.id === 'npc_tianpeng') {
+            qDesc = '制止天蓬元帅调戏嫦娥仙子';
+          } else if (activeQuestNpc.id === 'npc_juanlian') {
+            qDesc = '前往凌霄殿前求情力保卷帘大将';
+          } else if (activeQuestNpc.id === 'npc_tianbing_scout') {
+            qDesc = '向南天门仙官探问花果山战局';
+          }
+        } else if (mapId === 'chentangguan') {
           if (activeQuestNpc.id === 'npc_li_jing') {
             qDesc = (storyPhase === 'chentang_hooligans_done') ? '回帅府向李靖总兵复命' :
                     (storyPhase === 'chentang_boss_defeated' ? '平定恶霸，回帅府领赏' : '晋见李靖总兵，清剿陈塘混混');
@@ -33,6 +43,7 @@ class MiniMapEngine {
           }
         }
         return {
+          npcId: activeQuestNpc.id,
           x: activeQuestNpc.x,
           y: activeQuestNpc.y,
           name: activeQuestNpc.name,
@@ -48,6 +59,14 @@ class MiniMapEngine {
       }
       if (storyPhase === 'heaven_to_water_pavilion') {
         return { x: 15 * 32, y: 12 * 32, name: '瑶池水阁', desc: '沿御道前往东侧水阁巡视' };
+      }
+      if (storyPhase === 'heaven_pantao_start') {
+        return {
+          x: 15 * 32,
+          y: 12 * 32,
+          name: '天蓬元帅',
+          desc: '制止天蓬元帅调戏嫦娥仙子'
+        };
       }
       if (storyPhase === 'heaven_to_lingxiao') {
         return { x: 22 * 32, y: 12 * 32, name: '凌霄殿前', desc: '沿东侧御道返回凌霄殿前值守' };
@@ -664,18 +683,39 @@ class MiniMapEngine {
     ctx.fillStyle = beamGrad;
     ctx.fillRect(screenX - 8, screenY - 80, 16, 90);
 
-    // 3. 悬浮跳动的醒目金色感叹号与仙道任务指引卷轴
-    const bounceY = Math.sin(this.pulseTime * 4) * 4;
-    const tagY = screenY - 72 + bounceY;
+    // 3. 悬浮跳动的醒目金色感叹号与仙道任务指引卷轴 (统一接入 QUEST_BANNER_CONFIG)
+    const bannerCfg = (typeof window !== 'undefined' && window.QUEST_BANNER_CONFIG) || {
+      FONT_SIZE: 12,
+      BOUNCE_SPEED: 2,
+      BOUNCE_RANGE: 4,
+      EXCLAMATION_SIZE: 22,
+      OFFSET_Y: 72
+    };
+
+    const bounceSpeed = bannerCfg.BOUNCE_SPEED !== undefined ? bannerCfg.BOUNCE_SPEED : 2;
+    const bounceRange = bannerCfg.BOUNCE_RANGE !== undefined ? bannerCfg.BOUNCE_RANGE : 4;
+    const offsetY = bannerCfg.OFFSET_Y !== undefined ? bannerCfg.OFFSET_Y : 72;
+    const fontSize = bannerCfg.FONT_SIZE !== undefined ? bannerCfg.FONT_SIZE : 12;
+    const excSize = bannerCfg.EXCLAMATION_SIZE !== undefined ? bannerCfg.EXCLAMATION_SIZE : 22;
+
+    // 动态起伏优化：锦帛卷轴与下方感叹号形成生动自然的微差谐波浮动 (速度倍增更灵动)
+    const bannerWave = Math.sin(this.pulseTime * bounceSpeed) * bounceRange;
+    const tagY = screenY - offsetY + bannerWave;
+
+    const excWave = Math.sin(this.pulseTime * bounceSpeed + 0.5) * (bounceRange * 1.25);
+    const excY = screenY - (offsetY - 26) + excWave;
 
     // 主线指引悬浮仙家锦帛卷轴
     const questText = `【主线】${questTarget.desc}`;
-    ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
+    ctx.font = `bold ${fontSize}px "Microsoft YaHei", sans-serif`;
     const textW = ctx.measureText(questText).width;
 
-    ctx.fillStyle = 'rgba(24, 16, 10, 0.85)';
+    // 锦帛底衬圆角胶囊 (自适应字号大小)
+    const boxH = Math.max(16, Math.round(fontSize + 6));
+    const boxRadius = Math.min(8, Math.round(boxH / 2));
+    ctx.fillStyle = 'rgba(24, 16, 10, 0.88)';
     ctx.beginPath();
-    ctx.roundRect(screenX - textW / 2 - 8, tagY - 8, textW + 16, 16, 8);
+    ctx.roundRect(screenX - textW / 2 - 8, tagY - boxH / 2, textW + 16, boxH, boxRadius);
     ctx.fill();
     ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 1;
@@ -686,12 +726,71 @@ class MiniMapEngine {
     ctx.textBaseline = 'middle';
     ctx.fillText(questText, screenX, tagY);
 
-    // 锦帛下方的任务灵符感叹号
-    ctx.fillStyle = '#ffd700';
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur = 8;
-    ctx.font = 'bold 18px "Microsoft YaHei", sans-serif';
-    ctx.fillText('！', screenX, screenY - 48 + bounceY);
+    // 锦帛与感叹号之间的仙家灵力金虚线纽带
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(screenX, tagY + boxH / 2);
+    ctx.lineTo(screenX, excY - 14);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 锦帛下方的华丽任务灵符金色感叹号
+    const excGlow = ctx.createRadialGradient(screenX, excY - 3, 2, screenX, excY - 3, 20);
+    excGlow.addColorStop(0, 'rgba(255, 235, 120, 0.85)');
+    excGlow.addColorStop(0.5, 'rgba(255, 180, 0, 0.45)');
+    excGlow.addColorStop(1, 'rgba(255, 140, 0, 0)');
+    ctx.fillStyle = excGlow;
+    ctx.beginPath();
+    ctx.arc(screenX, excY - 3, 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 优雅金色倒三角令符徽宝底托 (几何严格对称，宽32高32黄金比例)
+    const bHalfW = 16;
+    const bTopH = 15;
+    const bBottomH = 17;
+
+    ctx.beginPath();
+    ctx.moveTo(screenX, excY + bBottomH);
+    ctx.lineTo(screenX + bHalfW, excY - bTopH);
+    ctx.lineTo(screenX - bHalfW, excY - bTopH);
+    ctx.closePath();
+    const bGrad = ctx.createLinearGradient(screenX, excY - bTopH, screenX, excY + bBottomH);
+    bGrad.addColorStop(0, 'rgba(52, 28, 8, 0.95)');
+    bGrad.addColorStop(0.5, 'rgba(25, 12, 4, 0.98)');
+    bGrad.addColorStop(1, 'rgba(48, 22, 6, 0.95)');
+    ctx.fillStyle = bGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 内层流光金边 (精致双重边框)
+    ctx.beginPath();
+    ctx.moveTo(screenX, excY + bBottomH - 4);
+    ctx.lineTo(screenX + bHalfW - 3.5, excY - bTopH + 2.5);
+    ctx.lineTo(screenX - bHalfW + 3.5, excY - bTopH + 2.5);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255, 235, 120, 0.55)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 醒目金色感叹号文本 (置于倒三角框内部正中，完美消除顶部溢出与底部空洞)
+    const tCenterY = excY + 1.2;
+    ctx.font = `900 ${Math.min(18, excSize)}px "Arial Black", "Microsoft YaHei", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#220e02';
+    ctx.lineWidth = 3.5;
+    ctx.strokeText('！', screenX, tCenterY);
+
+    const tGrad = ctx.createLinearGradient(screenX, tCenterY - 10, screenX, tCenterY + 10);
+    tGrad.addColorStop(0, '#ffffff');
+    tGrad.addColorStop(0.35, '#fffa65');
+    tGrad.addColorStop(1, '#ff9f1a');
+    ctx.fillStyle = tGrad;
+    ctx.fillText('！', screenX, tCenterY);
 
     ctx.restore();
   }

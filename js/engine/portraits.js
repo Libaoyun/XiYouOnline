@@ -100,8 +100,45 @@ class MasterPortraitEngine {
       'shuo_shu': 'rat',
       'giant_rat': 'rat',
       'pet_snake': 'snake',
-      'huangfeng': 'huangfeng_guai'
+      'huangfeng': 'huangfeng_guai',
+      // 猿猴大类
+      'yuanhou_jiang': 'yuanhou_jiang',
+      'yuanhou_bing': 'yuanhou_bing',
+      'yuanhou': 'yuanhou',
+      // 猕猴大类
+      'mihou_jiang': 'mihou_jiang',
+      'mihou_bing': 'mihou_bing',
+      'mihou': 'mihou',
+      // 树精大类
+      'kushu_jing': 'kushu_jing',
+      'shuyao': 'shuyao',
+      // 青蛇/蛇妖大类
+      'xiaohua_she': 'xiaohua_she',
+      'sheyao': 'sheyao',
+      // 狼妖/野狼大类
+      'wolf_wild': 'wolf_wild',
+      'shanlang': 'wolf_wild',
+      'langyao': 'langyao'
     };
+    this.customMonsterImages = {
+      'yuanhou_jiang': 'assets/monsters/yuanhou_jiang.jpg',
+      'yuanhou_bing': 'assets/monsters/yuanhou_jiang.jpg',
+      'yuanhou': 'assets/monsters/yuanhou_jiang.jpg',
+      'mihou_jiang': 'assets/monsters/mihou_jiang.jpg',
+      'mihou_bing': 'assets/monsters/mihou_jiang.jpg',
+      'mihou': 'assets/monsters/mihou_jiang.jpg',
+      'kushu_jing': 'assets/monsters/kushu_jing.jpg',
+      'shuyao': 'assets/monsters/shuyao.svg',
+      'tree': 'assets/monsters/kushu_jing.jpg',
+      'xiaohua_she': 'assets/monsters/xiaohua_she.svg',
+      'sheyao': 'assets/monsters/sheyao.svg',
+      'snake': 'assets/monsters/xiaohua_she.svg',
+      'wolf_wild': 'assets/monsters/wolf_wild.svg',
+      'shanlang': 'assets/monsters/wolf_wild.svg',
+      'langyao': 'assets/monsters/langyao.svg',
+      'wolf': 'assets/monsters/wolf_wild.svg'
+    };
+    if (typeof window !== 'undefined') window.MonsterArtMap = this.customMonsterImages;
     this.modelPortraits = { dragon_king: 'aoguang', xiaobailong: 'xiaobailong',
       hu_xianfeng: 'hu_xianfeng', bull_demon: 'bull_demon', honghaier: 'honghaier',
       jinchi_elder: 'jinchi_elder', jinjiao: 'jinjiao', yinjiao: 'yinjiao',
@@ -127,8 +164,13 @@ class MasterPortraitEngine {
       'cha_apo', 'fisherman', 'nezha', 'lijing', 'change', 'juanlian', 'taibai',
       'zhu_bajie', 'sha_wujing', 'panda_hero', 'baigu_jing', 'huangpao_guai',
       'huangfeng_guai',
+      'yuanhou_jiang', 'yuanhou_bing', 'yuanhou',
+      'mihou_jiang', 'mihou_bing', 'mihou',
+      'kushu_jing', 'shuyao',
+      'xiaohua_she', 'sheyao',
+      'wolf_wild', 'shanlang', 'langyao',
       'wolf', 'rat', 'changan_hawker', 'changan_child', 'xuanzang', 'puti_zushi',
-      'qixiannv', 'liuboqin'].includes(s)) return s;
+      'qixiannv', 'liuboqin', 'rulai'].includes(s)) return s;
 
     // 优先映射表匹配
     if (this.roleIdAliases[s]) return this.roleIdAliases[s];
@@ -203,6 +245,14 @@ class MasterPortraitEngine {
 
   // 兼容原有接口，输出纯净的 <img> 标签或高清图像
   getPortraitSvg(roleId, size = 64, options = {}) {
+    const normId = this.normalizeRoleId(roleId, options.title);
+    const customImg = (this.customMonsterImages && (this.customMonsterImages[normId] || this.customMonsterImages[roleId]));
+    if (customImg) {
+      const border = options.noBorder ? 'none' : '2.5px solid #ffd700';
+      const shadow = options.noShadow ? 'none' : '0 4px 14px rgba(0,0,0,0.85), inset 0 0 10px rgba(255,215,0,0.4)';
+      const fit = options.fit || 'cover';
+      return `<img src="${customImg}" width="${size}" height="${size}" class="master-game-avatar" style="display:block;border-radius:50%;border:${border};box-shadow:${shadow};object-fit:${fit};background:#09090b;" alt="${roleId}">`;
+    }
     const dataUrl = this.getAvatarDataUrl(roleId, size, options);
     const border = options.noBorder ? 'none' : '2.5px solid #ffd700';
     const shadow = options.noShadow ? 'none' : '0 4px 14px rgba(0,0,0,0.85), inset 0 0 10px rgba(255,215,0,0.4)';
@@ -343,6 +393,35 @@ class MasterPortraitEngine {
     }
 
     switch (roleId) {
+      case 'rulai': {
+        // 螺发、白毫、赭红袈裟；佛祖不复用观音冠饰白衣。
+        ctx.strokeStyle = '#d4a74b'; ctx.lineWidth = 1.4 * s;
+        ctx.beginPath(); ctx.arc(cx, cy - 4 * s, 25 * s, 0, Math.PI * 2); ctx.stroke();
+        const robe = ctx.createLinearGradient(cx - 20 * s, cy, cx + 20 * s, cy + 30 * s);
+        robe.addColorStop(0, '#ba5429'); robe.addColorStop(0.5, '#823523'); robe.addColorStop(1, '#4b211e');
+        ctx.fillStyle = robe;
+        ctx.beginPath(); ctx.moveTo(cx, cy + 4 * s);
+        ctx.bezierCurveTo(cx - 16 * s, cy + 6 * s, cx - 25 * s, cy + 24 * s, cx - 24 * s, cy + 31 * s);
+        ctx.lineTo(cx + 24 * s, cy + 31 * s);
+        ctx.bezierCurveTo(cx + 24 * s, cy + 16 * s, cx + 12 * s, cy + 4 * s, cx, cy + 4 * s); ctx.fill();
+        ctx.strokeStyle = '#e6bc6b'; ctx.lineWidth = 1.5 * s;
+        ctx.beginPath(); ctx.moveTo(cx + 12 * s, cy + 9 * s);
+        ctx.quadraticCurveTo(cx + 3 * s, cy + 18 * s, cx - 16 * s, cy + 29 * s); ctx.stroke();
+        ctx.fillStyle = '#d9b47b';
+        ctx.beginPath(); ctx.ellipse(cx, cy - 2 * s, 12 * s, 16 * s, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#262638';
+        for (let row = 0; row < 4; row++) for (let col = 0; col < 6; col++) {
+          ctx.beginPath(); ctx.arc(cx + (col - 2.5) * 3.6 * s, cy - (14 + row * 3.2) * s, 2.2 * s, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = '#634c3b'; ctx.lineWidth = 0.9 * s;
+        for (const side of [-1, 1]) {
+          ctx.beginPath(); ctx.moveTo(cx + side * 3 * s, cy - 3 * s);
+          ctx.quadraticCurveTo(cx + side * 6 * s, cy - 1 * s, cx + side * 9 * s, cy - 3 * s); ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(cx, cy + 7 * s, 4 * s, 0.15, Math.PI - 0.15); ctx.stroke();
+        ctx.fillStyle = '#fff3bf'; ctx.beginPath(); ctx.arc(cx, cy - 8 * s, 1.5 * s, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
       // =========================================================================
       // 1. 威灵显赫大将军 (朱雀双翼金盔、冲天战翎长红缨、纯金锁子甲、八卦护心镜)
       // =========================================================================

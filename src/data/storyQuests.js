@@ -35,11 +35,23 @@ export const STORY_DIALOGUES = {
         speaker: '御马监监副',
         speakerTitle: '【仙厩典事】',
         speakerIcon: '🐎',
-        text: '下官参见将军！天马通灵，只要常以银两仙露训练驯化，坐骑等级便可飞速提升，为将军带来更浑厚的气血生命与攻击力加成！',
+        text: '下官参见将军！御马监备有金刚【龙马】、神仙【飞剑】、妖魔【狮子】三大专属坐骑，常加驯化可大增属性。',
         options: [
           {
-            text: '【打开坐骑驯化与进阶面板】',
+            text: '挑选门派坐骑',
+            action: (ctx) => ctx.showChooseMountModal?.()
+          },
+          {
+            text: '坐骑驯化',
             action: (ctx) => ctx.openMountModal()
+          },
+          {
+            text: '前往蟠桃园',
+            action: (ctx) => ctx.loadMap?.('tiangong_pantao', { x: 64, y: 448 })
+          },
+          {
+            text: '返回刘家村',
+            action: (ctx) => ctx.loadMap?.('liujiacun', { x: 23 * 32, y: 10 * 32 })
           }
         ]
       }
@@ -52,17 +64,64 @@ export const STORY_DIALOGUES = {
         speaker: '蟠桃园土地',
         speakerTitle: '【瑶池地仙】',
         speakerIcon: '👴',
-        text: '小神参见威灵大将军！这蟠桃园共有三千六百株仙树：前面一千二百株，三千年一熟，人吃了成仙了道；中间一千二百株，六千年一熟，人吃了霞举飞升长生不老；后面一千二百株，九千年一熟，人吃了与天地齐寿！'
+        text: '小神参见上仙。园中仙桃已熟，靠近仙树即可采摘提升道行。'
       },
       {
         speaker: '蟠桃园土地',
         speakerTitle: '【瑶池地仙】',
         speakerIcon: '👴',
-        text: '天庭有例，上仙每日皆可在此免费采摘三次蟠桃！仙果灵气灌体，可获海量修为经验，将军速速品尝！',
+        text: '少侠若要离园，小神可施展遁法送少侠前往御马监或返回凡尘。',
         options: [
           {
-            text: '【采摘品尝蟠桃，飞速提升等级】',
-            action: (ctx) => ctx.openPeachModal()
+            text: '返回',
+            action: (ctx) => ctx.teleportFromPeachGarden?.('previous') || ctx.loadMap?.('liujiacun', { x: 23 * 32, y: 10 * 32 })
+          },
+          {
+            text: '返回刘家村',
+            action: (ctx) => ctx.teleportFromPeachGarden?.('liujiacun') || ctx.loadMap?.('liujiacun', { x: 23 * 32, y: 10 * 32 })
+          },
+          {
+            text: '返回居住地',
+            action: (ctx) => ctx.teleportToResidence?.()
+          },
+          {
+            text: '前往御马监',
+            action: (ctx) => ctx.loadMap?.('tiangong_yuma', { x: 10 * 32, y: 15 * 32 })
+          }
+        ]
+      }
+    ]
+  },
+
+  liujia_tudi_talk: {
+    steps: [
+      {
+        speaker: '刘家村土地神',
+        speakerTitle: '【两界山地仙】',
+        speakerIcon: '🌿',
+        text: '少侠初临凡尘，小神在此指点修行要领。'
+      },
+      {
+        speaker: '刘家村土地神',
+        speakerTitle: '【两界山地仙】',
+        speakerIcon: '🌿',
+        text: '每日去【蟠桃园】可吃桃大增经验；亦可去【御马监】选门派专属坐骑（龙马/飞剑/狮子）。',
+        options: [
+          {
+            text: '前往蟠桃园',
+            action: (ctx) => ctx.loadMap?.('tiangong_pantao', { x: 10 * 32, y: 12 * 32 })
+          },
+          {
+            text: '前往御马监',
+            action: (ctx) => ctx.loadMap?.('tiangong_yuma', { x: 10 * 32, y: 15 * 32 })
+          },
+          {
+            text: '返回居住地',
+            action: (ctx) => ctx.teleportToResidence?.()
+          },
+          {
+            text: '打听地势',
+            action: (ctx) => ctx.showMessage?.('🌿 土地公：“左侧是五行山与鹰愁涧，右侧是大唐长安盛京，南边乃是陈塘关与东海浩瀚碧波！”')
           }
         ]
       }

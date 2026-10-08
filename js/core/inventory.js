@@ -96,6 +96,21 @@ class Inventory {
     return true;
   }
 
+  // 在副本中尝试整批入包，全部成功才提交；失败不留下部分物品。
+  addItemsAtomically(items = []) {
+    if (!Array.isArray(items) || items.some(item => !item || !window.GAME_DATA.ITEMS[item.itemId] ||
+      !Number.isSafeInteger(item.count) || item.count <= 0)) {
+      return { success: false, reason: 'invalid_items' };
+    }
+    const draft = new Inventory(this.slots.map(slot => ({ ...slot })));
+    draft.maxSlots = this.maxSlots;
+    for (const item of items) {
+      if (!draft.addItem(item.itemId, item.count)) return { success: false, reason: 'inventory_full' };
+    }
+    this.slots = draft.slots;
+    return { success: true };
+  }
+
   // 扣减指定物品
   removeItem(itemId, count = 1) {
     if (this.getItemCount(itemId) < count) return false;
@@ -167,17 +182,34 @@ class Inventory {
       }
 
       // 永久气血与法力上限提升 (如人参果)
+      if (item.effect.maxHpBonus || item.effect.maxMpBonus) {
+        player.storyBonuses = player.storyBonuses || { hp: 0, mp: 0, def: 0, mdef: 0 };
+      }
       if (item.effect.maxHpBonus) {
+        player.storyBonuses.hp = (player.storyBonuses.hp || 0) + item.effect.maxHpBonus;
         player.maxHp = (player.maxHp || 100) + item.effect.maxHpBonus;
         player.hp = player.maxHp;
         msgs.push(`气血上限永久提升 ${item.effect.maxHpBonus} 点`);
         effectApplied = true;
       }
       if (item.effect.maxMpBonus) {
+        player.storyBonuses.mp = (player.storyBonuses.mp || 0) + item.effect.maxMpBonus;
         player.maxMp = (player.maxMp || 50) + item.effect.maxMpBonus;
         player.mp = player.maxMp;
         msgs.push(`法力上限永久提升 ${item.effect.maxMpBonus} 点`);
         effectApplied = true;
+      }
+
+      // 天赋丹：必须指定一只金仙仙宠，永久增加元神天赋点
+      if (item.effect.talentPoints) {
+        if (item.effect.target === 'jinxian_pet' && (!currentPet || currentPet.quality !== 'jinxian')) {
+          return { success: false, msg: '【天赋丹】必须喂给【金仙】品阶仙宠，且需先在仙宠界面选为出战仙宠。' };
+        }
+        const used = window.PetSystem.useTalentPill(currentPet);
+        if (!used.success) return { success: false, msg: used.msg };
+        this.removeItem(slot.itemId, 1);
+        if (window.Sound) window.Sound.playSuccess();
+        return { success: true, msg: used.msg };
       }
 
       // 飞行符瞬移

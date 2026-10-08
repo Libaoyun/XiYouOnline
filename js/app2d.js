@@ -9,6 +9,77 @@
  * 6. 天庭御马监坐骑培养与蟠桃胜境吃桃升级
  */
 
+/**
+ * ============================================================================
+ * 🎮 游戏全局移动速度数值配置 (GAME_SPEED_CONFIG)
+ * ----------------------------------------------------------------------------
+ * 集中管理玩家与野怪的基础移动速度，可直接在此处修改数值快速调控游戏节奏：
+ * - PLAYER_MORTAL_SPEED: 凡尘主角基础移速 (默认: 3.8)
+ * - PLAYER_HEAVEN_SPEED: 序章天界金甲大将军基础移速 (默认: 4.2)
+ * - WATER_SPEED_MULTIPLIER: 水下场景 (水晶宫/龙宫/东海之滨) 辟水神诀推力倍率 (默认: 1.15，即 +15%)
+ * - DEFAULT_MONSTER_SPEED: 绝大多数常规野怪巡逻漫步移速 (默认: 1.12)
+ * ============================================================================
+ */
+const GAME_SPEED_CONFIG = {
+  PLAYER_MORTAL_SPEED: 2.0,      // 凡尘主角基础移速 (直接在此修改生效)
+  PLAYER_HEAVEN_SPEED: 2.6,      // 序章天界金甲大将军基础移速 (直接在此修改生效)
+  WATER_SPEED_MULTIPLIER: 1.15,  // 东海/龙宫水底辟水神诀推力加成倍率 (直接在此修改生效)
+  DEFAULT_MONSTER_SPEED: 1.12    // 绝大多数常规野怪巡逻漫步移速 (直接在此修改生效)
+};
+
+if (typeof window !== 'undefined') {
+  window.GAME_SPEED_CONFIG = GAME_SPEED_CONFIG;
+  window.GAME_DATA = window.GAME_DATA || {};
+  window.GAME_DATA.SPEED_CONFIG = GAME_SPEED_CONFIG;
+}
+
+/**
+ * ============================================================================
+ * 📜 大世界任务悬浮动态文字与提示配置 (QUEST_BANNER_CONFIG)
+ * ----------------------------------------------------------------------------
+ * 统一入口：可在此直接修改大世界【主线】任务悬浮文字大小、弹跳速度与弹跳范围：
+ * - FONT_SIZE: 任务描述文字大小 (单位: px，默认: 10)
+ * - BOUNCE_SPEED: 弹跳速度/频率倍率 (数值越大跳跃越频繁，默认: 4)
+ * - BOUNCE_RANGE: 弹跳范围/幅度 (单位: px，数值越大起伏越大，默认: 4)
+ * - EXCLAMATION_SIZE: 任务感叹号【！】大小 (单位: px，默认: 18)
+ * - OFFSET_Y: 距离目标头顶基准悬浮高度 (单位: px，默认: 72)
+ *
+ * 场景内NPC与采集物交互气泡 (如 💬空格交谈 / 🍄空格采摘)：
+ * - BUBBLE_FONT_SIZE: 交互气泡文字大小 (单位: px，默认: 11)
+ * - BUBBLE_BOUNCE_SPEED: 交互气泡弹跳周期 (单位: ms，越小跳得越快，默认: 180)
+ * - BUBBLE_BOUNCE_RANGE: 交互气泡弹跳范围 (单位: px，默认: 2.5)
+ * - BUBBLE_OFFSET_Y: 交互气泡向上偏移高度 (单位: px，默认: 22，置于顶层绝不遮挡)
+ *
+ * 角色/NPC/野怪头顶名称与头衔称号 (字号统一在此配置与修改)：
+ * - NAME_FONT_SIZE: 玩家、NPC、野怪头顶名称字号 (单位: px，默认: 12)
+ * - TITLE_FONT_SIZE: 专属头衔称号字号 (如【镇山太保】，单位: px，默认: 11)
+ * ============================================================================
+ */
+const QUEST_BANNER_CONFIG = {
+  // 1. 【主线】大世界任务悬浮卷轴 (如：【主线】向刘伯钦交付新鲜青蘑菇下锅)
+  FONT_SIZE: 12,             // 任务描述文字大小 (px，可直接修改)
+  BOUNCE_SPEED: 2,           // 弹跳速度/频率倍率 (加速1倍，原1->2，越大跳得越快)
+  BOUNCE_RANGE: 4,           // 弹跳范围/起伏幅度 (px，可直接修改，越大起伏越大)
+  EXCLAMATION_SIZE: 22,      // 任务感叹号【！】基准配置字号 (px，默认22)
+  OFFSET_Y: 72,              // 悬浮距离目标垂直基准高度 (px，可直接修改)
+
+  // 2. 角色/NPC/野怪头顶名称与头衔称号 (统一在此处配置与修改字号，+1px)
+  NAME_FONT_SIZE: 13,        // 玩家、NPC、野怪头顶名称字号 (px，默认: 13，字号大1px)
+  TITLE_FONT_SIZE: 12,       // 专属头衔称号字号 (如【镇山太保】，px，默认: 12，字号大1px)
+
+  // 3. 场景NPC与物品交互提示气泡 (如：💬 空格交谈 / 🍄 空格采摘)
+  BUBBLE_FONT_SIZE: 11,      // 交互气泡文字大小 (px，可直接修改)
+  BUBBLE_BOUNCE_SPEED: 90,   // 交互气泡弹跳速度周期 (ms，加速1倍，原180->90跳动更灵动)
+  BUBBLE_BOUNCE_RANGE: 2.5,  // 交互气泡弹跳范围 (px，数值越大起伏越大)
+  BUBBLE_OFFSET_Y: 22        // 交互气泡垂直向上偏移量 (置于顶层，彻底杜绝遮挡)
+};
+
+if (typeof window !== 'undefined') {
+  window.QUEST_BANNER_CONFIG = QUEST_BANNER_CONFIG;
+  window.GAME_DATA = window.GAME_DATA || {};
+  window.GAME_DATA.QUEST_BANNER_CONFIG = QUEST_BANNER_CONFIG;
+}
+
 class GameApp2D {
   constructor() {
     this.canvas = null;
@@ -33,12 +104,13 @@ class GameApp2D {
       silver: 15000,
       appearance: 'heaven_general'
     }) : null;
+    this.speedConfig = GAME_SPEED_CONFIG;
     this.playerChar = (typeof window !== 'undefined' && window.Character) ? new window.Character({
       id: 'player',
       name: '威灵大将',
       type: 'player',
       appearance: 'heaven_general',
-      speed: 3.2
+      speed: GAME_SPEED_CONFIG.PLAYER_HEAVEN_SPEED
     }) : null;
     this.inventory = null;
 
@@ -134,14 +206,19 @@ class GameApp2D {
     // 初始化已播放章节记录
     this.initShownChapterSet();
 
-    // 1. 初始化玩家数据 (序章：九重天阙威灵大将军开局)
+    // 1. 初始化玩家数据 (序章：九重天阙威灵大将军开局，威灵大将作为50级神将配备3级技能)
     this.playerData = new window.Player({
       name: '威灵大将',
       classId: 'jingang',
       gender: 'male',
       level: 50,
       silver: 15000,
-      appearance: 'heaven_general'
+      appearance: 'heaven_general',
+      skills: [
+        { id: 'sk_jg_foguang', name: '佛光普照', genderReq: 'male', level: 3, mastery: 3000, maxLevel: 5, icon: '✨', desc: '男金刚专属单体玄击！造成【伤害基数 + 敌方当前生命百分比】伤害，并扣除【敌方当前法力百分比】！' },
+        { id: 'sk_jg_shesheng', name: '舍生取义', genderReq: 'all', level: 3, mastery: 3000, maxLevel: 5, icon: '⚔️', desc: '金刚核心神技！以自身气血反噬换取绝杀技能伤害！' },
+        { id: 'sk_jg_huti', name: '金刚护体', genderReq: 'all', level: 3, mastery: 3000, maxLevel: 5, icon: '🛡️', desc: '召唤罗汉金身护持队友，同时大幅提升物理防御与法术抗性！' }
+      ]
     });
 
     this.inventory = new window.Inventory([
@@ -204,7 +281,7 @@ class GameApp2D {
       name: this.playerData.name,
       type: 'player',
       appearance: 'heaven_general',
-      speed: 3.2
+      speed: GAME_SPEED_CONFIG.PLAYER_HEAVEN_SPEED
     });
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -341,7 +418,7 @@ class GameApp2D {
         }
         const mob1 = { id: 'mob_sanxian_2', name: '通臂灵猿', level: 25, spd: 45, hp: 1500, maxHp: 1500, quality: 'sanxian', isBoss: false };
         const mob2 = { id: 'mob_wild_1', name: '巡山野猪怪', level: 20, spd: 38, hp: 900, maxHp: 900, quality: 'ordinary', isBoss: false };
-        this.start2DBattle([mob1, mob2], () => {});
+        this.start2DBattle([mob1, mob2], () => { });
       }, 50);
     } else if (testCombat === 'features') {
       setTimeout(() => {
@@ -359,7 +436,7 @@ class GameApp2D {
         const mob1 = { id: 'mob_clam_1', name: '灵河巨蚌', level: 22, spd: 35, hp: 1200, maxHp: 1200, quality: 'ordinary', isBoss: false };
         const mob2 = { id: 'mob_shrimp_1', name: '巡海虾兵', level: 25, spd: 55, hp: 1400, maxHp: 1400, quality: 'ordinary', isBoss: false };
         const mob3 = { id: 'mob_snake_1', name: '盘石玄蛇', level: 24, spd: 60, hp: 1100, maxHp: 1100, quality: 'sanxian', isBoss: false };
-        this.start2DBattle([mob1, mob2, mob3], () => {});
+        this.start2DBattle([mob1, mob2, mob3], () => { });
       }, 50);
     } else if (testCombat === 'ready') {
       setTimeout(() => {
@@ -374,7 +451,7 @@ class GameApp2D {
         }
         const mob1 = { id: 'mob_clam_1', name: '灵河巨蚌', level: 22, spd: 35, hp: 1200, maxHp: 1200, quality: 'ordinary', isBoss: false };
         const mob2 = { id: 'mob_shrimp_1', name: '巡海虾兵', level: 25, spd: 55, hp: 1400, maxHp: 1400, quality: 'ordinary', isBoss: false };
-        this.start2DBattle([mob1, mob2], () => {});
+        this.start2DBattle([mob1, mob2], () => { });
         setTimeout(() => {
           if (this.currentBattle && this.currentBattle.allies && this.currentBattle.allies[0]) {
             this.confirmCurrentAllyAction(this.currentBattle.allies[0].id, { type: 'attack', target: 0 });
@@ -393,7 +470,7 @@ class GameApp2D {
         const mob1 = { id: 'mob_rat_1', name: '五行硕鼠', level: 20, spd: 35, hp: 1100, maxHp: 1100, quality: 'ordinary', isBoss: false };
         const mob2 = { id: 'mob_snake_1', name: '青花小蛇', level: 22, spd: 48, hp: 980, maxHp: 980, quality: 'ordinary', isBoss: false };
         const mob3 = { id: 'mob_fox_1', name: '赤尾野狐', level: 25, spd: 55, hp: 1400, maxHp: 1400, quality: 'sanxian', isBoss: false };
-        this.start2DBattle([mob1, mob2, mob3], () => {});
+        this.start2DBattle([mob1, mob2, mob3], () => { });
         setTimeout(() => {
           this.activeSelectedAllyId = 'player';
           this.isSelectingTarget = false;
@@ -412,7 +489,7 @@ class GameApp2D {
         this.activeCombatPets = [...this.pets];
         const mob1 = { id: 'mob_rat_1', name: '五行硕鼠', level: 20, spd: 35, hp: 1100, maxHp: 1100, quality: 'ordinary', isBoss: false };
         const mob2 = { id: 'mob_snake_1', name: '青花小蛇', level: 22, spd: 48, hp: 980, maxHp: 980, quality: 'ordinary', isBoss: false };
-        this.start2DBattle([mob1, mob2], () => {});
+        this.start2DBattle([mob1, mob2], () => { });
         setTimeout(() => {
           this.activeSelectedAllyId = 'player';
           this.chooseCombatAction('attack');
@@ -422,14 +499,14 @@ class GameApp2D {
       setTimeout(() => {
         if (!this.playerChar) this.playerChar = { appearance: 'heaven_general' };
         const mob1 = { id: 'mob_fox_1', name: '赤尾野狐', level: 25, spd: 55, hp: 1400, maxHp: 1400, quality: 'sanxian', isBoss: false };
-        this.start2DBattle([mob1], () => {});
+        this.start2DBattle([mob1], () => { });
         setTimeout(() => {
           this.showConfirmModal({
             title: '招降仙宠',
             content: '确定要尝试招降野生仙兽【赤尾野狐】吗？<br><span style="color:#f59e0b;font-size:12px;">（需要消耗 1 回合行动，品质越高成功率受资质影响）</span>',
             confirmText: '确定招降',
             cancelText: '放弃',
-            onConfirm: () => {}
+            onConfirm: () => { }
           });
         }, 200);
       }, 50);
@@ -471,25 +548,30 @@ class GameApp2D {
   // 自动存档与断点续玩体系 (绝不让玩家进度丢失)
   // =========================================================================
   saveAutoProgress() {
-    if (!this.playerData || !this.playerChar) return;
+    if (!this.playerData || !this.playerChar) return { success: false };
     try {
       const state = {
-        mapId: this.currentMapId,
+        mapId: this._mapDestination?.mapId || this.currentMapId,
         playerPos: {
-          x: Math.round(this.playerChar.x),
-          y: Math.round(this.playerChar.y),
+          x: Math.round(this._mapDestination?.spawn.x ?? this.playerChar.x),
+          y: Math.round(this._mapDestination?.spawn.y ?? this.playerChar.y),
           direction: this.playerChar.direction
         },
         storyPhase: this.storyPhase,
+        pendingStoryDialogue: this._pendingStoryDialogue || this._activeStoryDialogue || null,
         playerAppearance: this.playerChar.appearance,
         playerData: {
           name: this.playerData.name,
           level: this.playerData.level,
           exp: this.playerData.exp,
           silver: this.playerData.silver,
+          ingots: this.playerData.ingots,
           bankSilver: this.playerData.bankSilver || 0,
           homeResidence: this.playerData.homeResidence || null,
           classId: this.playerData.classId,
+          gender: this.playerData.gender,
+          appearance: this.playerData.appearance,
+          skills: this.playerData.skills,
           title: this.playerData.title,
           hp: this.playerData.hp,
           maxHp: this.playerData.maxHp,
@@ -498,10 +580,14 @@ class GameApp2D {
           potentialPoints: this.playerData.potentialPoints || 0,
           attributes: this.playerData.attributes,
           equipment: this.playerData.equipment,
-          resistances: this.playerData.resistances
+          resistances: this.playerData.resistances,
+          storyRewards: this.playerData.storyRewards,
+          storyBonuses: this.playerData.storyBonuses,
+          sideQuests: this.playerData.sideQuests
         },
         inventorySlots: this.inventory ? this.inventory.slots : [],
         pets: this.pets || [],
+        shanhai: this.getShanhai().toJSON(),
         activeCombatPetIds: (this.activeCombatPets || []).map(p => p.instanceId),
         mountState: {
           mounts: this.mountSystem.mounts,
@@ -516,13 +602,22 @@ class GameApp2D {
         shownChapters: Array.from(this.shownChapterSet || []),
         questKills: this.questKills || { mushrooms: 0, trees: 0, rats: 0 }
       };
-      if (window.SaveManager) {
-        window.SaveManager.saveGameFullState(state);
-      }
-      this.updateSaveIndicator(true);
+      const result = (window.SaveManager && window.SaveManager.saveGameFullState(state)) || { success: false };
+      this.updateSaveIndicator(result.success === true);
+      return result;
     } catch (e) {
       console.error('自动保存异常:', e);
+      this.updateSaveIndicator(false);
+      return { success: false };
     }
+  }
+
+  saveManualProgress() {
+    const result = this.saveAutoProgress();
+    const success = result?.success === true;
+    window.showGameMessage(success ? '💾 历练进度已手动保存！' : '存档未成功，请检查浏览器存储后重试。',
+      success ? 'success' : 'warning');
+    return result;
   }
 
   loadAutoSavedProgress() {
@@ -531,6 +626,7 @@ class GameApp2D {
     if (!state || !state.mapId) return false;
 
     try {
+      this.shanhai = new window.ShanhaiSystem(state.shanhai || {});
       if (state.shownChapters && Array.isArray(state.shownChapters)) {
         this.shownChapterSet = new Set(state.shownChapters);
       }
@@ -557,6 +653,11 @@ class GameApp2D {
       }
       if (state.pets && Array.isArray(state.pets)) {
         this.pets = state.pets;
+        for (const pet of this.pets) {
+          pet.gender = pet.gender || window.GAME_DATA.PETS[pet.templateId]?.gender || 'male';
+          pet.masterLessonLearned = !!(pet.masterLessonLearned || pet.skills?.length || pet.classId);
+          this.shanhai.observe(pet);
+        }
         const activeIds = state.activeCombatPetIds || [];
         this.activeCombatPets = this.pets.filter(p => activeIds.includes(p.instanceId));
       }
@@ -567,13 +668,17 @@ class GameApp2D {
       }
       if (state.storyPhase && state.storyPhase.startsWith('heaven_')) {
         this.companions = [];
-        this.pets = [];
-        this.activeCombatPets = [];
       } else if (state.companions) {
         this.companions = state.companions;
       }
       if (state.storyPhase) {
         this.storyPhase = state.storyPhase;
+      }
+      // 旧档只根据明确的完成状态补领取键，不猜测已消耗的丹药或可选心经。
+      this.playerData.storyRewards = this.playerData.storyRewards || {};
+      if (state.storyPhase === 'pingding_cleared') this.playerData.storyRewards.pingding_laojun = true;
+      if (this.playerData.sideQuests?.sq_sanling_demon?.step === 'done') {
+        this.playerData.storyRewards.sanling_completion = true;
       }
       if (state.playerAppearance) {
         this.playerChar.appearance = state.playerAppearance;
@@ -588,7 +693,15 @@ class GameApp2D {
         const safe = this.ensurePlayerSafePosition(targetMap, spawn.x, spawn.y);
         spawn = { x: safe.x, y: safe.y, direction: spawn.direction || 'down' };
       }
-      this.loadMap(targetMap, spawn);
+      const checkpoint = state.pendingStoryDialogue;
+      this.loadMap(targetMap, spawn, {
+        onComplete: () => {
+          if (checkpoint && checkpoint.mapId === this.currentMapId && checkpoint.phase === this.storyPhase &&
+            window.GAME_DATA.STORY_DIALOGUES[checkpoint.key]) {
+            this.scheduleStoryDialogue(checkpoint.key, 0);
+          }
+        }
+      });
       if (spawn && spawn.direction) {
         this.playerChar.direction = spawn.direction;
       }
@@ -609,6 +722,7 @@ class GameApp2D {
     if (el) {
       el.innerHTML = isSaved ? '●' : '⏳';
       el.style.color = isSaved ? '#2ed573' : '#ffd700';
+      el.title = isSaved ? '进度已保存' : '进度尚未保存成功，请尝试手动存档';
     }
   }
 
@@ -729,6 +843,11 @@ class GameApp2D {
           this.playerData.name = '威灵大将';
           this.playerData.level = 50;
           this.playerData.appearance = 'heaven_general';
+          this.playerData.skills = [
+            { id: 'sk_jg_foguang', name: '佛光普照', genderReq: 'male', level: 3, mastery: 3000, maxLevel: 5, icon: '✨', desc: '男金刚专属单体玄击！造成【伤害基数 + 敌方当前生命百分比】伤害，并扣除【敌方当前法力百分比】！' },
+            { id: 'sk_jg_shesheng', name: '舍生取义', genderReq: 'all', level: 3, mastery: 3000, maxLevel: 5, icon: '⚔️', desc: '金刚核心神技！以自身气血反噬换取绝杀技能伤害！' },
+            { id: 'sk_jg_huti', name: '金刚护体', genderReq: 'all', level: 3, mastery: 3000, maxLevel: 5, icon: '🛡️', desc: '召唤罗汉金身护持队友，同时大幅提升物理防御与法术抗性！' }
+          ];
           this.playerData.recalculateStats(false);
         }
         if (this.playerChar) {
@@ -979,6 +1098,9 @@ class GameApp2D {
 
     // 10. 天宫序章的专属神仙NPC：仅在天宫序章出现，并按三大因缘事件逐步显隐
     if (mapId === 'tiangong_palace' || mapId === 'tiangong_pantao') {
+      // 蟠桃园土地公是三界常驻接引仙官，凡间随时可神行吃桃，土地公始终常驻在蟠桃园最下方！
+      if (npcId === 'npc_pantao_tudi') return true;
+
       if (!isHeavenPhase) return false; // 贬落凡间后，天宫神仙退隐
 
       // 太白金星：天庭老仙，始终接引
@@ -1054,14 +1176,36 @@ class GameApp2D {
     return true;
   }
 
-  // 刷新当前地图 NPC 显隐与感叹号状态
+  // 刷新当前地图 NPC 显隐与感叹号状态 (仅就地刷新NPC/怪物实例与任务标识，绝不重载地图、不黑屏过渡、不锁交互)
   refreshMapNpcs() {
-    if (!this.playerChar) return;
-    this.loadMap(this.currentMapId, { x: this.playerChar.x, y: this.playerChar.y });
+    if (!this.playerChar || !this.currentMapId) return;
+    const mapData = window.GAME_DATA?.MAPS_2D?.[this.currentMapId];
+    if (!mapData) return;
+    this._rebuildMapEntities(mapData, false);
   }
 
   // 载入指定地图（支持场景平滑过渡动效：走动切图约0.75s，对话剧情切图约1.0s，Node单测环境同步立即执行）
   loadMap(mapId, customSpawn = null, options = {}) {
+    if (!window.GAME_DATA?.MAPS_2D?.[mapId]) return false;
+
+    // 记录进入蟠桃胜境前的地图与坐标，供园内最下方土地公引渡返回刚才所在之处
+    if (mapId === 'tiangong_pantao' && this.currentMapId && this.currentMapId !== 'tiangong_pantao') {
+      this.peachGardenReturnPoint = {
+        mapId: this.currentMapId,
+        x: this.playerChar ? this.playerChar.x : (this.playerSpawn ? this.playerSpawn.x : 23 * 32),
+        y: this.playerChar ? this.playerChar.y : (this.playerSpawn ? this.playerSpawn.y : 10 * 32)
+      };
+    }
+
+    const transitionId = this._mapTransitionId = (this._mapTransitionId || 0) + 1;
+    this._mapDestination = { mapId, spawn: customSpawn || window.GAME_DATA.MAPS_2D[mapId].playerSpawn };
+    for (const timer of this._mapTransitionTimers || []) clearTimeout(timer);
+    this._mapTransitionTimers = [];
+    if (this._transitionSafetyTimer) clearTimeout(this._transitionSafetyTimer);
+    this.cancelStoryDialogue();
+    this.keysDown = {};
+    this.autoMovePath = [];
+    this.autoMoveTargetCallback = null;
     const isNodeTest = typeof process !== 'undefined' && process.release && process.release.name === 'node';
     let duration = 0;
     if (typeof options === 'number') {
@@ -1083,7 +1227,28 @@ class GameApp2D {
     const targetName = targetMapData?.name || '未知圣境';
     const targetRegion = targetMapData?.region || '三界造化';
 
-    if (overlay && duration > 0 && !this.isTransitioning) {
+    if (this.currentMapId === mapId && !customSpawn && !options.forceTransition) {
+      this._mapDestination = null;
+      this.refreshMapNpcs();
+      this.isTransitioning = false;
+      overlay?.classList.remove('active', 'fade-out');
+      if (typeof options.onComplete === 'function') options.onComplete();
+      return true;
+    }
+
+    let completed = false;
+    const complete = () => {
+      if (completed || transitionId !== this._mapTransitionId) return;
+      completed = true;
+      overlay?.classList.remove('active', 'fade-out');
+      this.isTransitioning = false;
+      this._mapDestination = null;
+      this.saveAutoProgress();
+      if (this._transitionSafetyTimer) clearTimeout(this._transitionSafetyTimer);
+      this._transitionSafetyTimer = null;
+      if (typeof options.onComplete === 'function') options.onComplete();
+    };
+    if (overlay && duration > 0) {
       overlay.innerHTML = `
         <div class="scene-transition-banner">
           <div class="scene-transition-taichi"></div>
@@ -1097,38 +1262,107 @@ class GameApp2D {
         this.isTransitioning = true;
         this.autoMovePath = [];
         this.autoMoveTargetCallback = null;
+        this.keysDown = {};
+
         const halfMs = Math.max(160, Math.round((duration * 1000) / 2));
         overlay.style.transition = `opacity ${halfMs / 1000}s ease-in-out`;
         overlay.classList.remove('fade-out');
         overlay.classList.add('active');
 
         if (window.Sound && window.Sound.playBeep) {
-          try { window.Sound.playBeep(); } catch (e) {}
+          try { window.Sound.playBeep(); } catch (e) { }
         }
 
-        setTimeout(() => {
-          this._applyMapData(mapId, customSpawn);
-          setTimeout(() => {
-            overlay.classList.remove('active');
-            overlay.classList.add('fade-out');
-            setTimeout(() => {
-              overlay.classList.remove('fade-out');
+        this._transitionSafetyTimer = setTimeout(complete, Math.max(2500, halfMs * 2 + 500));
+        this._mapTransitionTimers.push(setTimeout(() => {
+          if (transitionId !== this._mapTransitionId) return;
+          let applied = false;
+          try {
+            this._applyMapData(mapId, customSpawn);
+            applied = true;
+          } catch (err) {
+            console.error('地图加载应用数据异常:', err);
+          } finally {
+            if (!applied) {
+              overlay.classList.remove('active', 'fade-out');
               this.isTransitioning = false;
-            }, halfMs);
-          }, 80);
-        }, halfMs);
-        return;
+              this._mapDestination = null;
+              clearTimeout(this._transitionSafetyTimer);
+              return;
+            }
+            this._mapTransitionTimers.push(setTimeout(() => {
+              if (transitionId !== this._mapTransitionId) return;
+              overlay.classList.remove('active');
+              overlay.classList.add('fade-out');
+              this._mapTransitionTimers.push(setTimeout(complete, halfMs));
+            }, 80));
+          }
+        }, halfMs));
+        return true;
       }
     }
 
     this._applyMapData(mapId, customSpawn);
-    this.isTransitioning = false;
+    complete();
+    return true;
+  }
+
+  cancelStoryDialogue() {
+    if (this._storyDialogueTimer) clearTimeout(this._storyDialogueTimer);
+    this._storyDialogueTimer = null;
+    this._pendingStoryDialogue = null;
+    this._activeStoryDialogue = null;
+  }
+
+  skipCurrentDialogue() {
+    const dialogue = window.Dialogue;
+    if (!dialogue?.currentDialogue) return;
+    const step = dialogue.currentDialogue.steps[dialogue.currentStep];
+    if (step.options?.length > 1) {
+      if (dialogue.isTyping) dialogue.next();
+      return;
+    }
+    dialogue.completeAllAndClose();
+  }
+
+  // 战后对白只归属于产生它的地图和剧情阶段；换图后不能再弹出旧剧情。
+  scheduleStoryDialogue(key, delay = 500) {
+    this.cancelStoryDialogue();
+    this.refreshMapNpcs();
+    const pending = { key, mapId: this.currentMapId, phase: this.storyPhase };
+    this._pendingStoryDialogue = pending;
+    this.saveAutoProgress();
+    this._storyDialogueTimer = setTimeout(() => this.openPendingStoryDialogue(), delay);
+  }
+
+  openPendingStoryDialogue() {
+    const pending = this._pendingStoryDialogue || this._activeStoryDialogue;
+    if (!pending) return false;
+    if (pending.mapId !== this.currentMapId || pending.phase !== this.storyPhase) {
+      this.cancelStoryDialogue();
+      return false;
+    }
+    if (this.currentBattle || this.isTransitioning || window.Dialogue?.currentDialogue) return true;
+    this.cancelStoryDialogue();
+    this._activeStoryDialogue = pending;
+    window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES[pending.key]);
+    return true;
+  }
+
+  finishStoryDialogue(dialogue) {
+    if (this._activeStoryDialogue && window.GAME_DATA.STORY_DIALOGUES[this._activeStoryDialogue.key] === dialogue) {
+      this._activeStoryDialogue = null;
+    }
+    this.saveAutoProgress();
   }
 
   // 内部执行地图数据与生灵加载
   _applyMapData(mapId, customSpawn = null) {
     const mapData = window.GAME_DATA.MAPS_2D[mapId];
-    if (!mapData) return;
+    if (!mapData) {
+      console.error(`未知地图编号: ${mapId}`);
+      return;
+    }
 
     this.currentMapId = mapId;
     this.autoMovePath = [];
@@ -1139,6 +1373,29 @@ class GameApp2D {
     this.playerChar.x = safePos.x;
     this.playerChar.y = safePos.y;
     this.playerChar.direction = rawSpawn.direction || 'down';
+    if (this.camera) {
+      this.camera.follow(this.playerChar.x, this.playerChar.y, mapData.width * 32, mapData.height * 32);
+    }
+
+    this._rebuildMapEntities(mapData, true);
+
+    if (window.Sound && window.Sound.playBeep) {
+      try { window.Sound.playBeep(); } catch (e) { }
+    }
+    this.updateLocationHeader(mapData.name, mapData.region);
+    this.updatePlayerHud();
+
+    // 每次过图或进入新场景，自动持久化历练进度
+    this.saveAutoProgress();
+
+    // 🌟 检查并自动触发当前章节国风开幕动画 (每个章节每位玩家只开幕一次，持久化到存档)
+    this.checkAndTriggerChapterOpening(mapId, this.storyPhase);
+  }
+
+  // 内部仅就地重建/刷新当前地图生灵与主支线感叹号状态 (支持保留战斗存量怪物)
+  _rebuildMapEntities(mapData, rebuildMonsters = false) {
+    if (!mapData) return;
+    const mapId = this.currentMapId || mapData.id;
 
     // 严格主线任务感叹号唯一制：同一时刻全游戏只允许当前唯一步骤的 1 位 NPC 拥有金色感叹号！
     const MAIN_QUEST_TARGETS = {
@@ -1215,22 +1472,23 @@ class GameApp2D {
       // 2. 地面采摘物不显示感叹号
       if (n.id.startsWith('prop_mushroom_')) return false;
 
-      // 3. 支线副本 NPC：如果有专属支线标识或三岭降妖任务，可显示支线感叹号
-      if (n.isSideQuest) {
-        return !this.interactedNpcSet || !this.interactedNpcSet.has(n.id);
+      // 3. 支线任务 NPC：如果有专属支线标识或刘家村土地公，显示翠绿碧玉支线感叹号 ('side')
+      if (n.isSideQuest || n.id === 'npc_liujia_tudi') {
+        const hasInteracted = this.interactedNpcSet && this.interactedNpcSet.has(n.id);
+        return hasInteracted ? false : 'side';
       }
       if (n.id === 'npc_yehu_hermit') {
         const sq = this.playerData?.sideQuests?.sq_sanling_demon;
-        return !sq || sq.step !== 'done';
+        return (!sq || sq.step !== 'done') ? 'side' : false;
       }
       if (n.id && (n.id.startsWith('npc_sanling_fox_') || n.id.startsWith('npc_sanling_wolf_') || n.id === 'npc_heifeng_shura_boss')) {
-        return true;
+        return 'side';
       }
 
-      // 4. 主线感叹号严格唯一匹配：只有当前阶段指定的唯一 NPC 显示感叹号！
+      // 4. 主线感叹号严格唯一匹配：只有当前阶段指定的唯一 NPC 显示金色感叹号 ('available')！
       const currentMainTarget = MAIN_QUEST_TARGETS[this.storyPhase];
       if (currentMainTarget && n.id === currentMainTarget) {
-        return true;
+        return 'available';
       }
 
       return false;
@@ -1251,34 +1509,42 @@ class GameApp2D {
         (this.storyPhase === 'wuzhuang_cleared' ? 'changan_girl' :
           this.storyPhase === 'baihu_first_cleared' ? 'tea_granny' : 'tudi_gong') : n.appearance,
       dialogueKey: n.dialogueKey,
-      questStatus: shouldShowQuestExclamation(n) ? 'available' : null
+      questStatus: shouldShowQuestExclamation(n) || null
     }));
 
-    // 实例化怪物 (完整继承地图怪物全部属性、战斗技能与80%移速)
-    this.monsters = (mapData.monsters || []).map(m => {
-      const mobChar = new window.Character({
-        id: m.id,
-        name: m.name,
-        type: 'monster',
-        x: m.x,
-        y: m.y,
-        speed: 1.12, // 野怪舒缓巡逻速度 (由原先 1.6 调降至 70% 约 1.12)
-        patrolRadius: m.patrolRadius !== undefined ? m.patrolRadius : 30,
-        appearance: m.appearance || (window.Character ? window.Character.inferMonsterType(m.name, m.id) : 'wild_wolf'),
-        dialogue: [`【${m.name}】(Lv.${m.level || 5}) 呲牙咧嘴，凶煞逼人！`]
+    // 实例化怪物 (完整继承地图怪物全部属性、战斗技能与80%移速；若为刷新NPC则保留当前存活怪物不强制刷满)
+    if (rebuildMonsters || !this.monsters || this.monsters.length === 0) {
+      this.monsters = (mapData.monsters || []).map(m => {
+        const mobChar = new window.Character({
+          id: m.id,
+          name: m.name,
+          type: 'monster',
+          x: m.x,
+          y: m.y,
+          speed: m.speed !== undefined ? m.speed : GAME_SPEED_CONFIG.DEFAULT_MONSTER_SPEED, // 绝大多数常规野怪巡逻漫步移速 (支持地图个体覆盖)
+          patrolRadius: m.patrolRadius !== undefined ? m.patrolRadius : 30,
+          appearance: m.appearance || (window.Character ? window.Character.inferMonsterType(m.name, m.id) : 'wild_wolf'),
+          dialogue: [`【${m.name}】(Lv.${m.level || 5}) 呲牙咧嘴，凶煞逼人！`]
+        });
+        mobChar.level = m.level || 5;
+        mobChar.hp = m.hp || 100;
+        mobChar.maxHp = m.maxHp || mobChar.hp;
+        mobChar.atk = m.atk || 20;
+        mobChar.def = m.def || 10;
+        mobChar.spd = m.spd || 20;
+        mobChar.skills = m.skills || ['普通攻击'];
+        mobChar.monsterData = m;
+        mobChar.templateId = window.ShanhaiSystem.resolveSpecies(m, mapId);
+        const species = window.GAME_DATA.PETS[mobChar.templateId];
+        mobChar.element = species?.element || m.element;
+        mobChar.quality = species?.quality || m.quality || 'ordinary';
+        return mobChar;
       });
-      mobChar.level = m.level || 5;
-      mobChar.hp = m.hp || 100;
-      mobChar.maxHp = m.maxHp || mobChar.hp;
-      mobChar.atk = m.atk || 20;
-      mobChar.def = m.def || 10;
-      mobChar.spd = m.spd || 20;
-      mobChar.skills = m.skills || ['普通攻击'];
-      mobChar.monsterData = m;
-      return mobChar;
-    });
+    }
 
-    window.Sound.playBeep();
+    if (window.Sound && window.Sound.playBeep) {
+      try { window.Sound.playBeep(); } catch (e) { }
+    }
     this.updateLocationHeader(mapData.name, mapData.region);
     this.updatePlayerHud();
 
@@ -1318,21 +1584,57 @@ class GameApp2D {
   // 输入监听
   bindInputs() {
     window.addEventListener('keydown', (e) => {
+      // 输入框与最上层确认窗口优先处理，避免输入名字或取消献录时触发游戏指令。
+      if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      const confirmCancel = document.getElementById('confirm-modal-cancel');
+      if (confirmCancel) {
+        if (e.key === 'Escape') confirmCancel.click();
+        if (e.key === ' ' || e.key === 'Enter' || e.key.startsWith('Arrow')) e.preventDefault();
+        return;
+      }
+      if (e.key === ' ' || e.key.startsWith('Arrow')) e.preventDefault();
+      if (e.repeat && !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D'].includes(e.key)) return;
+      if (window.Dialogue?.currentDialogue) {
+        if (e.key === ' ' || e.key === 'Enter') window.Dialogue.next();
+        else if (e.key === 'Escape') this.skipCurrentDialogue();
+        return;
+      }
+      if (!this.currentBattle && this.hasExplorationModal()) {
+        if (document.getElementById('shanhai-pet-picker-modal')) {
+          if (e.key === 'Escape' || e.key === 'Tab') {
+            e.preventDefault();
+            this.closeShanhaiPetPickerModal();
+          }
+          return;
+        }
+        if (e.key !== 'Escape' && !(e.key === 'Tab' && document.getElementById('scene-roster-modal'))) return;
+      }
       this.keysDown[e.key] = true;
       if (this.currentBattle) {
         if (this.battleTargetMenuOpen) {
-          if (e.key === 'Escape' || e.key === 'q' || e.key === 'Q') {
+          if (e.key === 'Escape' || e.key === 'Backspace') {
             this.cancelCombatTargetSelection();
             return;
           }
           if (e.key >= '1' && e.key <= '9') {
             const targetNum = parseInt(e.key, 10) - 1;
-            const aliveEnemies = this.currentBattle.enemies.filter(en => en.hp > 0);
-            if (aliveEnemies[targetNum]) {
-              const actualIdx = aliveEnemies[targetNum].enemyIndex !== undefined ? aliveEnemies[targetNum].enemyIndex : targetNum;
-              this.confirmCombatSkillTarget(actualIdx);
-              return;
-            }
+            this.setCombatFocusedTarget(targetNum);
+            return;
+          }
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            this.cycleCombatFocusedTarget(-1);
+            return;
+          }
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Tab') {
+            e.preventDefault();
+            this.cycleCombatFocusedTarget(1);
+            return;
+          }
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            this.confirmCurrentCombatAction();
+            return;
           }
         }
         if (e.key === ' ' || e.key === 'Enter') {
@@ -1342,7 +1644,7 @@ class GameApp2D {
             const skills = curAlly?.isPlayer ? this.playerData.getSkills() : (curAlly?.skills || []);
             if (skills.length > 0) this.onSkillButtonClick(skills[0].id);
           } else {
-            this.chooseCombatAction('attack');
+            this.initiateCombatAction('attack');
           }
           return;
         } else if (e.key === 'q' || e.key === 'Q') {
@@ -1352,10 +1654,10 @@ class GameApp2D {
           this.chooseCombatAction('defend');
           return;
         } else if (e.key === 'e' || e.key === 'E') {
-          this.chooseCombatAction('item');
+          this.initiateCombatAction('item');
           return;
         } else if (e.key === 'r' || e.key === 'R') {
-          this.chooseCombatAction('capture');
+          this.initiateCombatAction('capture');
           return;
         }
       }
@@ -1397,6 +1699,10 @@ class GameApp2D {
 
     window.addEventListener('keyup', (e) => {
       this.keysDown[e.key] = false;
+    });
+
+    window.addEventListener('blur', () => {
+      this.keysDown = {};
     });
 
     // 画布鼠标点击 -> 智能触发 A* 寻路或交互
@@ -1460,16 +1766,81 @@ class GameApp2D {
 
   // 场景鼠标点击智能分发
   handleClickCanvas(screenX, screenY) {
-    if (this.isPaused || this.currentBattle) return;
+    if (this.isPaused || this.isTransitioning || this.currentBattle) return;
     if (window.Dialogue && window.Dialogue.currentDialogue) {
       // 用户点击了场景画布，直接解除对话并走完流程
-      window.Dialogue.completeAllAndClose();
+      this.skipCurrentDialogue();
       return;
     }
 
     const worldPos = this.camera.screenToWorld(screenX, screenY);
     const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
     if (!mapData) return;
+
+    // 0. 是否点击在当前主线接引信标或其悬浮锦帛标语上
+    const questTarget = this.minimap ? this.minimap.getCurrentQuestTarget(this.currentMapId, this.storyPhase, mapData) : null;
+    if (questTarget) {
+      const beaconDist = Math.hypot(questTarget.x - worldPos.x, questTarget.y - worldPos.y);
+      const isBannerHit = Math.abs(worldPos.x - questTarget.x) <= 120 && (worldPos.y >= questTarget.y - 100 && worldPos.y <= questTarget.y - 30);
+      if (beaconDist < 48 || isBannerHit) {
+        // 如果身旁已在信标交互范围内部，直接触发到达
+        const playerDist = Math.hypot(questTarget.x - this.playerChar.x, questTarget.y - this.playerChar.y);
+        if (playerDist <= 140) {
+          const questNpc = this.npcs.find(n => n.id === questTarget.npcId);
+          if (questNpc && playerDist < questNpc.interactRadius) {
+            this.triggerNpcDialogue(questNpc);
+            return;
+          }
+          if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_water_pavilion') {
+            this.storyPhase = 'heaven_pantao_start';
+            this.refreshMapNpcs();
+            window.showGameMessage('🌊 已到瑶池水阁。前方似乎有人争执，过去看看。', 'info', 3200);
+            return;
+          }
+          if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_lingxiao') {
+            this.storyPhase = 'heaven_saved_change';
+            this.refreshMapNpcs();
+            window.showGameMessage('🏛️ 已到凌霄殿前。殿中忽传琉璃碎响，快去查看！', 'info', 3200);
+            return;
+          }
+        }
+        // 规划寻路走向信标
+        const path = this.pathfinding.findPath(
+          mapData, this.tilemap,
+          this.playerChar.x, this.playerChar.y,
+          questTarget.x, questTarget.y
+        );
+        if (path.length > 0) {
+          this.autoMovePath = path;
+          const arrivalMapId = this.currentMapId;
+          this.autoMoveTargetCallback = () => {
+            if (this.currentMapId !== arrivalMapId) return;
+            const questNpc = this.npcs.find(n => n.id === questTarget.npcId);
+            if (questNpc && Math.hypot(questNpc.x - this.playerChar.x, questNpc.y - this.playerChar.y) < questNpc.interactRadius) {
+              this.triggerNpcDialogue(questNpc);
+              return;
+            }
+            const portal = (mapData.portals || []).find(p => Math.hypot(p.x - questTarget.x, p.y - questTarget.y) < 40);
+            if (portal && Math.hypot(portal.x - this.playerChar.x, portal.y - this.playerChar.y) < 45) {
+              this.tryEnterPortal(portal);
+              return;
+            }
+            if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_water_pavilion') {
+              this.storyPhase = 'heaven_pantao_start';
+              this.refreshMapNpcs();
+              window.showGameMessage('🌊 已到瑶池水阁。前方似乎有人争执，过去看看。', 'info', 3200);
+            } else if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_lingxiao') {
+              this.storyPhase = 'heaven_saved_change';
+              this.refreshMapNpcs();
+              window.showGameMessage('🏛️ 已到凌霄殿前。殿中忽传琉璃碎响，快去查看！', 'info', 3200);
+            }
+          };
+          this.spawnClickRipple(questTarget.x, questTarget.y);
+          window.Sound.playBeep();
+          return;
+        }
+      }
+    }
 
     // 1. 是否点击在 NPC 附近 (半径 36px)
     for (const npc of this.npcs) {
@@ -1489,7 +1860,13 @@ class GameApp2D {
         );
         if (path.length > 0) {
           this.autoMovePath = path;
-          this.autoMoveTargetCallback = () => this.triggerNpcDialogue(npc);
+          const npcMapId = this.currentMapId;
+          this.autoMoveTargetCallback = () => {
+            const liveNpc = this.npcs.find(n => n.id === npc.id);
+            if (this.currentMapId === npcMapId && liveNpc && Math.hypot(liveNpc.x - this.playerChar.x, liveNpc.y - this.playerChar.y) < liveNpc.interactRadius) {
+              this.triggerNpcDialogue(liveNpc);
+            }
+          };
           this.spawnClickRipple(npc.x, npc.y);
           window.Sound.playBeep();
         }
@@ -1530,6 +1907,10 @@ class GameApp2D {
       for (const p of mapData.portals) {
         const dist = Math.hypot(p.x - worldPos.x, p.y - worldPos.y);
         if (dist < 32) {
+          if (Math.hypot(p.x - this.playerChar.x, p.y - this.playerChar.y) < 45) {
+            this.tryEnterPortal(p);
+            return;
+          }
           const path = this.pathfinding.findPath(
             mapData, this.tilemap,
             this.playerChar.x, this.playerChar.y,
@@ -1608,13 +1989,13 @@ class GameApp2D {
       return;
     }
     if (p.targetMap === 'huaguoshan' && this.currentMapId === 'tiangong_palace' &&
-        !['heaven_huaguoshan', 'heaven_huaguoshan_shuilien', 'heaven_huaguoshan_rescue', 'heaven_juling_defeated', 'heaven_final_wukong'].includes(this.storyPhase)) {
+      !['heaven_huaguoshan', 'heaven_huaguoshan_shuilien', 'heaven_huaguoshan_rescue', 'heaven_juling_defeated', 'heaven_final_wukong'].includes(this.storyPhase)) {
       this.autoMovePath = [];
       this.playerChar.y = p.y - 30;
       window.showGameMessage('南天门尚未接到出征帅令。先完成天宫值守。', 'warning', 3000);
       return;
     }
-    
+
     // 关隘与练功区等级限制校验 (主线对应任务特许放行)
     const pLevel = (this.playerData && this.playerData.level) || (this.player && this.player.level) || 1;
     const isWuxingWoodPass = p.targetMap === 'wuxingshan' && (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering');
@@ -1661,26 +2042,36 @@ class GameApp2D {
 
   // 游戏主循环
   gameLoop(timestamp) {
+    // 保留下一帧调度，单个 UI 错误不会让整个探索循环永久停摆。
+    requestAnimationFrame((t) => this.gameLoop(t));
     this.update();
     this.render();
-    requestAnimationFrame((t) => this.gameLoop(t));
   }
 
   // 状态更新
   update() {
-    if (this.isPaused || (window.Dialogue && window.Dialogue.currentDialogue) || this.currentBattle) return;
+    if (this.isPaused || this.isTransitioning || (window.Dialogue && window.Dialogue.currentDialogue) || this.currentBattle) return;
+    if ((this._pendingStoryDialogue || this._activeStoryDialogue) && this.openPendingStoryDialogue()) return;
+    if (this.hasExplorationModal()) {
+      this.keysDown = {};
+      this.autoMovePath = [];
+      this.autoMoveTargetCallback = null;
+      return;
+    }
 
     const mapData = window.GAME_DATA.MAPS_2D[this.currentMapId];
     if (!mapData) return;
 
     // 1. 敏捷移速与坐骑骑乘状态 (基础移速大幅提升，坐骑大幅加速，水中辟水神诀绝无迟滞)
-    const baseSpeed = this.playerChar.appearance === 'heaven_general' ? 4.2 : 3.8;
+    const baseSpeed = this.playerChar.appearance === 'heaven_general'
+      ? GAME_SPEED_CONFIG.PLAYER_HEAVEN_SPEED
+      : GAME_SPEED_CONFIG.PLAYER_MORTAL_SPEED;
     const speedBonus = this.mountSystem && this.mountSystem.getStatsBonus ? (this.mountSystem.getStatsBonus().speedBonus || 0) : 0;
     let finalSpeed = baseSpeed * (1 + speedBonus);
 
     // 🌊 龙宫与东海海域：辟水神诀加持，在水底如履平地，享受水流推力 +15% 极速畅游！
     if (this.currentMapId === 'shuijinggong' || this.currentMapId === 'longgong_palace' || this.currentMapId === 'donghai_coast') {
-      finalSpeed = Math.max(finalSpeed, baseSpeed * 1.15 * (1 + speedBonus));
+      finalSpeed = Math.max(finalSpeed, baseSpeed * GAME_SPEED_CONFIG.WATER_SPEED_MULTIPLIER * (1 + speedBonus));
     }
 
     this.playerChar.speed = finalSpeed;
@@ -1707,8 +2098,12 @@ class GameApp2D {
       // 3. 执行 A* 自动寻路步进
       const targetPoint = this.autoMovePath[0];
       const dist = Math.hypot(targetPoint.x - this.playerChar.x, targetPoint.y - this.playerChar.y);
-      if (dist < 5) {
+      const snapThreshold = Math.max(6, (this.playerChar.speed || 3.8) + 1);
+      if (dist <= snapThreshold) {
+        this.playerChar.x = targetPoint.x;
+        this.playerChar.y = targetPoint.y;
         this.autoMovePath.shift();
+        this._autoMoveStuckFrames = 0;
         if (this.autoMovePath.length === 0 && this.autoMoveTargetCallback) {
           const cb = this.autoMoveTargetCallback;
           this.autoMoveTargetCallback = null;
@@ -1717,10 +2112,24 @@ class GameApp2D {
       } else {
         const moveDx = (targetPoint.x - this.playerChar.x) / dist;
         const moveDy = (targetPoint.y - this.playerChar.y) / dist;
+        const prevX = this.playerChar.x;
+        const prevY = this.playerChar.y;
         this.playerChar.move(moveDx, moveDy, mapData, this.tilemap);
+        if (Math.abs(this.playerChar.x - prevX) < 0.05 && Math.abs(this.playerChar.y - prevY) < 0.05) {
+          this._autoMoveStuckFrames = (this._autoMoveStuckFrames || 0) + 1;
+          if (this._autoMoveStuckFrames > 8) {
+            this._autoMoveStuckFrames = 0;
+            this.autoMovePath = [];
+            this.autoMoveTargetCallback = null;
+            window.showGameMessage('前路受阻，请换个落脚点或用方向键绕行。', 'warning');
+          }
+        } else {
+          this._autoMoveStuckFrames = 0;
+        }
       }
     }
 
+    if (this.isTransitioning || this.currentBattle || window.Dialogue?.currentDialogue || mapData !== window.GAME_DATA.MAPS_2D[this.currentMapId]) return;
     // 3.5 移动停步检测与位置即时持久化防抖 (彻底确保玩家停下后的最新坐标100%存入本地)
     const isMovingNow = (dx !== 0 || dy !== 0 || this.autoMovePath.length > 0);
     if (this._wasPlayerMoving && !isMovingNow) {
@@ -1731,21 +2140,23 @@ class GameApp2D {
     }
     this._wasPlayerMoving = isMovingNow;
 
-    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_water_pavilion' &&
-        this.playerChar.x >= 420 && Math.abs(this.playerChar.y - 384) <= 82) {
-      this.storyPhase = 'heaven_pantao_start';
-      this.refreshMapNpcs();
-      window.showGameMessage('🌊 已到瑶池水阁。前方似乎有人争执，过去看看。', 'info', 3200);
-      return;
+    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_water_pavilion') {
+      const distToBeacon = Math.hypot(480 - this.playerChar.x, 384 - this.playerChar.y);
+      if (distToBeacon <= 140 || (this.playerChar.x >= 365 && Math.abs(this.playerChar.y - 432) <= 125)) {
+        this.storyPhase = 'heaven_pantao_start';
+        this.refreshMapNpcs();
+        window.showGameMessage('🌊 已到瑶池水阁。前方似乎有人争执，过去看看。', 'info', 3200);
+      }
     }
 
     // 卷帘只在玩家真正走到凌霄殿前后登场；阶段可存档恢复。
-    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_lingxiao' &&
-        this.playerChar.x >= 640 && Math.abs(this.playerChar.y - 384) <= 82) {
-      this.storyPhase = 'heaven_saved_change';
-      this.refreshMapNpcs();
-      window.showGameMessage('🏛️ 已到凌霄殿前。殿中忽传琉璃碎响，快去查看！', 'info', 3200);
-      return;
+    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_lingxiao') {
+      const distToLingxiao = Math.hypot(704 - this.playerChar.x, 384 - this.playerChar.y);
+      if (distToLingxiao <= 140 || (this.playerChar.x >= 580 && Math.abs(this.playerChar.y - 432) <= 125)) {
+        this.storyPhase = 'heaven_saved_change';
+        this.refreshMapNpcs();
+        window.showGameMessage('🏛️ 已到凌霄殿前。殿中忽传琉璃碎响，快去查看！', 'info', 3200);
+      }
     }
 
     // 4. 摄像机跟随
@@ -1754,13 +2165,14 @@ class GameApp2D {
     this.camera.follow(this.playerChar.x, this.playerChar.y, mapPixelW, mapPixelH);
 
     // 5. 怪物巡逻与碰撞
-    this.monsters.forEach(m => {
+    for (const m of this.monsters) {
       m.updatePatrol(mapData, this.tilemap);
       const dist = Math.hypot(m.x - this.playerChar.x, m.y - this.playerChar.y);
-      if (dist < 22) {
+      if (dist < 22 && Date.now() >= (this._encounterCooldownUntil || 0)) {
         this.triggerMonsterBattle(m);
+        return;
       }
-    });
+    }
 
     // 6. 传送门检测
     if (mapData.portals) {
@@ -1803,12 +2215,16 @@ class GameApp2D {
 
   // 附近 NPC 与场景交互
   interactNearby() {
+    if (this.isPaused || this.isTransitioning || this.currentBattle) return;
     if (window.Dialogue.currentDialogue) {
       window.Dialogue.next();
       return;
     }
 
-    for (const npc of this.npcs) {
+    const nearbyNpcs = this.npcs.filter(npc => Math.hypot(npc.x - this.playerChar.x, npc.y - this.playerChar.y) < npc.interactRadius)
+      .sort((a, b) => Number(b.questStatus === 'available') - Number(a.questStatus === 'available') ||
+        Math.hypot(a.x - this.playerChar.x, a.y - this.playerChar.y) - Math.hypot(b.x - this.playerChar.x, b.y - this.playerChar.y));
+    for (const npc of nearbyNpcs) {
       const dist = Math.hypot(npc.x - this.playerChar.x, npc.y - this.playerChar.y);
       if (dist < npc.interactRadius) {
         this.triggerNpcDialogue(npc);
@@ -1827,9 +2243,42 @@ class GameApp2D {
         }
       }
     }
+
+    // 天宫水阁/凌霄巡视信标交互 (靠近直接按空格/点击互动均可顺畅推进剧情)
+    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_water_pavilion') {
+      const dist = Math.hypot(480 - this.playerChar.x, 384 - this.playerChar.y);
+      if (dist <= 150 || this.playerChar.x >= 360) {
+        this.storyPhase = 'heaven_pantao_start';
+        this.refreshMapNpcs();
+        window.showGameMessage('🌊 已到瑶池水阁。前方似乎有人争执，过去看看。', 'info', 3200);
+        return;
+      }
+    }
+    if (this.currentMapId === 'tiangong_palace' && this.storyPhase === 'heaven_to_lingxiao') {
+      const dist = Math.hypot(704 - this.playerChar.x, 384 - this.playerChar.y);
+      if (dist <= 150 || this.playerChar.x >= 575) {
+        this.storyPhase = 'heaven_saved_change';
+        this.refreshMapNpcs();
+        window.showGameMessage('🏛️ 已到凌霄殿前。殿中忽传琉璃碎响，快去查看！', 'info', 3200);
+        return;
+      }
+    }
   }
 
   triggerNpcDialogue(npc) {
+    if (!npc || this.currentBattle || this.isTransitioning || window.Dialogue?.currentDialogue) return;
+    if (this.openPendingStoryDialogue()) return;
+    // 天宫旧配置把李天王和太白都指向开场；按当前阶段选剧本，不能重放已完成事件。
+    if (this.currentMapId === 'tiangong_palace') {
+      if (npc.id === 'npc_taibai') {
+        npc.dialogueKey = this.storyPhase === 'heaven_tiangong_trial' ? 'tiangong_banishment_scene' :
+          this.storyPhase === 'heaven_prologue' ? 'pantao_intro' : 'tiangong_duty_reminder';
+      } else if (npc.id === 'npc_litianwang') {
+        npc.dialogueKey = 'litianwang_duty_reminder';
+      } else if (npc.id === 'npc_change' && this.storyPhase !== 'heaven_pantao_start') {
+        npc.dialogueKey = 'change_talk';
+      }
+    }
     window.Sound.playBeep();
 
     // 用户点击/交互过后，立即消除该 NPC 头顶的金色感叹号，并记录为已交互
@@ -1844,10 +2293,12 @@ class GameApp2D {
         this.storyPhase === 'baihu_second_cleared' ? 'baigujing_third_encounter' : 'baigujing_encounter';
     }
     if (npc.id === 'npc_changan_tea' && this.storyPhase !== 'changan_arrived') {
-      window.Dialogue.start({ steps: [{
-        speaker: '茶肆阿婆', speakerTitle: '【长安市井】',
-        text: '客官又来了？这壶茶还热着。路上遇到新鲜事，回来讲给我听，茶钱算你半价。'
-      }] });
+      window.Dialogue.start({
+        steps: [{
+          speaker: '茶肆阿婆', speakerTitle: '【长安市井】',
+          text: '客官又来了？这壶茶还热着。路上遇到新鲜事，回来讲给我听，茶钱算你半价。'
+        }]
+      });
       return;
     }
     if (this.storyPhase === 'baoxiang_cleared' && npc.id === 'npc_baihuaxiu') {
@@ -1857,10 +2308,12 @@ class GameApp2D {
       npc.dialogueKey = 'baoxiang_king_reunion';
     }
     if (npc.id === 'npc_huangpao_boss' && this.storyPhase !== 'baoxiang_boss_ready') {
-      window.Dialogue.start({ steps: [{
-        speaker: '波月洞洞门', speakerTitle: '【妖雾锁关】',
-        text: '洞中妖风与星光交错。先去王宫问明来龙去脉，再找到百花羞公主，才能直面奎木狼。'
-      }] });
+      window.Dialogue.start({
+        steps: [{
+          speaker: '波月洞洞门', speakerTitle: '【妖雾锁关】',
+          text: '洞中妖风与星光交错。先去王宫问明来龙去脉，再找到百花羞公主，才能直面奎木狼。'
+        }]
+      });
       return;
     }
 
@@ -2003,7 +2456,8 @@ class GameApp2D {
           {
             speaker: npc.name,
             speakerTitle: npc.title,
-            text: `阿弥陀佛，贫道见少侠步履从容，神采奕奕，必能扫尽十万八千里妖氛！`
+            text: Array.isArray(npc.dialogue) && npc.dialogue[0]
+              ? npc.dialogue[0] : '远行辛苦。若是问路，请留意路口的指引；山间走动，也要给自己留条退路。'
           }
         ]
       });
@@ -2024,37 +2478,65 @@ class GameApp2D {
     window.showGameMessage(isRiding ? '🏇 已翻身上马疾驰，移动速度提升！' : '🚶 已翻身下马改为步行。', 'info');
   }
 
-  // 挑选坐骑
+  // 挑选坐骑 (三大门派专属：龙马-金刚专属、飞剑-神仙专属、狮子-妖魔专属)
   showChooseMountModal() {
     if (window.Dialogue) window.Dialogue.close();
+    document.querySelectorAll('.choose-mount-modal').forEach(m => m.remove());
+
+    const playerClass = this.playerData.classId || this.playerData.class || 'jingang';
+    const isClassMatched = (pClass, reqClass) => {
+      if (!reqClass) return true;
+      if (reqClass === pClass) return true;
+      if (reqClass === 'xianren' && (pClass === 'shenxian' || pClass === 'xianren')) return true;
+      return false;
+    };
+
+    const selectableMounts = [
+      window.MountSystem.TEMPLATES.long_ma,
+      window.MountSystem.TEMPLATES.feijian,
+      window.MountSystem.TEMPLATES.yan_shi
+    ].filter(Boolean);
 
     const modalHtml = `
-      <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:340px;">
-          <div class="modal-header">
-            <span class="modal-title">🐎 御马监 · 挑选天界神驹</span>
+      <div class="modal-overlay choose-mount-modal" onclick="this.remove()">
+        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:380px;background:radial-gradient(circle at 50% 10%, #2b1d14 0%, #150f0b 100%);border:2px solid #8d6b38;box-shadow:0 0 25px rgba(0,0,0,0.9);">
+          <div class="modal-header" style="background:linear-gradient(90deg, #44301e, #241b16);padding:12px 14px;">
+            <span class="modal-title" style="color:#fde047;font-size:15px;letter-spacing:1px;">🐎 御马监 · 挑选三界专属坐骑</span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body">
-            <div style="font-size:11px;color:#aaa;margin-bottom:8px;line-height:1.5;">
-              弼马温孙悟空：“俺老孙精心调理的天马，各个龙精虎猛，挑一匹去驰骋三界吧！”
+          <div class="modal-body" style="padding:12px;">
+            <div style="font-size:11px;color:#d4c4b0;margin-bottom:10px;line-height:1.6;background:rgba(0,0,0,0.35);padding:8px 10px;border-radius:6px;border:1px solid #4a331c;">
+              弼马温：“天厩灵兽分为<span style="color:#f39c12;font-weight:bold;">金刚龙马</span>、<span style="color:#38bdf8;font-weight:bold;">神仙飞剑</span>与<span style="color:#ef4444;font-weight:bold;">妖魔赤狮</span>，挑选你门派的专属灵骑吧！”
             </div>
-            ${Object.values(window.MountSystem.TEMPLATES).filter(t => t.id !== 'qitian_shenlong').map(tpl => `
-              <div class="action-card" style="margin-bottom:8px;" onclick="window.App2D.selectInitialMount('${tpl.id}'); this.closest('.modal-overlay').remove();">
-                <div class="action-left" style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:36px;height:36px;background:#3d2f21;border:1px solid #ffd700;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#ffd700;font-size:12px;">
-                    神驹
+            ${selectableMounts.map(tpl => {
+              const matched = isClassMatched(playerClass, tpl.reqClass);
+              return `
+                <div class="action-card" style="margin-bottom:10px;padding:10px;border:1.5px solid ${matched ? '#d4af37' : '#4a331c'};background:${matched ? 'rgba(50,32,18,0.7)' : 'rgba(20,15,12,0.6)'};border-radius:8px;cursor:pointer;transition:all 0.2s;box-shadow:${matched ? '0 0 10px rgba(212,175,55,0.2)' : 'none'};" onclick="window.App2D.selectInitialMount('${tpl.id}', this);">
+                  <div class="action-left" style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:40px;height:40px;background:#24170f;border:1.5px solid ${matched ? '#ffd700' : '#665039'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+                      ${tpl.icon}
+                    </div>
+                    <div>
+                      <div style="font-weight:bold;color:${matched ? '#fef08a' : '#aaa'};font-size:13px;display:flex;align-items:center;gap:6px;">
+                        ${tpl.name}
+                        <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${matched ? '#854d0e' : '#33271d'};color:${matched ? '#fef08a' : '#888'};border:1px solid ${matched ? '#eab308' : '#554131'};">
+                          ${tpl.tier}
+                        </span>
+                      </div>
+                      <div style="font-size:10.5px;color:#c4b5a0;margin-top:2px;">
+                        气血+${tpl.baseHp} · 攻击+${tpl.baseAtk} · 移速+${Math.floor(tpl.speedBonus * 100)}%
+                      </div>
+                      <div style="font-size:9.5px;color:#8d7966;margin-top:2px;">
+                        ${tpl.desc}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div style="font-weight:bold;color:#ffd700;font-size:13px;">${tpl.name} <span style="font-size:9px;color:#2ecc71;">[${tpl.tier}]</span></div>
-                    <div style="font-size:10px;color:#ddd;">气血+${tpl.baseHp} · 攻击+${tpl.baseAtk} · 移速+${Math.floor(tpl.speedBonus * 100)}%</div>
+                  <div class="action-right" style="color:${matched ? '#ffd700' : '#887766'};font-weight:bold;font-size:12px;margin-top:6px;text-align:right;">
+                    ${matched ? '选择领养' : `需【${tpl.reqClassName}】专属`}
                   </div>
                 </div>
-                <div class="action-right" style="color:#f39c12;font-weight:bold;">
-                  牵走领养 ▶
-                </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       </div>
@@ -2063,14 +2545,29 @@ class GameApp2D {
     viewport.insertAdjacentHTML('beforeend', modalHtml);
   }
 
-  selectInitialMount(templateId) {
+  selectInitialMount(templateId, clickedEl = null) {
+    const tpl = window.MountSystem.TEMPLATES[templateId];
+    if (!tpl) return;
+    const playerClass = this.playerData.classId || this.playerData.class || 'jingang';
+    const isMatched = !tpl.reqClass || tpl.reqClass === playerClass || (tpl.reqClass === 'xianren' && (playerClass === 'shenxian' || playerClass === 'xianren'));
+    if (!isMatched) {
+      window.Sound.playBeep();
+      window.showGameMessage(`⚠️【${tpl.name}】为【${tpl.reqClassName}】职业专属坐骑！少侠当前门派无法驾驭，请选择本门专属坐骑！`, 'warning', 3500);
+      return;
+    }
     const mount = this.mountSystem.addMount(templateId);
     this.mountSystem.isRiding = true;
     this.playerChar.isRiding = true;
     this.playerData.recalculateStats(false);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
-    window.showGameMessage(`🎉 恭喜获得天界神驹【${mount.name}】！气血上限+${mount.currentHp}，攻击+${mount.currentAtk}！移动速度大幅飙升！`, 'success', 4000);
+    if (clickedEl) {
+      const modal = clickedEl.closest('.modal-overlay');
+      if (modal) modal.remove();
+    } else {
+      document.querySelectorAll('.choose-mount-modal').forEach(m => m.remove());
+    }
+    window.showGameMessage(`🎉 恭喜获得本门专属坐骑【${mount.name}】！气血上限+${mount.currentHp}，攻击+${mount.currentAtk}！翻身上马疾驰！`, 'success', 4000);
   }
 
   // 坐骑面板
@@ -2144,9 +2641,43 @@ class GameApp2D {
       return;
     }
 
+    // 记录进入蟠桃园前的位置坐标与地图，供最下方土地公引渡传送返回
+    this.peachGardenReturnPoint = {
+      mapId: this.currentMapId || 'liujiacun',
+      x: this.playerChar ? this.playerChar.x : (this.playerSpawn ? this.playerSpawn.x : 23 * 32),
+      y: this.playerChar ? this.playerChar.y : (this.playerSpawn ? this.playerSpawn.y : 10 * 32)
+    };
+
     window.Sound.playSuccess();
     this.loadMap('tiangong_pantao', { x: 13 * 32, y: 12 * 32 });
-    window.showGameMessage('✨ 仙气腾腾！你已借遁法神行飞升进入天界【蟠桃胜境】！园中大仙树上挂有熟透仙桃，靠近确认即可采摘吞服！', 'success', 4500);
+    window.showGameMessage('✨ 仙气腾腾！你已借遁法神行飞升进入天界【蟠桃胜境】！园中大仙树上挂有熟透仙桃，靠近确认即可采摘吞服！园子最下方有土地公可助你返回！', 'success', 4500);
+  }
+
+  // 蟠桃园土地公遁法：返回刚才来的位置、刘家村或居住地
+  teleportFromPeachGarden(target = 'previous') {
+    if (window.Dialogue) window.Dialogue.close();
+    document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+
+    if (target === 'previous') {
+      if (this.peachGardenReturnPoint && this.peachGardenReturnPoint.mapId && this.peachGardenReturnPoint.mapId !== 'tiangong_pantao') {
+        const pt = this.peachGardenReturnPoint;
+        const targetMap = pt.mapId;
+        const targetCoords = { x: pt.x, y: pt.y };
+        if (window.Sound) window.Sound.playSuccess();
+        this.loadMap(targetMap, targetCoords);
+        const mapName = (window.GAME_DATA && window.GAME_DATA.MAPS_2D && window.GAME_DATA.MAPS_2D[targetMap]?.name) || targetMap;
+        window.showGameMessage(`✨ 土地公念咒引动缩地金光，已将你安全送回刚才所在之地【${mapName}】！`, 'success', 3500);
+      } else {
+        // 无记忆位置时默认返回刘家村
+        this.teleportFromPeachGarden('liujiacun');
+      }
+    } else if (target === 'liujiacun') {
+      if (window.Sound) window.Sound.playSuccess();
+      this.loadMap('liujiacun', { x: 23 * 32, y: 10 * 32 });
+      window.showGameMessage('🌿 土地公念动土遁真言，已将你安然送回两界山·刘家村！', 'info', 3500);
+    } else if (target === 'residence') {
+      this.teleportToResidence();
+    }
   }
 
   // 兼容旧入口：改为神行前往蟠桃园实景大仙树前采摘
@@ -2293,12 +2824,17 @@ class GameApp2D {
 
             <!-- 右侧四极潜能雷达罗盘 (体、力、敏、法) -->
             <div class="profile-v3-radar-box">
-              <canvas id="profile-radar-canvas" class="profile-v3-radar-canvas" width="120" height="94"></canvas>
+              <canvas id="profile-radar-canvas" class="profile-v3-radar-canvas" width="160" height="120"></canvas>
             </div>
           </div>
 
           <!-- 2. 下半区：11项深褐金角锦缎属性条目 (复刻图3金菱形条目) -->
           <div class="profile-v3-list">
+            <!-- 🌟 待分配潜能点 (直接置于内容首行，点击即可进入四维加点分配) -->
+            <div class="profile-v3-row" onclick="window.App2D.openStatAllocationModal('hero');" style="background:rgba(180,83,9,0.28);border:1.5px solid rgba(245,158,11,0.55);cursor:pointer;" title="点击立刻进行修为潜能分配">
+              <span class="profile-v3-label" style="color:#fef08a;font-weight:bold;">🌟 待分配潜能: <span style="color:#00ffcc;font-size:13.5px;font-weight:bold;">${p.potentialPoints} 点</span></span>
+              <span class="profile-v3-arrow" style="color:#ffd700;font-weight:bold;">点击分配 ✦</span>
+            </div>
             <div class="profile-v3-row" onclick="window.App2D.toggleMountRiding(); window.App2D.openPlayerProfileModal();">
               <span class="profile-v3-label">坐骑: ${this.playerChar && this.playerChar.isRiding ? '白龙神驹 (骑乘中)' : '暂无骑乘中坐骑'}</span>
               <span class="profile-v3-arrow">✦</span>
@@ -2345,12 +2881,10 @@ class GameApp2D {
             </div>
           </div>
 
-          <!-- 3. 底部微标与潜能分配入口 -->
-          <div class="profile-v3-footer">
-            <span class="profile-v3-foot-pill">9game.cn</span>
-            <button class="profile-v3-pot-btn" onclick="window.App2D.openStatAllocationModal()">
-              🌟 潜能分配 (${p.potentialPoints}点)
-            </button>
+          <!-- 3. 底部修真箴言与关闭操作 -->
+          <div class="profile-v3-footer" style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;">
+            <span style="font-size:10.5px;color:#a89278;">修真本心 · 历劫证道</span>
+            <button class="dialogue-opt-btn" onclick="this.closest('.profile-v3-overlay').remove()" style="padding:2px 10px;font-size:11px;">关闭</button>
           </div>
         </div>
       </div>
@@ -2376,7 +2910,7 @@ class GameApp2D {
     const roleId = isPanda ? 'panda_warrior' : (isGeneral ? 'heaven_general' : 'shaoxia');
 
     if (window.Portraits && typeof window.Portraits.drawAvatarOnCanvas === 'function') {
-      window.Portraits.drawAvatarOnCanvas(cvs, roleId);
+      window.Portraits.drawAvatarOnCanvas(ctx, roleId, 60);
     } else {
       // 优雅保底渲染
       const grad = ctx.createRadialGradient(30, 30, 5, 30, 30, 30);
@@ -2491,7 +3025,7 @@ class GameApp2D {
         if (typeof window.Sound.playSuccess === 'function') {
           window.Sound.playSuccess();
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let isClosed = false;
@@ -2643,7 +3177,7 @@ class GameApp2D {
           }
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   saveShownChapterSet() {
@@ -2651,7 +3185,7 @@ class GameApp2D {
       if (typeof localStorage !== 'undefined' && this.shownChapterSet) {
         localStorage.setItem('hanfeng_xy_shown_chapters', JSON.stringify(Array.from(this.shownChapterSet)));
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // 绘制图3右上角四极雷达罗盘 (体、力、敏、法)
@@ -2659,13 +3193,13 @@ class GameApp2D {
     const cvs = document.getElementById('profile-radar-canvas');
     if (!cvs) return;
     const ctx = cvs.getContext('2d');
-    const w = cvs.width;
-    const h = cvs.height;
+    const w = cvs.width || 160;
+    const h = cvs.height || 120;
     ctx.clearRect(0, 0, w, h);
 
     const cx = Math.floor(w / 2);
     const cy = Math.floor(h / 2);
-    const r = 28;
+    const r = Math.min(w, h) * 0.38; // 约45.6px，大方舒展
 
     // 1. 暗金星轨八卦同心圆背景
     ctx.strokeStyle = 'rgba(168, 120, 60, 0.35)';
@@ -2701,15 +3235,15 @@ class GameApp2D {
       // 外层金圈
       ctx.fillStyle = '#120b13';
       ctx.beginPath();
-      ctx.arc(axis.x, axis.y, 6.5, 0, Math.PI * 2);
+      ctx.arc(axis.x, axis.y, 9, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = '#d4af37';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // 文字
-      ctx.font = 'bold 8.5px "Microsoft YaHei", sans-serif';
+      // 文字 (加大为12px加粗)
+      ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
       ctx.fillStyle = '#fef08a';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -2734,7 +3268,7 @@ class GameApp2D {
     // 绘制发光青蓝半透明多边形网
     ctx.fillStyle = 'rgba(56, 189, 248, 0.32)';
     ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 2;
     ctx.shadowColor = '#00f2fe';
     ctx.shadowBlur = 8;
 
@@ -2753,68 +3287,729 @@ class GameApp2D {
     ctx.fillStyle = '#ffffff';
     [[cx, cy - rCon], [cx + rStr, cy], [cx, cy + rDex], [cx - rInt, cy]].forEach(([px, py]) => {
       ctx.beginPath();
-      ctx.arc(px, py, 2, 0, Math.PI * 2);
+      ctx.arc(px, py, 2.5, 0, Math.PI * 2);
       ctx.fill();
     });
   }
 
-  // 自由潜能点分配专用弹窗 (点击个人面板底部潜能分配时呼出)
-  openStatAllocationModal() {
-    const p = this.playerData;
-    const attrDefs = [
-      { key: 'con', name: '体质 (体)', desc: '增加气血上限与气血恢复', value: p.attributes.con },
-      { key: 'str', name: '力量 (力)', desc: '提升强力物理攻击伤害', value: p.attributes.str },
-      { key: 'int', name: '灵气 (法)', desc: '提升法术攻击与法力上限', value: p.attributes.int },
-      { key: 'sta', name: '耐力 (耐)', desc: '提升身躯硬度物理/法术防御', value: p.attributes.sta },
-      { key: 'dex', name: '敏捷 (敏)', desc: '提升回合出手速度与身法', value: p.attributes.dex },
-    ];
+  // =========================================================================
+  // 🎊 升级弹框与修为潜能分配 (生·法·力·速 四维雷达与保存锁定机制)
+  // =========================================================================
+  showLevelUpModal(newLevel, silverGained, pointsGained) {
+    if (typeof document === 'undefined' || !document.body) return;
+    document.querySelectorAll('.level-up-modal-overlay').forEach(el => el.remove());
 
     const modalHtml = `
-      <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:380px;width:92%;">
-          <div class="modal-header">
-            <span class="modal-title">🌟 修为潜能点分配</span>
-            <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      <div class="level-up-modal-overlay" onclick="if(event.target===this) this.remove()">
+        <div class="level-up-window" onclick="event.stopPropagation()">
+          <div class="level-up-crest"></div>
+          <div class="level-up-header">
+            <span class="level-up-title">🎉 突破升重 · 恭喜升级</span>
+            <button class="level-up-close" onclick="this.closest('.level-up-modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body" style="padding:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;background:rgba(20,15,10,0.85);padding:6px 10px;border-radius:4px;border:1px solid #5c4732;">
-              <span style="font-size:12px;color:#fef08a;">可用潜能点: <span style="font-size:14px;color:#00ffcc;font-weight:bold;">${p.potentialPoints}</span></span>
-              <span style="font-size:10px;color:#aaa;">点击分配强化四极五维</span>
+          <div class="level-up-body">
+            <div class="level-up-badge">
+              <span class="level-up-num">Lv.${newLevel}</span>
             </div>
-            <div style="display:flex;flex-direction:column;gap:5px;">
-              ${attrDefs.map(attr => `
-                <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);padding:6px 8px;border-radius:4px;border:1px solid #3d2c1c;">
-                  <div>
-                    <div style="font-size:11px;font-weight:bold;color:#ffd700;">${attr.name}: <span style="color:#ffffff;">${attr.value}</span></div>
-                    <div style="font-size:9.5px;color:#887766;">${attr.desc}</div>
-                  </div>
-                  <div>
-                    ${p.potentialPoints > 0 ? `
-                      <button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 1); window.App2D.openStatAllocationModal();" style="padding:2px 8px;font-size:10px;">+1</button>
-                      ${p.potentialPoints >= 5 ? `<button class="dialogue-opt-btn" onclick="window.App2D.allocateStat('${attr.key}', 5); window.App2D.openStatAllocationModal();" style="padding:2px 6px;font-size:10px;background:#5c1d18;margin-left:2px;">+5</button>` : ''}
-                    ` : `<span style="font-size:10px;color:#666;">已分配</span>`}
-                  </div>
-                </div>
-              `).join('')}
+            <div class="level-up-rewards">
+              <div class="level-up-reward-row">
+                <span style="color:#d4af37;">💰 银两奖励:</span>
+                <span style="color:#ffd700;font-weight:bold;">+${silverGained} 两</span>
+              </div>
+              <div class="level-up-reward-row">
+                <span style="color:#38bdf8;">🌟 获得潜能:</span>
+                <span style="color:#00ffcc;font-weight:bold;">+${pointsGained} 点 (待分配)</span>
+              </div>
             </div>
-            <div style="margin-top:10px;text-align:right;">
-              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove(); window.App2D.openPlayerProfileModal();" style="width:100%;">返回个人信息面板</button>
+            <div class="level-up-prompt">
+              恭喜道行大进！获得 <strong style="color:#ffd700;">${pointsGained}</strong> 属性点数待分配，是否立刻分配？
+            </div>
+            <div class="level-up-actions">
+              <button class="level-up-btn btn-alloc" onclick="this.closest('.level-up-modal-overlay').remove(); window.App2D.openStatAllocationModal('hero');">
+                立刻分配
+              </button>
+              <button class="level-up-btn btn-later" onclick="this.closest('.level-up-modal-overlay').remove();">
+                稍后再说
+              </button>
             </div>
           </div>
         </div>
       </div>
     `;
-    const v = document.body;
-    v.insertAdjacentHTML('beforeend', modalHtml);
-    if (window.Sound) window.Sound.playBeep();
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    if (window.Sound) {
+      if (typeof window.Sound.playLevelUp === 'function') {
+        window.Sound.playLevelUp();
+      } else if (typeof window.Sound.playSuccess === 'function') {
+        window.Sound.playSuccess();
+      } else if (typeof window.Sound.playBeep === 'function') {
+        window.Sound.playBeep();
+      }
+    }
   }
 
-  allocateStat(attrKey, amount = 1) {
+  // 综合属性实时计算与预览方法
+  getPreviewStats(targetType = 'hero', petIndex = 0, tempAttrs = null) {
+    const p = this.playerData;
+    if (!p) return { growth: '1.00', hp: 100, maxHp: 100, mp: 100, maxMp: 100, atk: 30, def: 20, spd: 15 };
+    if (targetType === 'pet') {
+      const pets = this.pets || [];
+      const pet = pets[petIndex] || (this.activeCombatPets && this.activeCombatPets[0]) || null;
+      if (!pet) return { growth: '1.00', hp: 100, maxHp: 100, mp: 100, maxMp: 100, atk: 30, def: 20, spd: 15 };
+      return this.getPetPreviewStats(pet, tempAttrs);
+    }
+    return this.getHeroPreviewStats(p, tempAttrs);
+  }
+
+  getHeroPreviewStats(p, tempAttrs = null) {
+    const classData = window.GAME_DATA?.CLASSES?.[p.classId];
+    const w = (classData && classData.attrWeights) || { hp: 14, atk: 2.0, def: 2.0, spd: 1.0, mp: 8, matk: 1.0 };
+    const curAttrs = tempAttrs || {
+      sheng: p.attributes.con,
+      fa: p.attributes.int,
+      li: p.attributes.str,
+      su: p.attributes.dex
+    };
+
+    const sheng = curAttrs.sheng ?? (p.attributes.con ?? 10);
+    const fa = curAttrs.fa ?? (p.attributes.int ?? 10);
+    const li = curAttrs.li ?? (p.attributes.str ?? 10);
+    const su = curAttrs.su ?? (p.attributes.dex ?? 10);
+
+    const baseLi = p.attributes.str ?? 10;
+    const baseSta = p.attributes.sta ?? 10;
+    const sta = baseSta + Math.floor(li * 0.4) - Math.floor(baseLi * 0.4);
+
+    const baseMaxHp = Math.floor(120 + p.level * 32 + sheng * w.hp + sta * 2);
+    const baseMaxMp = Math.floor(240 + p.level * 22 + fa * w.mp);
+    const baseAtk = Math.floor(28 + p.level * 8 + li * w.atk);
+    const baseDef = Math.floor(22 + p.level * 6 + sta * w.def + sheng * 0.3);
+    const baseSpd = Math.floor(12 + p.level * 2 + su * w.spd);
+
+    // 计算玩家装备与故事属性常态加成差值
+    const actualCon = p.attributes.con ?? 10;
+    const actualSta = p.attributes.sta ?? 10;
+    const actualInt = p.attributes.int ?? 10;
+    const actualStr = p.attributes.str ?? 10;
+    const actualDex = p.attributes.dex ?? 10;
+
+    const origBaseHp = Math.floor(120 + p.level * 32 + actualCon * w.hp + actualSta * 2);
+    const origBaseMp = Math.floor(240 + p.level * 22 + actualInt * w.mp);
+    const origBaseAtk = Math.floor(28 + p.level * 8 + actualStr * w.atk);
+    const origBaseDef = Math.floor(22 + p.level * 6 + actualSta * w.def + actualCon * 0.3);
+    const origBaseSpd = Math.floor(12 + p.level * 2 + actualDex * w.spd);
+
+    const maxHp = Math.max(1, baseMaxHp + (p.maxHp - origBaseHp));
+    const maxMp = Math.max(1, baseMaxMp + (p.maxMp - origBaseMp));
+    const atk = Math.max(1, baseAtk + (p.atk - origBaseAtk));
+    const def = Math.max(1, baseDef + (p.def - origBaseDef));
+    const spd = Math.max(1, baseSpd + (p.spd - origBaseSpd));
+
+    return {
+      growth: '1.00',
+      hp: Math.min(p.hp || maxHp, maxHp),
+      maxHp,
+      mp: Math.min(p.mp || maxMp, maxMp),
+      maxMp,
+      atk,
+      def,
+      spd
+    };
+  }
+
+  getPetPreviewStats(pet, tempAttrs = null) {
+    const template = window.GAME_DATA?.PETS?.[pet.templateId] || window.GAME_DATA?.PETS?.['dahai_gui'] || {};
+    const qMult = { ordinary: 1.0, baby: 1.05, variant: 1.15, sanxian: 1.25, jinxian: 1.35 }[pet.quality] || 1.0;
+    const g = pet.growth || template.growth || 1.0;
+    const lvl = pet.level || 1;
+    const apt = pet.aptitudes || template.aptitudes || {};
+
+    const aptitudeRatio = key => {
+      const range = template?.aptitudes?.[key];
+      if (!range || !Number.isFinite(apt?.[key])) return 1;
+      return Math.max(0.5, Math.min(1.5, apt[key] / ((range[0] + range[1]) / 2)));
+    };
+
+    const curAttrs = tempAttrs || {
+      sheng: pet.attrs?.sheng ?? (pet.attrs?.con ?? 10),
+      fa: pet.attrs?.fa ?? (pet.attrs?.int ?? 10),
+      li: pet.attrs?.li ?? (pet.attrs?.str ?? 10),
+      su: pet.attrs?.su ?? (pet.attrs?.dex ?? 10)
+    };
+
+    const shengVal = curAttrs.sheng ?? 10;
+    const faVal = curAttrs.fa ?? 10;
+    const liVal = curAttrs.li ?? 10;
+    const suVal = curAttrs.su ?? 10;
+
+    const baseLi = pet.attrs?.li ?? (pet.attrs?.str ?? 10);
+    const baseSta = pet.attrs?.sta ?? 10;
+    const staVal = baseSta + Math.floor(liVal * 0.5) - Math.floor(baseLi * 0.5);
+
+    const isCombatWild = (pet.isWild === false);
+    const wildHpBonus = isCombatWild ? Math.floor(40 + lvl * 2) : 0;
+    const wildAtkBonus = isCombatWild ? Math.floor(1 + lvl * 0.3) : 0;
+
+    let maxHp = Math.floor((185 + lvl * 25 + shengVal * 11.5 * g * aptitudeRatio('hp')) * qMult) + wildHpBonus;
+    let maxMp = Math.floor((120 + lvl * 15 + faVal * 8 * g) * qMult);
+    let atk = Math.floor((18 + lvl * 5 + liVal * 2.1 * g * aptitudeRatio('atk')) * qMult) + wildAtkBonus;
+    let def = Math.floor((15 + lvl * 4 + staVal * 1.8 * g * aptitudeRatio('def')) * qMult);
+    let spd = Math.floor((15 + suVal * 1.8 * g * aptitudeRatio('spd')) * qMult);
+
+    if (pet.passives && pet.passives.some(p => p.id === 'high_speed')) {
+      spd += 30;
+    }
+
+    maxHp = Math.max(90, maxHp);
+    maxMp = Math.max(60, maxMp);
+    atk = Math.max(25, atk);
+    def = Math.max(20, def);
+    spd = Math.max(15, spd);
+
+    return {
+      growth: (Number(g) || 1.0).toFixed(2),
+      hp: Math.min(pet.hp || maxHp, maxHp),
+      maxHp,
+      mp: Math.min(pet.mp || maxMp, maxMp),
+      maxMp,
+      atk,
+      def,
+      spd
+    };
+  }
+
+  // 绘制四维潜能雷达图 (血、精、力、速)
+  renderAllocRadar(cvsId, sheng = 20, fa = 20, li = 20, su = 20) {
+    if (typeof document === 'undefined') return;
+    const cvs = document.getElementById(cvsId);
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    if (!ctx) return;
+
+    const width = cvs.width || 160;
+    const height = cvs.height || 120;
+    ctx.clearRect(0, 0, width, height);
+
+    const cx = width / 2;
+    const cy = height / 2;
+    const r = Math.min(width, height) * 0.38; // 约45.6px，大气舒展
+
+    // 1. 绘制中式八角/菱形同心网格
+    ctx.lineWidth = 1;
+    [0.35, 0.7, 1.0].forEach((ratio, idx) => {
+      const cr = r * ratio;
+      ctx.strokeStyle = idx === 2 ? '#8d6b38' : 'rgba(141, 107, 56, 0.35)';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - cr);
+      ctx.lineTo(cx + cr, cy);
+      ctx.lineTo(cx, cy + cr);
+      ctx.lineTo(cx - cr, cy);
+      ctx.closePath();
+      ctx.stroke();
+    });
+
+    // 轴线
+    ctx.strokeStyle = 'rgba(141, 107, 56, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx, cy + r);
+    ctx.moveTo(cx - r, cy);
+    ctx.lineTo(cx + r, cy);
+    ctx.stroke();
+
+    // 2. 四极端点发光标签与文字 (上血、右精、下力、左速)
+    const axes = [
+      { label: '血', x: cx, y: cy - r, key: 'sheng', col: '#ef4444' },
+      { label: '精', x: cx + r, y: cy, key: 'fa', col: '#3b82f6' },
+      { label: '力', x: cx, y: cy + r, key: 'li', col: '#f59e0b' },
+      { label: '速', x: cx - r, y: cy, key: 'su', col: '#10b981' }
+    ];
+
+    axes.forEach(axis => {
+      ctx.fillStyle = '#120b13';
+      ctx.beginPath();
+      ctx.arc(axis.x, axis.y, 9, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = axis.col;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
+      ctx.fillStyle = '#fef08a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(axis.label, axis.x, axis.y + 0.5);
+    });
+
+    // 3. 计算雷达多边形
+    const maxVal = Math.max(sheng, fa, li, su, 25);
+    const getRadius = (val) => r * (0.35 + (val / maxVal) * 0.55);
+
+    const rSheng = getRadius(sheng);
+    const rFa = getRadius(fa);
+    const rLi = getRadius(li);
+    const rSu = getRadius(su);
+
+    // 绘制发光半透明多边形网
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#00f2fe';
+    ctx.shadowBlur = 8;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - rSheng);   // 血 (上)
+    ctx.lineTo(cx + rFa, cy);       // 精 (右)
+    ctx.lineTo(cx, cy + rLi);       // 力 (下)
+    ctx.lineTo(cx - rSu, cy);       // 速 (左)
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // 四个顶点晶莹光点
+    ctx.fillStyle = '#ffffff';
+    [[cx, cy - rSheng], [cx + rFa, cy], [cx, cy + rLi], [cx - rSu, cy]].forEach(([px, py]) => {
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  // 自由潜能点分配专用弹窗 (1:1 像素级复刻 profile-v3-window，四维血精力速雷达、实时预览与保存锁定机制)
+  openStatAllocationModal(targetType = 'hero', petIndex = 0) {
+    if (typeof document === 'undefined') return;
+    document.querySelectorAll('.stat-alloc-overlay').forEach(m => m.remove());
+
+    const p = this.playerData;
+    const pets = this.pets || [];
+    const activePet = pets[petIndex] || (this.activeCombatPets && this.activeCombatPets[0]) || null;
+    const isPet = (targetType === 'pet' && activePet);
+
+    const baseAttrs = isPet ? {
+      sheng: activePet.attrs?.sheng ?? (activePet.attrs?.con ?? 10),
+      fa: activePet.attrs?.fa ?? (activePet.attrs?.int ?? 10),
+      li: activePet.attrs?.li ?? (activePet.attrs?.str ?? 10),
+      su: activePet.attrs?.su ?? (activePet.attrs?.dex ?? 10)
+    } : {
+      sheng: p.attributes.con ?? 10,
+      fa: p.attributes.int ?? 10,
+      li: p.attributes.str ?? 10,
+      su: p.attributes.dex ?? 10
+    };
+
+    const basePoints = isPet ? (activePet.potentialPoints || 0) : (p.potentialPoints || 0);
+
+    // 建立本次会话的属性分配会话状态
+    this._allocSession = {
+      targetType: isPet ? 'pet' : 'hero',
+      petIndex: isPet ? petIndex : 0,
+      baseAttrs: { ...baseAttrs },
+      tempAttrs: { ...baseAttrs },
+      basePoints,
+      tempPoints: basePoints
+    };
+
+    const isPanda = !isPet && (p.name.includes('熊猫') || (this.playerChar && this.playerChar.appearance === 'panda_hero'));
+    const targetName = isPet ? activePet.name : p.name;
+    const targetSub = isPet ? (activePet.qualityName || '仙宠') : `ID: ${p.id || 2058}`;
+    const targetLevel = isPet ? activePet.level : p.level;
+
+    // 头像 HTML
+    let avatarHtml = '';
+    if (isPet) {
+      avatarHtml = (window.Portraits && typeof window.Portraits.getPortraitSvg === 'function')
+        ? window.Portraits.getPortraitSvg(activePet.templateId || activePet.id || 'dahai_gui', 56, { noBorder: true })
+        : `<span style="font-size:26px;">${activePet.icon || '🐾'}</span>`;
+    } else {
+      const isGeneral = this.playerChar?.appearance === 'heaven_general' || this.playerData?.appearance === 'heaven_general';
+      const roleId = isPanda ? 'panda_warrior' : (isGeneral ? 'heaven_general' : 'shaoxia');
+      avatarHtml = (window.Portraits && typeof window.Portraits.getPortraitSvg === 'function')
+        ? window.Portraits.getPortraitSvg(roleId, 56, { noBorder: true })
+        : `<span style="font-size:26px;">👤</span>`;
+    }
+
+    const preview = this.getPreviewStats(isPet ? 'pet' : 'hero', petIndex, baseAttrs);
+
+    const modalHtml = `
+      <div class="profile-v3-overlay stat-alloc-overlay" onclick="if(event.target===this) this.remove()">
+        <div class="profile-v3-window stat-alloc-window" onclick="event.stopPropagation()" style="max-width:440px;width:95%;max-height:92vh;display:flex;flex-direction:column;">
+          <div class="profile-v3-top-crest"></div>
+          <button class="profile-v3-close" onclick="this.closest('.profile-v3-overlay').remove()" title="关闭 (Esc)">✕</button>
+
+          <!-- 顶部切换页签 -->
+          <div style="display:flex;gap:6px;padding:12px 14px 0 14px;background:rgba(20,12,18,0.7);">
+            <button class="dialogue-opt-btn" onclick="window.App2D.openStatAllocationModal('hero')"
+              style="flex:1;padding:5px 8px;font-size:11.5px;${!isPet ? 'background:linear-gradient(180deg, #d97706 0%, #92400e 100%);color:#fff;border-color:#ffd700;' : 'opacity:0.75;'}">
+              👤 本尊修为加点
+            </button>
+            ${pets.length > 0 ? `
+              <button class="dialogue-opt-btn" onclick="window.App2D.openStatAllocationModal('pet', ${petIndex})"
+                style="flex:1;padding:5px 8px;font-size:11.5px;${isPet ? 'background:linear-gradient(180deg, #d97706 0%, #92400e 100%);color:#fff;border-color:#ffd700;' : 'opacity:0.75;'}">
+                🐾 仙宠潜能加点 (${pets.length}只)
+              </button>
+            ` : ''}
+          </div>
+
+          ${isPet && pets.length > 1 ? `
+            <!-- 多仙宠横向切换栏 -->
+            <div style="display:flex;gap:4px;overflow-x:auto;padding:6px 14px;background:rgba(15,8,12,0.85);border-bottom:1px solid #4a301c;">
+              ${pets.map((pt, idx) => `
+                <button class="dialogue-opt-btn" onclick="window.App2D.openStatAllocationModal('pet', ${idx})"
+                  style="padding:2px 8px;font-size:10.5px;white-space:nowrap;${idx === petIndex ? 'background:#b45309;color:#fff;border-color:#f59e0b;' : 'opacity:0.65;'}">
+                  ${pt.name} (Lv.${pt.level})
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- 1. 顶部身份名片与四维雷达图 (1:1 复刻 profile-v3-window) -->
+          <div class="profile-v3-header" style="border-top:1px solid #4a301c;">
+            <!-- 左侧身份名片 -->
+            <div class="profile-v3-identity">
+              <div class="profile-v3-avatar-ring">
+                ${avatarHtml}
+              </div>
+              <div class="profile-v3-id-info">
+                <div class="profile-v3-name">${targetName}</div>
+                <div class="profile-v3-subid">${targetSub}</div>
+                <div class="profile-v3-badges-row">
+                  <div class="profile-v3-lv-pill">
+                    <span class="profile-v3-lv-txt">LV</span>
+                    <span class="profile-v3-lv-num">${targetLevel}</span>
+                  </div>
+                  <div class="profile-v3-xian-seal">${isPet ? '宠' : '仙'}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 右侧四维雷达图 (血、精、力、速) -->
+            <div class="profile-v3-radar-box">
+              <canvas id="stat-alloc-radar-canvas" class="profile-v3-radar-canvas" width="160" height="120"></canvas>
+            </div>
+          </div>
+
+          <!-- 2. 中间加点交互面板 (滚动内容) -->
+          <div style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+            <!-- 待分配点数横幅 -->
+            <div class="stat-alloc-banner">
+              <span style="color:#fef08a;font-weight:bold;">待分配潜能点:</span>
+              <span><span id="stat-alloc-remain-pts" class="alloc-points-glow">${basePoints}</span> <span style="font-size:11px;color:#cbd5e1;">点</span></span>
+            </div>
+
+            <!-- 四项加点控制器: 血、精、力、速 -->
+            <div class="stat-alloc-rows-box">
+              ${[
+                { key: 'sheng', tag: 'tag-sheng', short: '血', name: '血 (气血)', desc: '提升最大生命值' },
+                { key: 'fa', tag: 'tag-fa', short: '精', name: '精 (法力)', desc: '提升最大法力值' },
+                { key: 'li', tag: 'tag-li', short: '力', name: '力 (攻击)', desc: '提升攻击与防御' },
+                { key: 'su', tag: 'tag-su', short: '速', name: '速 (速度)', desc: '提升出手速度' }
+              ].map(item => `
+                <div class="stat-alloc-row">
+                  <div class="stat-alloc-label-group">
+                    <span class="stat-alloc-tag ${item.tag}">${item.short}</span>
+                    <span class="stat-alloc-name">${item.name}</span>
+                  </div>
+                  <div class="stat-alloc-controls">
+                    <button class="stat-alloc-btn" id="btn-minus-${item.key}" onclick="window.App2D.adjustAlloc('${item.key}', -1)" title="减少1点">-</button>
+                    <input type="number" class="stat-alloc-input" id="alloc-input-${item.key}"
+                      value="${baseAttrs[item.key]}"
+                      min="${baseAttrs[item.key]}"
+                      max="${baseAttrs[item.key] + basePoints}"
+                      onchange="window.App2D.setAllocDirect('${item.key}', this)"
+                      oninput="window.App2D.setAllocDirect('${item.key}', this)">
+                    <button class="stat-alloc-btn" id="btn-plus-${item.key}" onclick="window.App2D.adjustAlloc('${item.key}', 1)" title="增加1点">+</button>
+                    <div class="stat-alloc-diff" id="alloc-diff-${item.key}">
+                      <span class="stat-diff-zero">(0)</span>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- 操作按钮：保存分配与重置 -->
+            <div class="stat-alloc-action-bar">
+              <button class="stat-alloc-save-btn" onclick="window.App2D.saveAlloc()">
+                💾 确认保存分配
+              </button>
+              <button class="stat-alloc-reset-btn" onclick="window.App2D.resetAlloc()">
+                🔄 重置修改
+              </button>
+            </div>
+
+            <!-- 3. 下方角色综合属性实时计算面板 -->
+            <div class="stat-alloc-details-panel">
+              <div class="stat-details-title">
+                <span>📊 当前角色综合属性</span>
+                <span style="font-size:10px;color:#a89278;font-weight:normal;">加点实时预览</span>
+              </div>
+              <div class="stat-details-grid">
+                <div class="stat-details-item">
+                  <span>成长率:</span>
+                  <span id="preview-growth" class="stat-details-val">${preview.growth}</span>
+                </div>
+                <div class="stat-details-item">
+                  <span>速度:</span>
+                  <span id="preview-spd" class="stat-details-val">${preview.spd}</span>
+                </div>
+                <div class="stat-details-item">
+                  <span>生命值:</span>
+                  <span id="preview-hp" class="stat-details-val">${preview.hp} / ${preview.maxHp}</span>
+                </div>
+                <div class="stat-details-item">
+                  <span>防御力:</span>
+                  <span id="preview-def" class="stat-details-val">${preview.def}</span>
+                </div>
+                <div class="stat-details-item">
+                  <span>法力值:</span>
+                  <span id="preview-mp" class="stat-details-val">${preview.mp} / ${preview.maxMp}</span>
+                </div>
+                <div class="stat-details-item">
+                  <span>攻击力:</span>
+                  <span id="preview-atk" class="stat-details-val">${preview.atk}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. 底部微标与返回 -->
+          <div class="profile-v3-footer" style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;">
+            <span style="font-size:10px;color:#a89278;">💡 保存后点数正式固化不可缩减</span>
+            <button class="dialogue-opt-btn" onclick="this.closest('.profile-v3-overlay').remove(); window.App2D.openPlayerProfileModal();" style="padding:2px 10px;font-size:11px;">
+              返回人物状态
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    if (window.Sound) window.Sound.playBeep();
+
+    // 绘制初始四维雷达图
+    this.renderAllocRadar('stat-alloc-radar-canvas', baseAttrs.sheng, baseAttrs.fa, baseAttrs.li, baseAttrs.su);
+    this.updateAllocModalUI();
+  }
+
+  // 加点微调 (-1 / +1)
+  adjustAlloc(attrKey, delta) {
+    const s = this._allocSession;
+    if (!s) return;
+    if (delta > 0) {
+      if (s.tempPoints < delta) {
+        window.showGameMessage('待分配潜能点不足！', 'warning');
+        return;
+      }
+      s.tempAttrs[attrKey] += delta;
+      s.tempPoints -= delta;
+    } else if (delta < 0) {
+      if (s.tempAttrs[attrKey] + delta < s.baseAttrs[attrKey]) {
+        window.showGameMessage('已保存锁定的点数无法撤回缩减！', 'warning');
+        return;
+      }
+      s.tempAttrs[attrKey] += delta;
+      s.tempPoints -= delta;
+    }
+    this.updateAllocModalUI();
+  }
+
+  // 加点直接输入
+  setAllocDirect(attrKey, inputElem) {
+    const s = this._allocSession;
+    if (!s || !inputElem) return;
+    let typed = parseInt(inputElem.value, 10);
+    const minVal = s.baseAttrs[attrKey];
+    const maxVal = s.tempAttrs[attrKey] + s.tempPoints;
+
+    if (isNaN(typed) || typed < minVal) {
+      typed = minVal;
+    } else if (typed > maxVal) {
+      typed = maxVal;
+    }
+
+    const diff = typed - s.tempAttrs[attrKey];
+    s.tempAttrs[attrKey] = typed;
+    s.tempPoints -= diff;
+
+    this.updateAllocModalUI();
+  }
+
+  // 重置本次未保存的加点调整
+  resetAlloc() {
+    const s = this._allocSession;
+    if (!s) return;
+    s.tempAttrs = { ...s.baseAttrs };
+    s.tempPoints = s.basePoints;
+    this.updateAllocModalUI();
+    window.showGameMessage('已重置本次未保存的加点调整', 'info');
+  }
+
+  // 确认保存分配 (永久生效锁定，消耗过的点数无法再退减)
+  saveAlloc() {
+    const s = this._allocSession;
+    if (!s) return;
+
+    const diffs = {
+      sheng: s.tempAttrs.sheng - s.baseAttrs.sheng,
+      fa: s.tempAttrs.fa - s.baseAttrs.fa,
+      li: s.tempAttrs.li - s.baseAttrs.li,
+      su: s.tempAttrs.su - s.baseAttrs.su,
+    };
+    const totalDiff = Object.values(diffs).reduce((a, b) => a + b, 0);
+    if (totalDiff <= 0) {
+      window.showGameMessage('未做任何潜能点修改', 'info');
+      return;
+    }
+
+    if (s.targetType === 'hero') {
+      const p = this.playerData;
+      for (const [key, val] of Object.entries(diffs)) {
+        if (val > 0) {
+          p.allocatePoints(key, val);
+        }
+      }
+      this.updatePlayerHud();
+      s.basePoints = p.potentialPoints;
+      s.baseAttrs = {
+        sheng: p.attributes.con,
+        fa: p.attributes.int,
+        li: p.attributes.str,
+        su: p.attributes.dex
+      };
+    } else {
+      const pets = this.pets || [];
+      const pet = pets[s.petIndex];
+      if (!pet) return;
+      for (const [key, val] of Object.entries(diffs)) {
+        if (val > 0 && window.PetSystem) {
+          window.PetSystem.allocatePetPoints(pet, key, val);
+        }
+      }
+      s.basePoints = pet.potentialPoints || 0;
+      s.baseAttrs = {
+        sheng: pet.attrs?.sheng ?? (pet.attrs?.con ?? 10),
+        fa: pet.attrs?.fa ?? (pet.attrs?.int ?? 10),
+        li: pet.attrs?.li ?? (pet.attrs?.str ?? 10),
+        su: pet.attrs?.su ?? (pet.attrs?.dex ?? 10)
+      };
+    }
+
+    s.tempAttrs = { ...s.baseAttrs };
+    s.tempPoints = s.basePoints;
+
+    if (window.Sound) {
+      if (typeof window.Sound.playSuccess === 'function') window.Sound.playSuccess();
+      else if (typeof window.Sound.playBeep === 'function') window.Sound.playBeep();
+    }
+    window.showGameMessage('✨ 属性加点保存成功！点数已正式生效并锁定！', 'success');
+
+    if (typeof this.saveAutoProgress === 'function') {
+      this.saveAutoProgress();
+    }
+
+    this.updateAllocModalUI();
+  }
+
+  // 刷新加点弹窗交互与实时数值预览
+  updateAllocModalUI() {
+    const s = this._allocSession;
+    if (!s || typeof document === 'undefined') return;
+
+    // 1. 剩余点数更新
+    const remainEl = document.getElementById('stat-alloc-remain-pts');
+    if (remainEl) remainEl.innerText = s.tempPoints;
+
+    // 2. 四项属性输入控件与差异更新
+    ['sheng', 'fa', 'li', 'su'].forEach(key => {
+      const cur = s.tempAttrs[key];
+      const base = s.baseAttrs[key];
+      const diff = cur - base;
+
+      const input = document.getElementById(`alloc-input-${key}`);
+      if (input && document.activeElement !== input) {
+        input.value = cur;
+        input.min = base;
+        input.max = cur + s.tempPoints;
+      }
+
+      const diffEl = document.getElementById(`alloc-diff-${key}`);
+      if (diffEl) {
+        if (diff > 0) {
+          diffEl.innerHTML = `<span class="stat-diff-pos">(+${diff})</span>`;
+        } else {
+          diffEl.innerHTML = `<span class="stat-diff-zero">(0)</span>`;
+        }
+      }
+
+      const btnMinus = document.getElementById(`btn-minus-${key}`);
+      if (btnMinus) {
+        btnMinus.disabled = (cur <= base);
+        if (btnMinus.style) {
+          btnMinus.style.opacity = (cur <= base) ? '0.45' : '1';
+          btnMinus.style.cursor = (cur <= base) ? 'not-allowed' : 'pointer';
+        }
+      }
+
+      const btnPlus = document.getElementById(`btn-plus-${key}`);
+      if (btnPlus) {
+        btnPlus.disabled = (s.tempPoints <= 0);
+        if (btnPlus.style) {
+          btnPlus.style.opacity = (s.tempPoints <= 0) ? '0.45' : '1';
+          btnPlus.style.cursor = (s.tempPoints <= 0) ? 'not-allowed' : 'pointer';
+        }
+      }
+    });
+
+    // 3. 重绘四维雷达图
+    this.renderAllocRadar('stat-alloc-radar-canvas', s.tempAttrs.sheng, s.tempAttrs.fa, s.tempAttrs.li, s.tempAttrs.su);
+
+    // 4. 计算并更新下方综合属性预览
+    const preview = this.getPreviewStats(s.targetType, s.petIndex, s.tempAttrs);
+    if (preview) {
+      const gEl = document.getElementById('preview-growth');
+      if (gEl) gEl.innerText = preview.growth;
+      const hpEl = document.getElementById('preview-hp');
+      if (hpEl) hpEl.innerText = `${preview.hp} / ${preview.maxHp}`;
+      const mpEl = document.getElementById('preview-mp');
+      if (mpEl) mpEl.innerText = `${preview.mp} / ${preview.maxMp}`;
+      const atkEl = document.getElementById('preview-atk');
+      if (atkEl) atkEl.innerText = preview.atk;
+      const defEl = document.getElementById('preview-def');
+      if (defEl) defEl.innerText = preview.def;
+      const spdEl = document.getElementById('preview-spd');
+      if (spdEl) spdEl.innerText = preview.spd;
+    }
+  }
+
+  // 保持向后兼容原有接口
+  allocateStat(attrKey, amount = 1, targetType = 'hero', petIndex = 0) {
+    if (this._allocSession) {
+      this.adjustAlloc(attrKey, amount);
+      this.saveAlloc();
+      return;
+    }
+    if (targetType === 'pet') {
+      const pets = this.pets || [];
+      const pet = pets[petIndex];
+      if (pet && window.PetSystem && window.PetSystem.allocatePetPoints(pet, attrKey, amount)) {
+        if (window.Sound) window.Sound.playBeep();
+        window.showGameMessage(`✨ 仙宠【${pet.name}】加点成功！当前 ${attrKey}: ${pet.attrs[attrKey] || pet.attrs.sheng}`, 'success', 2000);
+        this.openStatAllocationModal('pet', petIndex);
+      } else {
+        window.showGameMessage('仙宠潜能点不足！', 'warning', 2000);
+      }
+      return;
+    }
+
     if (this.playerData.allocatePoints(attrKey, amount)) {
       this.updatePlayerHud();
       if (window.Sound) window.Sound.playBeep();
-      window.showGameMessage(`✨ 潜能分配成功！当前 ${attrKey}: ${this.playerData.attributes[attrKey]}`, 'success', 2000);
-      this.openPlayerProfileModal();
+      const curVal = this.playerData.attributes[attrKey] || this.playerData.attributes.con;
+      window.showGameMessage(`✨ 潜能分配成功！当前 ${attrKey}: ${curVal}`, 'success', 2000);
+      this.openStatAllocationModal('hero');
     } else {
       window.showGameMessage('潜能点不足！', 'warning', 2000);
     }
@@ -2831,88 +4026,107 @@ class GameApp2D {
     const eq = this.playerData.equipment;
 
     const parts = [
-      { key: 'weapon', name: '神兵' },
-      { key: 'head', name: '冠盔' },
-      { key: 'armor', name: '铠甲' },
-      { key: 'necklace', name: '项坠' },
-      { key: 'belt', name: '腰带' },
-      { key: 'boots', name: '鞋靴' }
+      { key: 'weapon', name: '神兵', icon: '⚔️' },
+      { key: 'head', name: '冠盔', icon: '👑' },
+      { key: 'armor', name: '铠甲', icon: '🥋' },
+      { key: 'necklace', name: '项坠', icon: '📿' },
+      { key: 'belt', name: '腰带', icon: '🎗️' },
+      { key: 'boots', name: '鞋靴', icon: '👢' }
     ];
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
         <div class="modal-window inventory-panel" onclick="event.stopPropagation()">
           <div class="modal-header">
-            <span class="modal-title">乾坤行囊 <small>${this.inventory.slots.length}/${this.inventory.maxSlots} 格</small></span>
+            <span class="modal-title">乾坤行囊 <small style="color:#fde047;margin-left:6px;">${this.inventory.slots.length}/${this.inventory.maxSlots} 格</small></span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
           <div class="modal-body inventory-body">
-            <div class="inventory-layout"><section class="inventory-equipment">
-            <!-- 身上穿戴装备概览 -->
-            <div class="inventory-equipment-inner">
-              <div class="inventory-hero-preview">
-                <div class="inventory-hero-portrait">${window.Portraits ? window.Portraits.getPortraitSvg(this.playerData.appearance === 'heaven_general' ? 'heaven_general' : 'shaoxia', 62) : '⚔️'}</div>
-                <div><strong>${this.playerData.name}</strong><span>Lv.${this.playerData.level} · 当前装束</span></div>
-              </div>
-              <div class="inventory-equipped-heading"><strong>身上装备</strong><span>银两 ${this.playerData.silver} 两</span></div>
-              <div class="inventory-equipped-tip">点击装备查看属性与宝石孔</div>
-              <div class="inventory-equipped-grid">
-                ${parts.map(p => {
-                  const itemSlot = eq[p.key];
-                  if (!itemSlot) {
-                    return `
-                      <div class="inventory-equipped-empty">
-                        <div>[${p.name}]</div>
-                        <div style="margin-top:2px;">未佩戴</div>
-                      </div>
-                    `;
-                  }
-                  const baseIt = window.GAME_DATA.ITEMS[itemSlot.itemId] || {};
-                  const sockets = itemSlot.sockets || [null, null, null];
-                  const socketIcons = sockets.map(g => g ? '💎' : '⚪').join('');
-                  return `
-                    <button type="button" class="inventory-equipped-card" onclick="window.App2D.showEquippedDetail('${p.key}')">
-                      <div class="inventory-equipped-name">
-                        ${baseIt.icon || '⚔️'}${baseIt.name || p.name}
-                      </div>
-                      <div class="inventory-equipped-stars">+${itemSlot.star || 0}星 ${socketIcons}</div>
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-
-            </section><section class="inventory-contents">
-            <div class="inventory-section-heading">物品 <span>${items.length} 件</span></div>
-            <!-- 分类切换 Tabs -->
-            <div class="inventory-tabs">
-              <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='all'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('all')">全部</button>
-              <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='consumable'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('consumable')">💊药品</button>
-              <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='equip'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('equip')">🛡️装备</button>
-              <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='gem'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('gem')">💎宝石</button>
-              <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${activeCategory==='misc'?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openInventoryModal('misc')">📦杂物</button>
-            </div>
-
-            <!-- 物品列表格 -->
-            <div class="inventory-item-grid">
-              ${items.length === 0 ? `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#887766;font-size:11px;">此分类下暂无物品</div>` : ''}
-              ${items.map(slot => {
-                const it = window.GAME_DATA.ITEMS[slot.itemId] || {};
-                const isEq = it.type === 'equip';
-                const sockets = (slot.equipData && slot.equipData.sockets) || [];
-                const sockStr = isEq ? sockets.map(g => g ? '💎' : '⚪').join('') : '';
-                return `
-                  <button type="button" class="inventory-item-card" onclick="window.App2D.showInventoryItemDetail('${slot.instanceId}')" title="${it.name || '物品'}">
-                    <div class="inventory-item-icon">${it.icon || '📦'}</div>
-                    <div class="inventory-item-name">
-                      ${it.name || '物品'}
+            <div class="inventory-layout">
+              <!-- 左侧：身上穿戴装备神位 -->
+              <section class="inventory-equipment">
+                <div class="inventory-equipment-inner">
+                  <div class="inventory-hero-preview">
+                    <div class="inventory-hero-portrait">${window.Portraits ? window.Portraits.getPortraitSvg(this.playerData.appearance === 'heaven_general' ? 'heaven_general' : 'shaoxia', 54) : '⚔️'}</div>
+                    <div style="flex:1;">
+                      <div style="font-weight:bold;font-size:13.5px;color:#fef08a;">${this.playerData.name}</div>
+                      <div style="font-size:10px;color:#a89682;margin-top:2px;">Lv.${this.playerData.level} · 当前装束</div>
+                      <div style="font-size:10.5px;color:#ffd700;margin-top:3px;font-weight:bold;">🪙 银两: ${this.playerData.silver} 两</div>
                     </div>
-                    ${slot.count > 1 ? `<span class="inventory-item-count">×${slot.count}</span>` : ''}
-                    ${isEq ? `<div class="inventory-item-sockets">${sockStr}</div>` : ''}
-                  </button>
-                `;
-              }).join('')}
-            </div></section></div>
+                  </div>
+                  <div class="inventory-equipped-heading">
+                    <strong>身披法宝神装</strong>
+                  </div>
+                  <div class="inventory-equipped-tip">点击神位可查看属性与宝石孔</div>
+                  <div class="inventory-equipped-grid">
+                    ${parts.map(p => {
+                      const itemSlot = eq[p.key];
+                      if (!itemSlot) {
+                        return `
+                          <div class="inventory-equipped-empty">
+                            <div style="font-size:16px;opacity:0.4;">${p.icon}</div>
+                            <div style="margin-top:2px;font-size:10px;color:#8d7966;">[${p.name}] 虚位</div>
+                          </div>
+                        `;
+                      }
+                      const baseIt = window.GAME_DATA.ITEMS[itemSlot.itemId] || {};
+                      const sockets = itemSlot.sockets || [null, null, null];
+                      const socketIcons = sockets.map(g => g ? '💎' : '⚪').join('');
+                      return `
+                        <button type="button" class="inventory-equipped-card" onclick="window.App2D.showEquippedDetail('${p.key}')">
+                          <div class="inventory-equipped-name">
+                            ${baseIt.icon || p.icon} ${baseIt.name || p.name}
+                          </div>
+                          <div class="inventory-equipped-stars">+${itemSlot.star || 0}星 ${socketIcons}</div>
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </section>
+
+              <!-- 右侧：百宝行囊格与分类 -->
+              <section class="inventory-contents">
+                <div class="inventory-section-heading">
+                  行囊珍宝 <span>${items.length} 件</span>
+                </div>
+                <!-- 分类切换 Tabs -->
+                <div class="inventory-tabs">
+                  ${[
+                    { id: 'all', name: '全部' },
+                    { id: 'consumable', name: '💊 仙丹' },
+                    { id: 'equip', name: '🛡️ 神兵' },
+                    { id: 'gem', name: '💎 灵石' },
+                    { id: 'misc', name: '📦 奇珍' }
+                  ].map(tab => `
+                    <button class="dialogue-opt-btn" style="flex:1;padding:5px 4px;font-size:10.5px;${activeCategory === tab.id ? 'background:linear-gradient(180deg,#b4833e,#825a22);color:#fff;font-weight:bold;border-color:#d4af37;' : 'background:rgba(20,15,12,0.8);color:#c4b5a0;'}" onclick="window.App2D.openInventoryModal('${tab.id}')">
+                      ${tab.name}
+                    </button>
+                  `).join('')}
+                </div>
+
+                <!-- 物品列表格 -->
+                <div class="inventory-item-grid">
+                  ${items.length === 0 ? `<div style="grid-column:1/-1;text-align:center;padding:30px 10px;color:#8d7966;font-size:11px;">此分类下暂无存物</div>` : ''}
+                  ${items.map(slot => {
+                    const it = window.GAME_DATA.ITEMS[slot.itemId] || {};
+                    const isEq = it.type === 'equip';
+                    const sockets = (slot.equipData && slot.equipData.sockets) || [];
+                    const sockStr = isEq ? sockets.map(g => g ? '💎' : '⚪').join('') : '';
+                    return `
+                      <button type="button" class="inventory-item-card" onclick="window.App2D.showInventoryItemDetail('${slot.instanceId}')" title="${it.name || '物品'}">
+                        <div class="inventory-item-icon">${it.icon || '📦'}</div>
+                        <div class="inventory-item-name">
+                          ${it.name || '物品'}
+                        </div>
+                        ${slot.count > 1 ? `<span class="inventory-item-count">×${slot.count}</span>` : ''}
+                        ${isEq ? `<div class="inventory-item-sockets">${sockStr}</div>` : ''}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </div>
@@ -2942,36 +4156,132 @@ class GameApp2D {
       `;
     } else if (it.type === 'gem') {
       opButtons = `
-        <button class="dialogue-opt-btn" onclick="window.App2D.openGemSocketModal('${instanceId}'); this.closest('.modal-overlay').remove();" style="flex:1;background:#8e44ad;">
-          💎 镶嵌到装备
+        <button class="dialogue-opt-btn" onclick="window.App2D.openGemSocketModal('${instanceId}'); this.closest('.modal-overlay').remove();" style="flex:1;background:linear-gradient(180deg,#6c3483,#4a235a);">
+          💎 镶嵌宝石
         </button>
+      `;
+    }
+
+    const typeNames = {
+      equip: '神兵法宝',
+      consumable: '仙丹妙药',
+      gem: '灵石仙玉',
+      misc: '天材奇珍',
+      forge_item: '铸造材料',
+      pet_item: '仙宠灵物',
+      pet_book: '魔兽要诀',
+      quest_item: '历练信物'
+    };
+    const typeLabel = typeNames[it.type] || '行囊奇珍';
+
+    const qualityNames = {
+      white: '凡品',
+      green: '良品',
+      blue: '灵品',
+      purple: '宝器',
+      gold: '仙器',
+      orange: '神器'
+    };
+    const qualityColors = {
+      white: '#d1d5db',
+      green: '#4ade80',
+      blue: '#38bdf8',
+      purple: '#c084fc',
+      gold: '#fde047',
+      orange: '#fb923c'
+    };
+    const qColor = qualityColors[it.quality] || '#e2e8f0';
+    const qName = qualityNames[it.quality] || '灵珍';
+
+    const attrMap = {
+      atk: '物攻',
+      matk: '法攻',
+      def: '物防',
+      mdef: '法防',
+      hp: '气血',
+      mp: '法力',
+      spd: '速度',
+      hit: '命中',
+      crit: '暴击'
+    };
+
+    const resMap = {
+      phy: '抗普攻',
+      shesheng: '抗舍生',
+      leiting: '抗雷霆',
+      feisha: '抗飞沙',
+      fengyin: '抗封印',
+      dingshen: '抗定身'
+    };
+
+    let attrsHtml = '';
+    if (it.attrs && Object.keys(it.attrs).length > 0) {
+      attrsHtml = `
+        <div style="background:rgba(20,15,10,0.7);padding:8px 10px;border-radius:6px;border:1px solid #4a331c;margin-bottom:10px;">
+          <div style="color:#ffd700;font-size:11px;font-weight:bold;margin-bottom:6px;letter-spacing:0.5px;">⚔️ 基础神兵属性</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            ${Object.entries(it.attrs).map(([k, v]) => `
+              <div style="background:#24170f;border:1px solid #3d2a1b;border-radius:4px;padding:3px 8px;display:flex;justify-content:space-between;font-size:11px;">
+                <span style="color:#c4b5a0;">${attrMap[k] || k.toUpperCase()}</span>
+                <span style="color:#fef08a;font-weight:bold;">+${v}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    let bonusHtml = '';
+    if (it.bonus && Object.keys(it.bonus).length > 0) {
+      bonusHtml = `
+        <div style="background:rgba(30,15,35,0.7);padding:8px 10px;border-radius:6px;border:1px solid #7c3aed;margin-bottom:10px;">
+          <div style="color:#d8b4fe;font-size:11px;font-weight:bold;margin-bottom:6px;letter-spacing:0.5px;">💎 镶嵌孔位加持</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:4px;">
+            ${Object.entries(it.bonus).map(([k, v]) => `
+              <div style="background:#23112c;border:1px solid #5b21b6;border-radius:4px;padding:3px 8px;display:flex;justify-content:space-between;font-size:11px;">
+                <span style="color:#e9d5ff;">${resMap[k.replace('res_', '')] || (attrMap[k] || k)}</span>
+                <span style="color:#a7f3d0;font-weight:bold;">+${typeof v === 'number' && v < 1 ? Math.round(v * 100) + '%' : v}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
       `;
     }
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window item-detail-panel" onclick="event.stopPropagation()">
-          <div class="modal-header">
-            <span class="modal-title">${it.icon || '📦'} ${it.name}</span>
+        <div class="modal-window item-detail-modal" onclick="event.stopPropagation()" style="max-width:320px;background:radial-gradient(circle at 50% 10%, #291c13 0%, #150f0b 100%);border:2px solid #8d6b38;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.85);overflow:hidden;">
+          <div class="modal-header" style="background:linear-gradient(90deg, #44301e, #241b16);padding:10px 14px;border-bottom:1.5px solid #6b4e28;display:flex;justify-content:space-between;align-items:center;">
+            <span class="modal-title" style="color:#fde047;font-size:14px;font-weight:bold;display:flex;align-items:center;gap:6px;">
+              ${it.icon || '📦'} ${it.name}
+            </span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body item-detail-body">
-            <div class="item-detail-icon">${it.icon || '📦'}</div>
-            <div class="item-detail-description">${it.desc || '一件三界秘宝。'}</div>
-            ${it.attrs ? `
-              <div style="background:#1b120a;padding:6px;border-radius:4px;border:1px solid #443322;margin-bottom:8px;">
-                ${Object.entries(it.attrs).map(([k, v]) => `<div>${k.toUpperCase()}: +${v}</div>`).join('')}
+          <div class="modal-body" style="padding:12px;">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
+              <div style="width:46px;height:46px;border-radius:8px;background:#24170f;border:1.5px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+                ${it.icon || '📦'}
               </div>
-            ` : ''}
-            ${it.bonus ? `
-              <div style="background:#1b120a;padding:6px;border-radius:4px;border:1px solid #8e44ad;margin-bottom:8px;color:#d2a8ff;">
-                【宝石孔位镶嵌属性】<br>
-                ${Object.entries(it.bonus).map(([k, v]) => `<div>${k.replace('res_', '抗性 ')}: +${typeof v === 'number' && v < 1 ? (v*100)+'%' : v}</div>`).join('')}
+              <div style="flex:1;">
+                <div style="font-weight:bold;font-size:13.5px;color:#fef08a;">${it.name}</div>
+                <div style="display:flex;gap:5px;margin-top:4px;">
+                  <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:#382416;color:${qColor};border:1px solid #5a3c22;">${qName}</span>
+                  <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:#2a1b12;color:#a89682;border:1px solid #44301f;">${typeLabel}</span>
+                  ${slot.count > 1 ? `<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:#3b1e1e;color:#fca5a5;border:1px solid #7f1d1d;">×${slot.count}</span>` : ''}
+                </div>
               </div>
-            ` : ''}
-            <div style="display:flex;gap:6px;margin-top:10px;">
+            </div>
+
+            <div style="font-size:11px;color:#d8c6b4;background:rgba(0,0,0,0.38);border-left:3px solid #d4af37;padding:6px 9px;border-radius:0 5px 5px 0;margin-bottom:10px;line-height:1.5;">
+              ${it.desc || '三界宝物。'}
+            </div>
+
+            ${attrsHtml}
+            ${bonusHtml}
+
+            <div style="display:flex;gap:8px;margin-top:8px;">
               ${opButtons}
-              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove()" style="padding:4px 10px;">关闭</button>
+              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove()" style="padding:6px 14px;">关闭</button>
             </div>
           </div>
         </div>
@@ -2994,38 +4304,92 @@ class GameApp2D {
     const it = window.GAME_DATA.ITEMS[equip.itemId] || {};
     const sockets = equip.sockets || [null, null, null];
 
+    const slotNames = {
+      weapon: '神兵',
+      head: '冠盔',
+      armor: '铠甲',
+      necklace: '项坠',
+      belt: '腰带',
+      boots: '鞋靴'
+    };
+    const sName = slotNames[slotKey] || slotKey;
+
+    const attrMap = {
+      atk: '物攻',
+      matk: '法攻',
+      def: '物防',
+      mdef: '法防',
+      hp: '气血',
+      mp: '法力',
+      spd: '速度',
+      hit: '命中',
+      crit: '暴击'
+    };
+
+    let attrsHtml = '';
+    if (it.attrs && Object.keys(it.attrs).length > 0) {
+      attrsHtml = `
+        <div style="background:rgba(20,15,10,0.7);padding:8px 10px;border-radius:6px;border:1px solid #4a331c;margin-bottom:10px;">
+          <div style="color:#ffd700;font-size:11px;font-weight:bold;margin-bottom:6px;letter-spacing:0.5px;">⚔️ 装备加成属性</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            ${Object.entries(it.attrs).map(([k, v]) => `
+              <div style="background:#24170f;border:1px solid #3d2a1b;border-radius:4px;padding:3px 8px;display:flex;justify-content:space-between;font-size:11px;">
+                <span style="color:#c4b5a0;">${attrMap[k] || k.toUpperCase()}</span>
+                <span style="color:#fef08a;font-weight:bold;">+${v}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:320px;">
-          <div class="modal-header">
-            <span class="modal-title">${it.icon || '🛡️'} ${it.name} (+${equip.star||0}星)</span>
+        <div class="modal-window item-detail-modal" onclick="event.stopPropagation()" style="max-width:320px;background:radial-gradient(circle at 50% 10%, #291c13 0%, #150f0b 100%);border:2px solid #8d6b38;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.85);overflow:hidden;">
+          <div class="modal-header" style="background:linear-gradient(90deg, #44301e, #241b16);padding:10px 14px;border-bottom:1.5px solid #6b4e28;display:flex;justify-content:space-between;align-items:center;">
+            <span class="modal-title" style="color:#fde047;font-size:14px;font-weight:bold;display:flex;align-items:center;gap:6px;">
+              ${it.icon || '🛡️'} ${it.name} (+${equip.star || 0}星)
+            </span>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body" style="font-size:11px;color:#fef0cd;line-height:1.6;">
-            <div>部位：${it.slot || slotKey}</div>
-            <div style="color:#aaa;margin-bottom:6px;">${it.desc || ''}</div>
-            
-            <div style="background:#1b120a;border:1px solid #c59b27;border-radius:6px;padding:6px;margin-bottom:8px;">
-              <div style="color:#ffd700;font-weight:bold;margin-bottom:4px;">💎 宝石镶嵌孔 (${sockets.filter(Boolean).length}/3)</div>
+          <div class="modal-body" style="padding:12px;">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
+              <div style="width:46px;height:46px;border-radius:8px;background:#24170f;border:1.5px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+                ${it.icon || '🛡️'}
+              </div>
+              <div style="flex:1;">
+                <div style="font-weight:bold;font-size:13.5px;color:#fef08a;">${it.name} <span style="color:#ffd700;font-size:11px;font-weight:normal;">(+${equip.star || 0}星)</span></div>
+                <div style="font-size:10.5px;color:#a89682;margin-top:2px;">神位部位：【${sName}】</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px;color:#d8c6b4;background:rgba(0,0,0,0.38);border-left:3px solid #d4af37;padding:6px 9px;border-radius:0 5px 5px 0;margin-bottom:10px;line-height:1.5;">
+              ${it.desc || '护体神装。'}
+            </div>
+
+            ${attrsHtml}
+
+            <div style="background:rgba(20,15,10,0.7);border:1px solid #6b4e28;border-radius:6px;padding:8px 10px;margin-bottom:10px;">
+              <div style="color:#ffd700;font-size:11px;font-weight:bold;margin-bottom:6px;">💎 宝石镶嵌孔 (${sockets.filter(Boolean).length}/3)</div>
               ${sockets.map((gemId, idx) => {
                 if (gemId) {
                   const gIt = window.GAME_DATA.ITEMS[gemId] || {};
                   return `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-                      <span>第${idx+1}孔: 💎 ${gIt.name}</span>
-                      <button class="dialogue-opt-btn" style="padding:1px 6px;font-size:9px;" onclick="window.App2D.unsocketEquippedGem('${slotKey}', ${idx}); this.closest('.modal-overlay').remove();">拆除</button>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;background:#24170f;padding:2px 6px;border-radius:4px;border:1px solid #3d2a1b;">
+                      <span style="font-size:11px;color:#fde047;">第${idx + 1}孔: 💎 ${gIt.name}</span>
+                      <button class="dialogue-opt-btn" style="padding:1px 6px;font-size:9.5px;background:#78350f;" onclick="window.App2D.unsocketEquippedGem('${slotKey}', ${idx}); this.closest('.modal-overlay').remove();">拆除</button>
                     </div>
                   `;
                 }
-                return `<div style="color:#887766;">第${idx+1}孔: ⚪ 空孔位 (可镶嵌宝石)</div>`;
+                return `<div style="color:#887766;font-size:10.5px;padding:2px 0;">第${idx + 1}孔: ⚪ 空孔位 (可镶嵌宝石)</div>`;
               }).join('')}
             </div>
 
-            <div style="display:flex;gap:6px;">
-              <button class="dialogue-opt-btn" style="flex:1;background:#c0392b;" onclick="window.App2D.unequipItemToBag('${slotKey}'); this.closest('.modal-overlay').remove();">
-                卸下装备到背包
+            <div style="display:flex;gap:8px;">
+              <button class="dialogue-opt-btn" style="flex:1;background:linear-gradient(180deg,#991b1b,#7f1d1d);border-color:#ef4444;" onclick="window.App2D.unequipItemToBag('${slotKey}'); this.closest('.modal-overlay').remove();">
+                卸下装备
               </button>
-              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove()">关闭</button>
+              <button class="dialogue-opt-btn" onclick="this.closest('.modal-overlay').remove()" style="padding:6px 14px;">关闭</button>
             </div>
           </div>
         </div>
@@ -3073,10 +4437,10 @@ class GameApp2D {
             <div style="max-height:200px;overflow-y:auto;">
               ${bagEquips.length === 0 ? `<div style="color:#887766;text-align:center;padding:12px;">背包内暂无可镶嵌装备</div>` : ''}
               ${bagEquips.map(eqSlot => {
-                const eqItem = window.GAME_DATA.ITEMS[eqSlot.itemId];
-                const sockets = (eqSlot.equipData && eqSlot.equipData.sockets) || [null, null, null];
-                const emptyIdx = sockets.findIndex(g => !g);
-                return `
+      const eqItem = window.GAME_DATA.ITEMS[eqSlot.itemId];
+      const sockets = (eqSlot.equipData && eqSlot.equipData.sockets) || [null, null, null];
+      const emptyIdx = sockets.findIndex(g => !g);
+      return `
                   <div style="background:#20140b;border:1px solid #5c4732;border-radius:6px;padding:6px 8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
                       <div style="color:#ffd700;font-weight:bold;">${eqItem.name}</div>
@@ -3084,12 +4448,12 @@ class GameApp2D {
                     </div>
                     ${emptyIdx !== -1 ? `
                       <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;" onclick="window.App2D.doSocketGem('${eqSlot.instanceId}', '${gemSlot.itemId}', ${emptyIdx}); this.closest('.modal-overlay').remove();">
-                        镶嵌于第${emptyIdx+1}孔
+                        镶嵌于第${emptyIdx + 1}孔
                       </button>
                     ` : `<span style="font-size:10px;color:#e74c3c;">已满孔</span>`}
                   </div>
                 `;
-              }).join('')}
+    }).join('')}
             </div>
           </div>
         </div>
@@ -3121,7 +4485,7 @@ class GameApp2D {
     this.playerData.recalculateStats(false);
     this.updatePlayerHud();
     window.Sound.playSuccess();
-    window.showGameMessage(`已拆除第 ${socketIdx+1} 孔宝石并放入背包！`, 'success');
+    window.showGameMessage(`已拆除第 ${socketIdx + 1} 孔宝石并放入背包！`, 'success');
   }
 
   // =========================================================================
@@ -3155,30 +4519,42 @@ class GameApp2D {
             <div class="pet-roster-list">
               ${this.pets.length === 0 ? `<div style="text-align:center;color:#887766;padding:20px;">暂无仙宠，可前往野外使用神符或法宝招降！</div>` : ''}
               ${this.pets.map(pet => {
-                const isActive = this.activeCombatPets.some(p => p.instanceId === pet.instanceId);
-                const qColor = pet.quality === 'jinxian' ? '#ffd700' : (pet.quality === 'sanxian' ? '#3498db' : '#aaa');
-                const hasSkill = pet.skills && pet.skills.length > 0;
-                const canLearn = (pet.quality === 'jinxian') || (pet.quality === 'sanxian' && pet.level >= 10);
+      const isActive = this.activeCombatPets.some(p => p.instanceId === pet.instanceId);
+      const qColor = pet.quality === 'jinxian' ? '#ffd700' : (pet.quality === 'sanxian' ? '#3498db' : '#aaa');
+      const hasSkill = pet.skills && pet.skills.length > 0;
+      const canLearn = ['jinxian', 'sanxian'].includes(pet.quality) && pet.level >= 10 && !pet.masterLessonLearned;
 
-                const getPetPortrait = (p, size = 32) => {
-                  const pName = (p.name || '').toLowerCase();
-                  let rId = 'rat';
-                  if (pName.includes('龟') || pName.includes('玄武')) rId = 'turtle';
-                  else if (pName.includes('蛇')) rId = 'snake';
-                  else if (pName.includes('狐')) rId = 'fox';
-                  else if (pName.includes('狼')) rId = 'wolf';
-                  else if (pName.includes('虎')) rId = 'tiger';
-                  else if (pName.includes('熊')) rId = 'bear';
-                  else if (pName.includes('蚌')) rId = 'clam';
-                  else if (pName.includes('蟹')) rId = 'crab';
-                  else if (pName.includes('虾')) rId = 'shrimp';
-                  else if (pName.includes('猪')) rId = 'pig';
-                  else if (pName.includes('猿') || pName.includes('猴')) rId = 'ape';
-                  else if (pName.includes('龙')) rId = 'xiaobailong';
-                  return window.Portraits ? window.Portraits.getPortraitSvg(rId, size) : `<span style="font-size:20px;">${p.icon || '🐾'}</span>`;
-                };
+      const getPetPortrait = (p, size = 32) => {
+        const pId = p.templateId || p.id;
+        if (pId && window.Portraits?.customMonsterImages?.[pId]) {
+          return window.Portraits.getPortraitSvg(pId, size);
+        }
+        const pName = (p.name || '').toLowerCase();
+        let rId = 'rat';
+        if (pName.includes('猿猴将') || pName.includes('猛猿')) rId = 'yuanhou_jiang';
+        else if (pName.includes('猕猴将') || pName.includes('灵猕')) rId = 'mihou_jiang';
+        else if (pName.includes('树精') || pName.includes('枯树')) rId = 'kushu_jing';
+        else if (pName.includes('树妖')) rId = 'shuyao';
+        else if (pName.includes('青蛇') || pName.includes('小花蛇')) rId = 'xiaohua_she';
+        else if (pName.includes('蛇妖')) rId = 'sheyao';
+        else if (pName.includes('啸月') || pName.includes('狼妖')) rId = 'langyao';
+        else if (pName.includes('野狼') || pName.includes('山狼')) rId = 'wolf_wild';
+        else if (pName.includes('龟') || pName.includes('玄武')) rId = 'turtle';
+        else if (pName.includes('蛇')) rId = 'snake';
+        else if (pName.includes('狐')) rId = 'fox';
+        else if (pName.includes('狼')) rId = 'wolf';
+        else if (pName.includes('虎')) rId = 'tiger';
+        else if (pName.includes('熊')) rId = 'bear';
+        else if (pName.includes('蚌')) rId = 'clam';
+        else if (pName.includes('蟹')) rId = 'crab';
+        else if (pName.includes('虾')) rId = 'shrimp';
+        else if (pName.includes('猪')) rId = 'pig';
+        else if (pName.includes('猿') || pName.includes('猴')) rId = 'ape';
+        else if (pName.includes('龙')) rId = 'xiaobailong';
+        return window.Portraits ? window.Portraits.getPortraitSvg(rId, size) : `<span style="font-size:20px;">${p.icon || '🐾'}</span>`;
+      };
 
-                return `
+      return `
                   <div class="pet-card ${isActive ? 'is-active' : ''}">
                     <div class="pet-card-header">
                       <div class="pet-identity">
@@ -3216,10 +4592,14 @@ class GameApp2D {
                     </div>
 
                     <!-- 绝技与门派技能 -->
+                    <div class="pet-attributes"><span>潜能 ${pet.potentialPoints || 0} 点 · ${pet.gender === 'female' ? '女' : '男'}</span>
+                      ${[['sheng', '生', 'con'], ['fa', '法', 'int'], ['li', '力', 'str'], ['su', '速', 'dex']].map(([key, label, legacy]) => `<button class="dialogue-opt-btn" ${!(pet.potentialPoints > 0) ? 'disabled' : ''}
+                        onclick="App2D.allocatePetAttribute('${pet.instanceId}', '${key}')">${label} ${pet.attrs?.[key] ?? pet.attrs?.[legacy] ?? 10} ＋</button>`).join('')}
+                    </div>
                     <div class="pet-skill-row">
                       <div style="color:#bbb;">
                         ${hasSkill ? `绝技: <span style="color:#ffd700;font-weight:bold;">${pet.skills[0].name}</span> ${(pet.skills[0].desc || '').slice(0, 40)}` : `
-                          <span style="color:#887766;">${pet.quality==='ordinary' ? '普通仙宠无法领悟绝技，仅能物理攻击' : (pet.quality==='sanxian' ? '散仙需修行至 Lv.10 开启灵窍' : '未领悟绝技')}</span>
+                          <span style="color:#887766;">${pet.quality === 'ordinary' ? '普通仙宠无法领悟绝技，仅能物理攻击' : (pet.quality === 'sanxian' ? '10级后到神坛免费传法一次' : '10级后到神坛免费传法一次')}</span>
                         `}
                       </div>
                       <div class="pet-actions">
@@ -3231,7 +4611,7 @@ class GameApp2D {
                         </button>
                         ${(!hasSkill && canLearn) ? `
                           <button class="dialogue-opt-btn" style="padding:2px 6px;font-size:9px;background:#8e44ad;" onclick="window.App2D.learnSkillForPet('${pet.instanceId}')">
-                            ⚡ 领悟
+                            ✨ 祖师传法（免费一次）
                           </button>
                         ` : ''}
                       </div>
@@ -3241,17 +4621,17 @@ class GameApp2D {
                     <div class="pet-passives">
                       <span style="color:#ffd700;font-weight:bold;">被动神技:</span>
                       ${[0, 1, 2, 3].map(slotIdx => {
-                        const pass = (pet.passives && pet.passives[slotIdx]);
-                        if (pass) {
-                          return `<span style="background:#2c3e50;border:1px solid #f39c12;border-radius:3px;padding:1px 4px;color:#f1c40f;" title="${pass.desc}">${pass.icon || '📖'} ${pass.name}</span>`;
-                        } else {
-                          return `<span style="border:1px dashed #555;border-radius:3px;padding:1px 4px;color:#666;">[空槽位]</span>`;
-                        }
-                      }).join('')}
+        const pass = (pet.passives && pet.passives[slotIdx]);
+        if (pass) {
+          return `<span style="background:#2c3e50;border:1px solid #f39c12;border-radius:3px;padding:1px 4px;color:#f1c40f;" title="${pass.desc}">${pass.icon || '📖'} ${pass.name}</span>`;
+        } else {
+          return `<span style="border:1px dashed #555;border-radius:3px;padding:1px 4px;color:#666;">[空槽位]</span>`;
+        }
+      }).join('')}
                     </div>
                   </div>
                 `;
-              }).join('')}
+    }).join('')}
             </div>
           </div>
         </div>
@@ -3283,7 +4663,22 @@ class GameApp2D {
     this.openPetManageModal();
   }
 
+  allocatePetAttribute(instanceId, attrKey) {
+    if (this.currentBattle || this.isTransitioning) return;
+    const pet = this.pets.find(p => p.instanceId === instanceId);
+    if (window.PetSystem.allocatePetPoints(pet, attrKey, 1)) {
+      this.openPetManageModal();
+      this.saveAutoProgress();
+    }
+  }
+
   learnSkillForPet(instanceId) {
+    const master = this.npcs?.find(n => n.id === 'npc_puti_laozu');
+    if (this.currentBattle || this.isTransitioning || this.currentMapId !== 'changan_shendan' || !master ||
+      Math.hypot(this.playerChar.x - master.x, this.playerChar.y - master.y) > 96) {
+      window.showGameMessage('请带10级散仙或金仙前往长安旁神坛，在菩提祖师身边免费受法。', 'info');
+      return;
+    }
     const pet = this.pets.find(p => p.instanceId === instanceId);
     if (!pet) return;
     const res = window.PetSystem.learnSkill(pet);
@@ -3291,6 +4686,7 @@ class GameApp2D {
       window.Sound.playCrit();
       window.showGameMessage(res.msg, 'success', 4500);
       this.openPetManageModal();
+      this.saveAutoProgress();
     } else {
       window.showGameMessage(res.msg, 'warning');
     }
@@ -3465,14 +4861,15 @@ class GameApp2D {
   }
 
   teleportToResidence() {
-    if (!this.playerData.homeResidence) {
-      window.showGameMessage('少侠尚未在大唐长安户籍官处登记定居！请先前往长安城西门户籍官处办理！', 'warning');
-      return;
+    const mapId = (this.playerData && this.playerData.homeResidence) ? this.playerData.homeResidence : 'liujiacun';
+    const coords = (mapId === 'liujiacun') ? { x: 23 * 32, y: 10 * 32 } : { x: 3 * 32, y: 11 * 32 };
+    this.loadMap(mapId, coords);
+    if (window.Sound) window.Sound.playLevelUp();
+    if (!this.playerData || !this.playerData.homeResidence) {
+      window.showGameMessage('🏠 少侠尚未在长安户籍官处定居登记，已先行将你送回初心祖居【刘家村】！', 'info', 4000);
+    } else {
+      window.showGameMessage('🏠 催动归家神印！瞬息回到温馨的定居家园！', 'success', 3500);
     }
-    const mapId = this.playerData.homeResidence;
-    this.loadMap(mapId, { x: 3 * 32, y: 11 * 32 });
-    window.Sound.playLevelUp();
-    window.showGameMessage('🏠 催动归家神印！瞬息回到温馨的大唐长安家园！', 'success', 3500);
   }
 
   // =========================================================================
@@ -3485,6 +4882,11 @@ class GameApp2D {
     for (const p of portals) {
       const sx = p.x - this.camera.x;
       const sy = p.y - this.camera.y;
+
+      // 视锥体剔除：不在视口内的传送门不渲染，防止边缘残损露字
+      if (sx < -80 || sx > this.camera.viewportWidth + 80 || sy < -80 || sy > this.camera.viewportHeight + 80) {
+        continue;
+      }
 
       const isLocked = !!(p.minLevel && this.player && this.player.level < p.minLevel);
 
@@ -3604,11 +5006,9 @@ class GameApp2D {
 
     this.start2DBattle([tianpengBoss], () => {
       this.storyPhase = 'heaven_to_lingxiao';
-      setTimeout(() => {
-        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.tianpeng_after_battle) {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.tianpeng_after_battle);
-        }
-      }, 500);
+      this.scheduleStoryDialogue('tianpeng_after_battle', 500);
+    }, () => {
+      window.showGameMessage('天蓬元帅醉酒蛮劲十足！仙躯已抚平复原，上前可再次与其对招！', 'warning', 3500);
     });
   }
 
@@ -3641,11 +5041,9 @@ class GameApp2D {
 
     this.start2DBattle([chimaoBoss], () => {
       this.storyPhase = 'heaven_huaguoshan_rescue';
-      setTimeout(() => {
-        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.chimao_shuilien_after) {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.chimao_shuilien_after);
-        }
-      }, 500);
+      this.scheduleStoryDialogue('chimao_shuilien_after', 500);
+    }, () => {
+      window.showGameMessage('花果山健将身手敏捷！重整旗鼓后可再次与其切磋！', 'warning', 3500);
     });
   }
 
@@ -3678,11 +5076,9 @@ class GameApp2D {
 
     this.start2DBattle([heavenlyBoss], () => {
       this.storyPhase = 'heaven_juling_defeated';
-      setTimeout(() => {
-        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan) {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan);
-        }
-      }, 500);
+      this.scheduleStoryDialogue('juling_defeated_to_huaguoshan', 500);
+    }, () => {
+      window.showGameMessage('巨灵神天界重斧神威赫赫！回气休整后可再次拔戟交锋！', 'warning', 3500);
     });
   }
 
@@ -3764,11 +5160,7 @@ class GameApp2D {
     const proceedToYangjian = () => {
       this.storyPhase = 'heaven_yangjian_capture';
       this.companions = []; // 清空临时助战天将
-      setTimeout(() => {
-        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.yangjian_capture_and_banishment) {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.yangjian_capture_and_banishment);
-        }
-      }, 600);
+      this.scheduleStoryDialogue('yangjian_capture_and_banishment', 600);
     };
 
     this.start2DBattle([wukongBoss], proceedToYangjian, proceedToYangjian);
@@ -3785,43 +5177,47 @@ class GameApp2D {
 
   // 2. 贬落凡尘刘家村
   executeBanishment() {
+    if (this.storyPhase === 'liujiacun_start') return;
     this.playerData.level = 1;
     this.playerData.exp = 0;
+    this.playerData.potentialPoints = 0;
+    this.playerData.attributes = { con: 10, str: 10, int: 10, dex: 10, sta: 10 };
     this.playerData.name = '失忆行者';
     this.playerData.unequipItem('weapon');
     this.playerData.unequipItem('armor');
+    this.playerData.unequipItem('head');
+    this.playerData.unequipItem('belt');
+    this.playerData.unequipItem('boots');
+    this.playerData.unequipItem('necklace');
     this.playerChar.name = this.playerData.name;
     this.playerChar.appearance = 'mortal_wanderer';
-    this.playerChar.speed = 3.8; // 敏捷行云流水凡尘移速 (基础 3.8)
+    this.playerChar.speed = GAME_SPEED_CONFIG.PLAYER_MORTAL_SPEED; // 敏捷行云流水凡尘移速 (基础配置)
+    // 贬落凡尘刘家村：神力被封，天界神骑收回，凡尘开局无马步行
+    if (this.mountSystem) {
+      this.mountSystem.mounts = [];
+      this.mountSystem.activeMountId = null;
+      this.mountSystem.isRiding = false;
+    }
+    if (this.playerChar) {
+      this.playerChar.isRiding = false;
+    }
+    if (window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
+      this.playerData.skills = window.GAME_DATA.getSkillsForClassAndGender(this.playerData.classId, this.playerData.gender);
+    }
+    this.playerData.recalculateStats(true);
+    this.updatePlayerHud();
 
     this.storyPhase = 'liujiacun_start';
     this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
 
-    const viewport = document.getElementById('game-viewport');
-    if (viewport) {
-      const flash = document.createElement('div');
-      flash.style.position = 'absolute';
-      flash.style.top = '0';
-      flash.style.left = '0';
-      flash.style.width = '100%';
-      flash.style.height = '100%';
-      flash.style.background = '#000';
-      flash.style.zIndex = '999';
-      flash.style.transition = 'opacity 1.2s';
-      viewport.appendChild(flash);
-
-      setTimeout(() => {
-        this.loadMap('liujiacun');
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 1200);
-
-        setTimeout(() => {
-          if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.liuboqin_talk) {
-            window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.liuboqin_talk);
-          }
-        }, 2200);
-      }, 800);
-    }
+    if (window.Dialogue) window.Dialogue.close();
+    this.loadMap('liujiacun', null, {
+      onComplete: () => {
+        if (this.currentMapId === 'liujiacun' && this.storyPhase === 'liujiacun_start') {
+          this.scheduleStoryDialogue('liuboqin_talk', 0);
+        }
+      }
+    });
   }
 
   // 3. 采摘野生青蘑菇 (生火做饭)
@@ -3875,13 +5271,18 @@ class GameApp2D {
 
   // 5. 触发猛兽与恶鬼战斗 (支持砍柴伐树与刘家村除害计数)
   triggerMonsterBattle(monsterChar) {
+    if (this.currentBattle || this.isTransitioning || window.Dialogue?.currentDialogue || Date.now() < (this._encounterCooldownUntil || 0)) return;
     const md = monsterChar.monsterData || {};
     const mob = {
       id: monsterChar.id,
       name: monsterChar.name,
       modelId: monsterChar.appearance || md.appearance || monsterChar.id,
-      isMutated: false,
-      isBoss: false,
+      templateId: monsterChar.templateId || window.ShanhaiSystem.resolveSpecies(md, this.currentMapId),
+      element: monsterChar.element || md.element,
+      quality: monsterChar.quality || md.quality || 'ordinary',
+      gender: md.gender,
+      isMutated: !!md.isMutated,
+      isBoss: !!monsterChar.isBoss || !!md.isBoss,
       level: monsterChar.level || md.level || 3,
       hp: monsterChar.maxHp || md.hp || 150,
       maxHp: monsterChar.maxHp || md.maxHp || 150,
@@ -3895,27 +5296,91 @@ class GameApp2D {
       skills: md.skills || monsterChar.skills || ['连击']
     };
 
-    // 新手剧情怪物动态数值适格化 (确保凡间新手剧情战斗平滑适度，杜绝新手被高等级野怪秒杀)
+    // 新手剧情怪物动态数值适格化 (杜绝抓痒1点伤害，使初期战斗真实可信且充满适度压迫感)
+    const isQuestRat = monsterChar.id.includes('rat') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'giant_rat') || monsterChar.name.includes('硕鼠');
+    if (isQuestRat && (this.storyPhase === 'liujiacun_rat_hunting' || this.storyPhase === 'liujiacun_intro' || this.storyPhase === 'liujiacun_start')) {
+      mob.level = 2;
+      mob.hp = 120;
+      mob.maxHp = 120;
+      mob.atk = 34; // 硕鼠利齿撕咬，对凡人初期28防御造成 6~12 点有效伤害
+      mob.def = 10;
+      mob.spd = 24;
+    }
     const isQuestTree = monsterChar.id.includes('tree') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'tree') || monsterChar.name.includes('枯树精');
     if (isQuestTree && (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering')) {
       mob.level = 2;
-      mob.hp = 110;
-      mob.maxHp = 110;
-      mob.atk = 22;
-      mob.def = 10;
+      mob.hp = 130;
+      mob.maxHp = 130;
+      mob.atk = 36; // 枯木重击，造成 8~14 点有效伤害
+      mob.def = 12;
       mob.spd = 18;
     }
     const isQuestHooligan = monsterChar.name.includes('混混') || monsterChar.id.includes('hooligan') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'hooligan');
-    if (isQuestHooligan && this.storyPhase === 'chentang_defeat_hooligans') {
+    if (isQuestHooligan && (this.storyPhase === 'chentang_defeat_hooligans' || this.storyPhase === 'chentang_boss_ready')) {
       mob.level = 4;
-      mob.hp = 180;
-      mob.maxHp = 180;
-      mob.atk = 32;
-      mob.def = 16;
-      mob.spd = 22;
+      mob.hp = 220;
+      mob.maxHp = 220;
+      mob.atk = 52; // 街头恶霸功夫重拳，对陈塘关时期玩家造成 16~22 点有效伤害
+      mob.def = 18;
+      mob.spd = 24;
     }
 
-    this.start2DBattle([mob], () => {
+    // 野怪战斗遇怪组规模动态缩放法则 (Req 2)
+    // 一般来说除特殊野怪或Boss外，遇到的野怪都是2个及以上：
+    // - 前期低级区域（刘家村、五行山、陈塘关、鹰愁涧、高老庄等）：一组2个野怪
+    // - 宝象国或之前白骨精（白虎岭/宝象国）：一组3个野怪
+    // - 平顶山（莲花洞、猫妖/狐妖/金银角）：一组4个野怪
+    const isBossOrSpecial = monsterChar.isBoss || monsterChar.isGhostTarget || (monsterChar.id && monsterChar.id.includes('boss'));
+    let groupCount = 1;
+    if (!isBossOrSpecial) {
+      const curMap = this.currentMapId || '';
+      const mName = monsterChar.name || '';
+      if (curMap.includes('pingdingshan') || curMap.includes('lianhuadong') || mName.includes('猫妖') || mName.includes('平顶山')) {
+        groupCount = 4;
+      } else if (curMap.includes('baihu') || curMap.includes('baoxiang') || mName.includes('白骨') || mName.includes('白虎') || mName.includes('宝象')) {
+        groupCount = 3;
+      } else {
+        groupCount = 2;
+      }
+    }
+
+    const enemies = [mob];
+    const isStoryGroup = isQuestTree && ['liujiacun_go_cut_wood', 'liujiacun_wood_gathering'].includes(this.storyPhase) ||
+      this.storyPhase === 'liujiacun_rat_hunting' || isQuestHooligan && this.storyPhase === 'chentang_defeat_hooligans' ||
+      this.storyPhase?.startsWith('heaven_');
+    for (let i = 1; i < groupCount; i++) {
+      const subMob = {
+        ...mob,
+        id: `${mob.id}_sub_${i}`,
+        name: mob.name,
+        enemyIndex: i,
+        hp: Math.min(mob.maxHp, Math.max(1, Math.floor(mob.hp * (0.95 + Math.random() * 0.10)))),
+        maxHp: mob.maxHp,
+        atk: Math.max(10, Math.floor(mob.atk * (0.95 + Math.random() * 0.10))),
+        def: mob.def,
+        spd: Math.max(5, mob.spd + (i % 2 === 0 ? 1 : -1))
+      };
+      // 后续同行怪偶遇异种；剧情砍柴、除鼠等组保持同种，计数与难度稳定。
+      if (i === 1 && !isStoryGroup && !isBossOrSpecial && mob.level >= 8) {
+        const roll = Math.random();
+        const quality = roll < 0.03 && mob.level >= 25 ? 'jinxian' : roll < 0.13 ? 'sanxian' : roll < 0.38 ? 'ordinary' : null;
+        const pool = Object.values(window.GAME_DATA.PETS).filter(p => p.quality === quality && p.reqLevel <= mob.level &&
+          window.ShanhaiSystem.isCollectible(p) && (!p.habitatMapId || p.habitatMapId === this.currentMapId));
+        if (pool.length) {
+          const template = pool[Math.floor(Math.random() * pool.length)];
+          const wild = window.PetSystem.createPet(template.id, false, mob.level, false);
+          Object.assign(subMob, {
+            templateId: template.id, name: template.name, quality: template.quality,
+            element: template.element, gender: wild.gender, modelId: template.appearance || window.Character.inferMonsterType(template.name, template.id),
+            hp: wild.hp, maxHp: wild.maxHp, mp: wild.mp, maxMp: wild.maxMp, atk: wild.atk, def: wild.def,
+            matk: wild.matk, mdef: wild.mdef, spd: wild.spd, skills: ['普通攻击']
+          });
+        }
+      }
+      enemies.push(subMob);
+    }
+
+    this.start2DBattle(enemies, () => {
       this.monsters = this.monsters.filter(m => m.id !== monsterChar.id);
       if (monsterChar.isGhostTarget) {
         this.ghostQuest.completed = true;
@@ -3923,19 +5388,24 @@ class GameApp2D {
         window.showGameMessage(`🎉【伏魔告捷】成功诛灭作祟恶鬼【${this.ghostQuest.targetName}】！速回长安城向钟馗天师复命领赏！`, 'success', 5000);
       }
 
+      const defeatedCount = enemies.filter(e => !e.isCaptured).length;
+      const defeated = enemies.filter(e => !e.isCaptured);
+      this.playerData.gainExp(defeated.reduce((sum, e) => sum + 50 + (e.level || 1) * 25, 0));
+      this.playerData.silver += defeated.reduce((sum, e) => sum + 10 + (e.level || 1) * 5, 0);
+
       // 五行山砍柴伐树任务推进
       if (monsterChar.id.includes('tree') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'tree') || monsterChar.name.includes('枯树精')) {
         if (this.storyPhase === 'liujiacun_go_cut_wood' || this.storyPhase === 'liujiacun_wood_gathering') {
           this.storyPhase = 'liujiacun_wood_gathering';
           if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
-          this.questKills.trees = (this.questKills.trees || 0) + 1;
-          this.inventory.addItem('item_dry_wood', 1);
+          this.questKills.trees = Math.min(4, (this.questKills.trees || 0) + defeatedCount);
+          this.inventory.addItem('item_dry_wood', defeatedCount);
           if (this.questKills.trees >= 4) {
             this.storyPhase = 'liujiacun_wood_collected';
             if (window.Sound) window.Sound.playCrit();
             window.showGameMessage('🎉 4捆坚韧柴木已收集齐全！请回刘家村向刘伯钦交差！', 'success', 4500);
           } else {
-            window.showGameMessage(`🪵 砍倒枯树精！获得坚韧柴木 (${this.questKills.trees}/4)`, 'info', 3000);
+            window.showGameMessage(`🪵 砍倒一组枯树精(${defeatedCount}只)！收集坚韧柴木 (${this.questKills.trees}/4)`, 'info', 3000);
           }
           this.refreshMapNpcs();
         }
@@ -3945,13 +5415,13 @@ class GameApp2D {
       if (monsterChar.id.includes('rat') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'giant_rat') || monsterChar.name.includes('硕鼠')) {
         if (this.storyPhase === 'liujiacun_rat_hunting') {
           if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0 };
-          this.questKills.rats = (this.questKills.rats || 0) + 1;
+          this.questKills.rats = Math.min(4, (this.questKills.rats || 0) + defeatedCount);
           if (this.questKills.rats >= 4) {
             this.storyPhase = 'liujiacun_rats_cleared';
             if (window.Sound) window.Sound.playCrit();
             window.showGameMessage('🎉 4只偷粮硕鼠已全部消灭！村中粮仓平安，快向刘伯钦交差！', 'success', 4500);
           } else {
-            window.showGameMessage(`🐀 击败偷粮硕鼠 (${this.questKills.rats}/4)`, 'info', 3000);
+            window.showGameMessage(`🐀 击败一组偷粮硕鼠(${defeatedCount}只) (${this.questKills.rats}/4)`, 'info', 3000);
           }
           this.refreshMapNpcs();
         }
@@ -3961,13 +5431,13 @@ class GameApp2D {
       if (monsterChar.name.includes('混混') || monsterChar.id.includes('hooligan') || (monsterChar.monsterData && monsterChar.monsterData.appearance === 'hooligan')) {
         if (this.storyPhase === 'chentang_defeat_hooligans') {
           if (!this.questKills) this.questKills = { mushrooms: 0, trees: 0, rats: 0, chentangHooligans: 0 };
-          this.questKills.chentangHooligans = (this.questKills.chentangHooligans || 0) + 1;
+          this.questKills.chentangHooligans = Math.min(4, (this.questKills.chentangHooligans || 0) + defeatedCount);
           if (this.questKills.chentangHooligans >= 4) {
             this.storyPhase = 'chentang_hooligans_done';
             if (window.Sound) window.Sound.playCrit();
             window.showGameMessage('🎉 4名作恶混混已全部制伏！陈塘关街市初定，快回总兵府向李靖复命！', 'success', 4500);
           } else {
-            window.showGameMessage(`🥋 制伏街头作恶混混 (${this.questKills.chentangHooligans}/4)`, 'info', 3000);
+            window.showGameMessage(`🥋 制伏一组街头作恶混混(${defeatedCount}人) (${this.questKills.chentangHooligans}/4)`, 'info', 3000);
           }
           this.refreshMapNpcs();
         }
@@ -3989,11 +5459,11 @@ class GameApp2D {
       isMutated: false,
       isBoss: true,
       level: 6,
-      hp: 450,
-      maxHp: 450,
+      hp: 550,
+      maxHp: 550,
       mp: 150,
       maxMp: 150,
-      atk: 46,
+      atk: 62,
       def: 22,
       matk: 15,
       mdef: 15,
@@ -4009,12 +5479,12 @@ class GameApp2D {
       isMutated: false,
       isBoss: false,
       level: 4,
-      hp: 150,
-      maxHp: 150,
+      hp: 180,
+      maxHp: 180,
       mp: 50,
       maxMp: 50,
-      atk: 24,
-      def: 14,
+      atk: 48,
+      def: 16,
       matk: 10,
       mdef: 10,
       spd: 20,
@@ -4029,12 +5499,12 @@ class GameApp2D {
       isMutated: false,
       isBoss: false,
       level: 4,
-      hp: 150,
-      maxHp: 150,
+      hp: 180,
+      maxHp: 180,
       mp: 50,
       maxMp: 50,
-      atk: 24,
-      def: 14,
+      atk: 48,
+      def: 16,
       matk: 10,
       mdef: 10,
       spd: 20,
@@ -4076,11 +5546,7 @@ class GameApp2D {
     };
     this.start2DBattle([yechaBoss], () => {
       this.storyPhase = 'donghai_dragon_arrived';
-      setTimeout(() => {
-        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.donghai_dragon_apology) {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.donghai_dragon_apology);
-        }
-      }, 500);
+      this.scheduleStoryDialogue('donghai_dragon_apology', 500);
     });
   }
 
@@ -4111,16 +5577,15 @@ class GameApp2D {
     this.updatePlayerHud();
     window.showGameMessage('💎【龙神神装全套】已装备【覆海点钢枪、龙鳞轻钢甲、碧水定海盔、踏浪穿云靴、龙珠凝霜佩】！战力与气血大幅飞跃！', 'success', 5000);
 
-    setTimeout(() => {
-      this.storyPhase = 'chentang_guanyin_revelation';
-      this.loadMap('chentangguan', { x: 576, y: 384 });
-      window.showGameMessage('☁️ 返回陈塘关！天际祥云缭绕，仙乐阵阵！', 'info', 3500);
-      setTimeout(() => {
-        if (window.Dialogue && window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation) {
-          window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.chentang_guanyin_revelation);
+    this.storyPhase = 'chentang_guanyin_revelation';
+    this.loadMap('chentangguan', { x: 576, y: 384 }, {
+      onComplete: () => {
+        if (this.currentMapId === 'chentangguan' && this.storyPhase === 'chentang_guanyin_revelation') {
+          this.scheduleStoryDialogue('chentang_guanyin_revelation', 0);
         }
-      }, 600);
-    }, 1200);
+      }
+    });
+    window.showGameMessage('☁️ 返回陈塘关！天际祥云缭绕，仙乐阵阵！', 'info', 3500);
   }
 
   // 8. 观音赐宝 (五行山前)
@@ -4150,9 +5615,7 @@ class GameApp2D {
       setTimeout(() => vp.classList.remove('hit-shake'), 800);
     }
 
-    setTimeout(() => {
-      window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.wuxing_freed);
-    }, 600);
+    this.scheduleStoryDialogue('wuxing_freed', 600);
   }
 
   // 7. 齐天大圣入队
@@ -4190,9 +5653,7 @@ class GameApp2D {
       skills: ['水攻', '飞沙走石']
     };
     this.start2DBattle([boss], () => {
-      setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.bailong_post_battle);
-      }, 500);
+      this.scheduleStoryDialogue('bailong_post_battle');
     });
   }
 
@@ -4271,9 +5732,7 @@ class GameApp2D {
       skills: ['泰山压顶', '金刚护体', '高级吸血']
     };
     this.start2DBattle([boss], () => {
-      setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.bajie_post_battle);
-      }, 500);
+      this.scheduleStoryDialogue('bajie_post_battle');
     });
   }
 
@@ -4349,7 +5808,7 @@ class GameApp2D {
       this.npcs = this.npcs.filter(n => n.id !== 'npc_huangfeng_boss');
       this.storyPhase = 'huangfeng_cleared';
       this.saveAutoProgress();
-      window.showGameMessage('🎉【灵宝止风】定风神丹止住三昧神风！黄风大圣现回黄毛貂鼠原形伏罪！', 'success', 4500);
+      window.showGameMessage('🎉【灵宝止风】灵吉护住退路，合力破除妖风！黄风大圣现回黄毛貂鼠原形伏罪！', 'success', 4500);
     });
   }
 
@@ -4372,9 +5831,7 @@ class GameApp2D {
       skills: ['金刚护体', '水攻', '大闹天宫']
     };
     this.start2DBattle([boss], () => {
-      setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.shaseng_post_battle);
-      }, 500);
+      this.scheduleStoryDialogue('shaseng_post_battle');
     });
   }
 
@@ -4421,14 +5878,17 @@ class GameApp2D {
 
   // === 第八章：浮屠山乌巢禅师传心经 ===
   learnHeartSutra() {
-    this.playerData.maxHp += 1500;
-    this.playerData.hp = this.playerData.maxHp;
-    this.playerData.maxMp += 800;
-    this.playerData.mp = this.playerData.maxMp;
-    this.playerData.def += 30;
-    this.playerData.mdef += 30;
+    const player = this.playerData;
+    const result = player.claimStoryReward('heart_sutra', {
+      bonuses: { hp: 1500, mp: 800, def: 30, mdef: 30 }, healToFull: true
+    });
+    if (!result.success) {
+      window.showGameMessage('心经已经领悟，重读可静心，修为不会重复增加。', 'info');
+      return;
+    }
     window.Sound.playSuccess();
     this.updatePlayerHud();
+    this.saveAutoProgress();
     window.showGameMessage('📿 顿悟《般若波罗蜜多心经》！心无挂碍，最大气血+1500，最大精力+800，双抗大幅提升！', 'success', 4500);
   }
 
@@ -4451,15 +5911,13 @@ class GameApp2D {
       skills: ['金刚护体', '封印咒', '雷霆万钧', '大闹天宫']
     };
     this.start2DBattle([boss], () => {
-      setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.zhenyuanzi_post_battle);
-      }, 500);
+      this.scheduleStoryDialogue('zhenyuanzi_post_battle');
     });
   }
 
   grantZhenyuanziGift() {
     if (this.storyPhase === 'wuzhuang_cleared' || this.storyPhase === 'baihu_first_cleared' ||
-        this.storyPhase === 'baihu_second_cleared' || this.storyPhase === 'baihu_cleared') return;
+      this.storyPhase === 'baihu_second_cleared' || this.storyPhase === 'baihu_cleared') return;
     this.storyPhase = 'wuzhuang_cleared';
     this.npcs = this.npcs.filter(n => n.id !== 'npc_zhenyuanzi');
     if (this.inventory) {
@@ -4523,9 +5981,7 @@ class GameApp2D {
         }
         this.interactedNpcSet.delete('npc_baigujing');
         this.saveAutoProgress();
-        setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES[
-          stage === 1 ? 'baigujing_first_aftermath' : 'baigujing_second_aftermath'
-        ]), 500);
+        this.scheduleStoryDialogue(stage === 1 ? 'baigujing_first_aftermath' : 'baigujing_second_aftermath');
         return;
       }
       this.npcs = this.npcs.filter(n => n.id !== 'npc_baigujing');
@@ -4539,7 +5995,7 @@ class GameApp2D {
       this.updatePlayerHud();
       this.saveAutoProgress();
       window.Sound.playLevelUp();
-      setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.baigujing_final_aftermath), 500);
+      this.scheduleStoryDialogue('baigujing_final_aftermath');
       window.showGameMessage('🎉【三打白骨精】幽冥真身已破！获赠【千年白骨幽魂戒】与【金柳露】*2！', 'success', 5000);
     });
   }
@@ -4576,7 +6032,7 @@ class GameApp2D {
       this.updatePlayerHud();
       this.saveAutoProgress();
       window.Sound.playLevelUp();
-      setTimeout(() => window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.huangpao_aftermath), 500);
+      this.scheduleStoryDialogue('huangpao_aftermath');
       window.showGameMessage('🎉【大破波月洞】降伏奎木狼还朝！救出百花羞公主，获赠神兵【冷月追魂宝刀】与【高级必杀兽诀】！', 'success', 5000);
     });
   }
@@ -4727,22 +6183,23 @@ class GameApp2D {
       this.updatePlayerHud();
       this.saveAutoProgress();
       window.Sound.playLevelUp();
-      setTimeout(() => {
-        window.Dialogue.start(window.GAME_DATA.STORY_DIALOGUES.pingdingshan_laojun_aftermath);
-      }, 500);
+      this.scheduleStoryDialogue('pingdingshan_laojun_aftermath');
     });
   }
 
   grantLaojunGift() {
     if (this.storyPhase === 'pingding_cleared') return;
-    this.storyPhase = 'pingding_cleared';
-    if (this.inventory) {
-      this.inventory.addItem('jiuzhuan_xuandu_dan', 2);
-      this.inventory.addItem('eq_wp_qixing', 1);
-      this.inventory.addItem('zijin_hulu', 1);
+    const result = this.playerData.claimStoryReward('pingding_laojun', {
+      items: [{ itemId: 'jiuzhuan_xuandu_dan', count: 2 }, { itemId: 'eq_wp_qixing', count: 1 },
+      { itemId: 'zijin_hulu', count: 1 }], exp: 80000, silver: 20000
+    }, this.inventory);
+    if (!result.success) {
+      if (result.reason !== 'already_claimed') {
+        window.showGameMessage('行囊装不下这份赠礼，请整理背包后再向老君领取。', 'warning', 5000);
+      }
+      return;
     }
-    this.playerData.gainExp(80000);
-    this.playerData.silver += 20000;
+    this.storyPhase = 'pingding_cleared';
     this.updatePlayerHud();
     this.saveAutoProgress();
     window.Sound.playLevelUp();
@@ -4987,15 +6444,18 @@ class GameApp2D {
       window.showGameMessage('道长抚须含笑：“三岭妖氛未绝，少侠莫急，功成自会奉上厚礼。”', 'info');
       return;
     }
+    const result = this.playerData.claimStoryReward('sanling_completion', {
+      items: [{ itemId: 'eq_peishi_heifeng', count: 1 }, { itemId: 'jin_liu_lu', count: 3 },
+      { itemId: 'jiuzhuan_dan', count: 3 }], exp: 35000, silver: 10000
+    }, this.inventory);
+    if (!result.success) {
+      if (result.reason !== 'already_claimed') {
+        window.showGameMessage('行囊装不下道长的谢礼，请整理背包后再来复命。', 'warning', 5000);
+      }
+      return;
+    }
     sq.step = 'done';
     sq.status = 'completed';
-    if (this.inventory) {
-      this.inventory.addItem('eq_peishi_heifeng', 1);
-      this.inventory.addItem('jin_liu_lu', 3);
-      this.inventory.addItem('jiuzhuan_dan', 3);
-    }
-    this.playerData.gainExp(35000);
-    this.playerData.silver += 10000;
     this.updatePlayerHud();
     this.saveAutoProgress();
     window.Sound.playLevelUp();
@@ -5018,12 +6478,17 @@ class GameApp2D {
   // 战斗桥接与全屏渲染 (彻底消除卡死，国风立绘，战术时序与动作打击)
   // 战斗桥接与全屏渲染 (经典汉风三栏布局：左敌方竖排，中操作竖排，右我方四位竖排)
   start2DBattle(enemies, onVictoryCallback, onDefeatCallback = null) {
+    if (this.currentBattle || this.isTransitioning) return false;
+    this.autoMovePath = [];
+    this.autoMoveTargetCallback = null;
+    this.keysDown = {};
     if (window.Dialogue) {
       window.Dialogue.close();
     }
 
     const battleEl = document.getElementById('battle-screen-layer');
     if (!battleEl) return;
+    enemies.forEach(enemy => this.getShanhai().observe(enemy, this.currentMapId));
 
     battleEl.style.display = 'flex';
     this.isPaused = true;
@@ -5031,8 +6496,8 @@ class GameApp2D {
     // 仙宠出战规则：20级带1只、30级带2只、40级带3只
     const maxPets = this.playerData.getMaxCombatPets ? this.playerData.getMaxCombatPets() : 0;
     let combatAllies = [];
-    if (this.activeCombatPets && this.activeCombatPets.length > 0) {
-      combatAllies = this.activeCombatPets.slice(0, maxPets);
+    if (Array.isArray(this.activeCombatPets)) {
+      combatAllies = this.activeCombatPets.filter(p => this.pets?.some(owned => owned.instanceId === p.instanceId)).slice(0, maxPets);
     } else if (this.pets && this.pets.length > 0) {
       combatAllies = this.pets.slice(0, maxPets);
     }
@@ -5052,6 +6517,7 @@ class GameApp2D {
       enemies
     );
 
+    this.currentBattle.trainingPetIds = (this.pets || []).map(p => p.instanceId);
     this.selectedTargetIndex = 0;
     this.selectedAllyId = 'player';
     this.battleSkillMenuOpen = false;
@@ -5101,7 +6567,7 @@ class GameApp2D {
     const loop = () => {
       if (!this.currentBattle) return;
       this.renderBattleCanvasFrame();
-      this.battleAnimId = requestAnimationFrame(loop);
+      if (this.currentBattle) this.battleAnimId = requestAnimationFrame(loop);
     };
     this.battleAnimId = requestAnimationFrame(loop);
   }
@@ -5126,17 +6592,66 @@ class GameApp2D {
       hexSvg.style.display = (isOpen || this.battleTargetMenuOpen) ? 'none' : 'block';
       skillPanel.style.display = (isOpen && !this.battleTargetMenuOpen) ? 'flex' : 'none';
       if (targetPanel) targetPanel.style.display = this.battleTargetMenuOpen ? 'flex' : 'none';
+      document.getElementById('battle-honeycomb-menu')?.classList.toggle('is-targeting', this.battleTargetMenuOpen);
       if (window.Sound) window.Sound.playBeep();
       return;
     }
     this.renderBattleInterface();
   }
 
+  // 计算技能当前动态法力消耗
+  getSkillMpCost(sk, curAlly = null) {
+    if (!sk) return 0;
+    if (sk.costMp) return sk.costMp;
+    if (!window.SkillMasteryEngine) return 0;
+    const lvl = sk.level || 1;
+    const mastery = (sk.mastery !== undefined) ? sk.mastery : (sk.proficiency || 0);
+    const sId = sk.id || '';
+    const sName = sk.name || '';
+    if (sId === 'sk_jg_shesheng' || sName.includes('舍生取义')) {
+      return window.SkillMasteryEngine.calculateShesheng(curAlly, null, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_jg_foguang' || sName.includes('佛光普照')) {
+      return window.SkillMasteryEngine.calculateMpDrainAttack(false, curAlly, null, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_jg_ruxiang' || sName.includes('如来神掌')) {
+      return window.SkillMasteryEngine.calculateMpDrainAttack(true, curAlly, null, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_jg_huti' || sName.includes('金刚护体')) {
+      return window.SkillMasteryEngine.calculateHutiBuff(lvl, mastery).costMp;
+    }
+    if (sId === 'sk_ym_leiting' || sName.includes('雷霆万钧')) {
+      return window.SkillMasteryEngine.calculateLeiting(curAlly, null, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_ym_wandu' || sName.includes('万毒攻心')) {
+      return window.SkillMasteryEngine.calculateWandu(curAlly, null, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_ym_sanmei' || sName.includes('三昧真火')) {
+      return window.SkillMasteryEngine.calculateGroupSpell('三昧真火', curAlly, 1, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_ym_feisha' || sName.includes('飞沙走石')) {
+      return window.SkillMasteryEngine.calculateGroupSpell('飞沙走石', curAlly, 1, lvl, mastery).costMp;
+    }
+    if (sId === 'sk_xr_luanhun' || sName.includes('乱魂')) {
+      return window.SkillMasteryEngine.calculateControlSpell('luanhun', lvl, mastery).costMp;
+    }
+    if (sId === 'sk_xr_fengyin' || sName.includes('封印')) {
+      return window.SkillMasteryEngine.calculateControlSpell('fengyin', lvl, mastery).costMp;
+    }
+    if (sId === 'sk_xr_dingshen' || sName.includes('定身')) {
+      return window.SkillMasteryEngine.calculateControlSpell('dingshen', lvl, mastery).costMp;
+    }
+    if (sId === 'sk_xr_yinshen' || sName.includes('隐身')) {
+      return window.SkillMasteryEngine.calculateControlSpell('yinshen', lvl, mastery).costMp;
+    }
+    return 0;
+  }
+
   // 判定是否需要由玩家手动点选目标
   isSkillTargetSelectionNeeded(skillId) {
     if (!this.currentBattle) return false;
     const aliveEnemies = this.currentBattle.enemies.filter(e => e.hp > 0);
-    if (aliveEnemies.length <= 1) return false; // 敌方仅存1人，目标无歧义，直接跳过选择
+    const aliveAllies = (this.currentBattle.allies || []).filter(a => a.hp > 0);
 
     // 获取当前出招角色及该技能配置
     const curAllyId = this.selectedAllyId || 'player';
@@ -5146,19 +6661,26 @@ class GameApp2D {
     const sId = sk.id || '';
     const sName = sk.name || '';
 
-    // 1. 增益/隐身/团队防御类技能：无需选择敌方目标
-    if (sId === 'sk_jg_huti' || sName.includes('金刚护体') ||
-        sId === 'sk_xr_yinshen' || sName.includes('隐身')) {
+    // 1. 金刚护体等友军增益：当友方存活大于1人时需要选择目标友军
+    if (sId === 'sk_jg_huti' || sName.includes('金刚护体')) {
+      return aliveAllies.length > 1;
+    }
+
+    // 2. 自身专属/隐身：无需选择目标
+    if (sId === 'sk_xr_yinshen' || sName.includes('隐身')) {
       return false;
     }
 
-    // 2. 必中全场群伤神法：三昧真火、飞沙走石，必中所有敌人，无需指定单体
+    // 3. 必中全场群伤神法：三昧真火、飞沙走石，必中所有敌人，无需指定单体
     if (sId === 'sk_ym_sanmei' || sName.includes('三昧真火') ||
-        sId === 'sk_ym_feisha' || sName.includes('飞沙走石')) {
+      sId === 'sk_ym_feisha' || sName.includes('飞沙走石')) {
       return false;
     }
 
-    // 3. 计算该技能可命中的最大目标数
+    // 4. 敌方单体或多目标：若敌方存活仅1人，目标无歧义，无需选择
+    if (aliveEnemies.length <= 1) return false;
+
+    // 5. 计算该技能可命中的最大目标数
     let maxTargets = 1;
     if (sId === 'sk_jg_ruxiang' || sName.includes('如来神掌')) {
       const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateMpDrainAttack) ?
@@ -5198,13 +6720,19 @@ class GameApp2D {
   onSkillButtonClick(skillId) {
     if (!this.currentBattle || this.currentBattle.status === 'executing') return;
 
+    const curAllyId = this.selectedAllyId || 'player';
+    const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
+    const curSkills = curAlly?.isPlayer ? (this.playerData?.getSkills ? this.playerData.getSkills() : (this.playerData?.skills || [])) : (curAlly?.skills || []);
+    const sk = curSkills.find(s => s.id === skillId || s.name === skillId) || { id: skillId, name: skillId };
+    const costMp = this.getSkillMpCost(sk, curAlly);
+    if (curAlly && curAlly.mp < costMp) {
+      window.showGameMessage(`⚠️ 法力不足！施展【${sk.name || '该技能'}】需消耗 ${costMp} 精力 (当前: ${curAlly.mp})！`, 'warning', 2500);
+      if (window.Sound && window.Sound.playFailure) window.Sound.playFailure();
+      return;
+    }
+
     if (this.isSkillTargetSelectionNeeded(skillId)) {
-      this.pendingSkillAction = { skillId };
-      this.battleSkillMenuOpen = false;
-      this.battleTargetMenuOpen = true;
-      if (window.Sound) window.Sound.playBeep();
-      window.showGameMessage('🎯 请在战场中点选目标或在列表中锁定敌方！', 'info', 2500);
-      this.renderBattleInterface();
+      this.initiateCombatAction('skill', skillId);
     } else {
       this.battleSkillMenuOpen = false;
       this.battleTargetMenuOpen = false;
@@ -5213,22 +6741,211 @@ class GameApp2D {
     }
   }
 
-  // 确认选定技能目标并执行出招
-  confirmCombatSkillTarget(targetIdx) {
+  // 核心战斗指令发起入口：严格遵循“先选指令 -> 再筛选可选目标 -> 若可选目标>1必须手动选择”
+  initiateCombatAction(type, skillId = null, itemId = null) {
     if (!this.currentBattle || this.currentBattle.status === 'executing') return;
-    const skillId = this.pendingSkillAction ? this.pendingSkillAction.skillId : null;
-    this.selectedTargetIndex = targetIdx;
-    this.battleTargetMenuOpen = false;
-    this.pendingSkillAction = null;
-    if (window.Sound) window.Sound.playBeep();
-    this.chooseCombatAction('skill', skillId);
+    const battle = this.currentBattle;
+    const aliveEnemies = battle.enemies.filter(e => e.hp > 0);
+    const aliveAllies = battle.allies.filter(a => a.hp > 0);
+    const curAllyId = this.selectedAllyId || 'player';
+    const curAlly = battle.allies.find(a => a.id === curAllyId) || battle.allies[0];
+
+    // 防御与逃跑直接执行自身指令
+    if (type === 'defend' || type === 'flee') {
+      return this.chooseCombatAction(type);
+    }
+
+    let targetSide = 'enemy';
+    let actionName = '普通攻击';
+    let skill = null;
+
+    if (type === 'attack') {
+      targetSide = 'enemy';
+      actionName = '普通物理攻击';
+    } else if (type === 'capture') {
+      targetSide = 'enemy';
+      actionName = '招降收服';
+    } else if (type === 'item') {
+      targetSide = 'ally';
+      actionName = '使用药品';
+    } else if (type === 'skill') {
+      const curSkills = curAlly?.isPlayer ? (this.playerData?.getSkills ? this.playerData.getSkills() : (this.playerData?.skills || [])) : (curAlly?.skills || []);
+      skill = curSkills.find(s => s.id === skillId || s.name === skillId) || { id: skillId, name: skillId };
+      actionName = skill.name || '门派绝技';
+
+      const costMp = this.getSkillMpCost(skill, curAlly);
+      if (curAlly && curAlly.mp < costMp) {
+        window.showGameMessage(`⚠️ 法力不足！施展【${skill.name || '该技能'}】需消耗 ${costMp} 精力 (当前: ${curAlly.mp})！`, 'warning', 2500);
+        if (window.Sound && window.Sound.playFailure) window.Sound.playFailure();
+        return;
+      }
+
+      const sId = skill.id || '';
+      const sName = skill.name || '';
+
+      // 1. 隐身等自身专属技能：直接施展
+      if (sId === 'sk_xr_yinshen' || sName.includes('隐身')) {
+        this.battleSkillMenuOpen = false;
+        return this.chooseCombatAction('skill', skillId);
+      }
+      // 2. 金刚护体等友军增益技能：只能选择友军！
+      else if (sId === 'sk_jg_huti' || sName.includes('金刚护体')) {
+        targetSide = 'ally';
+      }
+      // 3. 全体群伤神法：三昧真火、飞沙走石，直接出招
+      else if (sId === 'sk_ym_sanmei' || sName.includes('三昧真火') ||
+        sId === 'sk_ym_feisha' || sName.includes('飞沙走石')) {
+        this.battleSkillMenuOpen = false;
+        return this.chooseCombatAction('skill', skillId);
+      }
+      // 4. 敌方单体或多目标攻击/控制
+      else {
+        let maxTargets = 1;
+        if (sId === 'sk_jg_ruxiang' || sName.includes('如来神掌')) {
+          const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateMpDrainAttack) ?
+            window.SkillMasteryEngine.calculateMpDrainAttack(true, curAlly, aliveEnemies[0], skill.level || 1, skill.mastery || 0) : { maxTargets: 3 };
+          maxTargets = calc.maxTargets || 3;
+        } else if (sId === 'sk_ym_wandu' || sName.includes('万毒攻心')) {
+          const calc = (window.SkillMasteryEngine && window.SkillMasteryEngine.calculateWandu) ?
+            window.SkillMasteryEngine.calculateWandu(curAlly, aliveEnemies[0], skill.level || 1, skill.mastery || 0) : { maxTargets: 3 };
+          maxTargets = calc.maxTargets || 3;
+        }
+        if (aliveEnemies.length <= maxTargets && maxTargets > 1) {
+          // 群攻目标全覆盖，无需单选
+          this.battleSkillMenuOpen = false;
+          return this.chooseCombatAction('skill', skillId);
+        }
+        targetSide = 'enemy';
+      }
+    }
+
+    const candidates = targetSide === 'enemy' ? aliveEnemies : aliveAllies;
+    if (candidates.length === 0) {
+      window.showGameMessage('⚠️ 当前无可作用的有效目标！', 'warning', 2000);
+      return;
+    }
+
+    // 核心准则：若可选目标 > 1，严禁直接自动攻击，必须弹出目标选择面板！
+    if (candidates.length > 1) {
+      this.pendingCombatAction = {
+        type,
+        skillId,
+        itemId,
+        targetSide,
+        actionName
+      };
+      this.pendingSkillAction = this.pendingCombatAction; // 保持向后兼容
+      this.targetFocusIndex = 0;
+      if (targetSide === 'enemy') {
+        const firstEnemyIdx = candidates[0].enemyIndex !== undefined ? candidates[0].enemyIndex : 0;
+        this.selectedTargetIndex = firstEnemyIdx;
+      }
+      this.battleSkillMenuOpen = false;
+      this.battleTargetMenuOpen = true;
+      if (window.Sound) window.Sound.playBeep();
+      // 操作说明由目标面板提供，避免重复长提示覆盖小屏的目标标签。
+      this.renderBattleInterface();
+    } else {
+      // 仅有 1 个可选目标时自动选定
+      const soleTarget = candidates[0];
+      this.battleSkillMenuOpen = false;
+      this.battleTargetMenuOpen = false;
+      this.pendingCombatAction = null;
+      this.pendingSkillAction = null;
+      if (targetSide === 'enemy') {
+        const targetIdx = soleTarget.enemyIndex !== undefined ? soleTarget.enemyIndex : 0;
+        this.selectedTargetIndex = targetIdx;
+        this.chooseCombatAction(type, skillId, targetIdx);
+      } else {
+        this.chooseCombatAction(type, skillId, 0, soleTarget.id);
+      }
+    }
   }
 
-  // 取消目标选择并返回绝技选择面板
-  cancelCombatTargetSelection() {
+  // 切换目标聚焦 (更新当前预览的单个目标状态)
+  setCombatFocusedTarget(idx) {
+    if (!this.currentBattle) return;
+    const pending = this.pendingCombatAction || this.pendingSkillAction;
+    const isAlly = pending?.targetSide === 'ally';
+    const pool = isAlly
+      ? (this.currentBattle.allies || []).filter(a => a.hp > 0)
+      : (this.currentBattle.enemies || []).filter(en => en.hp > 0);
+    const targetIdx = Number(idx);
+    if (Number.isInteger(targetIdx) && targetIdx >= 0 && targetIdx < pool.length) {
+      this.targetFocusIndex = targetIdx;
+      if (!isAlly) {
+        this.selectedTargetIndex = pool[targetIdx].enemyIndex !== undefined ? pool[targetIdx].enemyIndex : targetIdx;
+      }
+      if (window.Sound) window.Sound.playBeep();
+      this.renderBattleInterface();
+    }
+  }
+
+  // 轮转切换目标 (支持键盘左右箭头/Tab键)
+  cycleCombatFocusedTarget(delta = 1) {
+    if (!this.currentBattle) return;
+    const pending = this.pendingCombatAction || this.pendingSkillAction;
+    const isAlly = pending?.targetSide === 'ally';
+    const pool = isAlly
+      ? (this.currentBattle.allies || []).filter(a => a.hp > 0)
+      : (this.currentBattle.enemies || []).filter(en => en.hp > 0);
+    if (!pool.length) return;
+    let nextIdx = (Number(this.targetFocusIndex || 0) + delta) % pool.length;
+    if (nextIdx < 0) nextIdx += pool.length;
+    this.setCombatFocusedTarget(nextIdx);
+  }
+
+  // 确认当前聚焦目标并执行出招
+  confirmCurrentCombatAction() {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+    const pending = this.pendingCombatAction || this.pendingSkillAction || { targetSide: 'enemy' };
+    const isAlly = pending?.targetSide === 'ally';
+    const pool = isAlly
+      ? (this.currentBattle.allies || []).filter(a => a.hp > 0)
+      : (this.currentBattle.enemies || []).filter(en => en.hp > 0);
+    const focusIdx = Number(this.targetFocusIndex || 0);
+    const target = pool[focusIdx] || pool[0];
+    if (!target) return;
+    const targetKey = isAlly ? target.id : (target.enemyIndex !== undefined ? target.enemyIndex : focusIdx);
+    this.confirmCombatActionTarget(targetKey);
+  }
+
+  // 确认选定目标并执行出招 (支持敌方下标或友方ID)
+  confirmCombatActionTarget(targetKey) {
+    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+    const pending = this.pendingCombatAction || this.pendingSkillAction || { type: 'skill', targetSide: 'enemy' };
+    const { type, skillId, targetSide } = pending;
     this.battleTargetMenuOpen = false;
+    this.pendingCombatAction = null;
     this.pendingSkillAction = null;
-    this.battleSkillMenuOpen = true;
+    if (window.Sound) window.Sound.playBeep();
+
+    if (targetSide === 'ally') {
+      const allyId = String(targetKey);
+      this.chooseCombatAction(type, skillId, 0, allyId);
+    } else {
+      const targetIdx = Number(targetKey);
+      this.selectedTargetIndex = Number.isFinite(targetIdx) ? targetIdx : 0;
+      this.chooseCombatAction(type, skillId, this.selectedTargetIndex);
+    }
+  }
+
+  // 确认选定技能目标兼容别名
+  confirmCombatSkillTarget(targetIdx) {
+    this.confirmCombatActionTarget(targetIdx);
+  }
+
+  // 取消目标选择并返回对应面板
+  cancelCombatTargetSelection() {
+    const pending = this.pendingCombatAction || this.pendingSkillAction;
+    this.battleTargetMenuOpen = false;
+    this.pendingCombatAction = null;
+    this.pendingSkillAction = null;
+    if (!pending || pending.type === 'skill') {
+      this.battleSkillMenuOpen = true;
+    } else {
+      this.battleSkillMenuOpen = false;
+    }
     if (window.Sound) window.Sound.playBeep();
     this.renderBattleInterface();
   }
@@ -5254,13 +6971,13 @@ class GameApp2D {
     if (!this.currentBattle || this.currentBattle.status === 'executing') return;
     if (window.Sound) window.Sound.playBeep();
     if (action === 'attack') {
-      this.chooseCombatAction('attack');
+      this.initiateCombatAction('attack');
     } else if (action === 'skill') {
       this.toggleSkillMenu(!this.battleSkillMenuOpen);
     } else if (action === 'capture') {
-      this.chooseCombatAction('capture');
+      this.initiateCombatAction('capture');
     } else if (action === 'item') {
-      this.chooseCombatAction('item');
+      this.initiateCombatAction('item');
     } else if (action === 'pet') {
       window.showGameMessage('🐾 仙宠正随你列阵战敌！点击右侧仙宠形象可直接指派出招。', 'info');
     } else if (action === 'flee') {
@@ -5289,6 +7006,20 @@ class GameApp2D {
   renderBattleInterface() {
     const layer = document.getElementById('battle-screen-layer');
     if (!layer || !this.currentBattle) return;
+
+    // 智能防御死锁：若无存活敌方或己方全灭，立即执行全功能结案，杜绝卡在空壳战场
+    const aliveEnemiesCheck = (typeof this.currentBattle.getAliveEnemies === 'function')
+      ? this.currentBattle.getAliveEnemies()
+      : (this.currentBattle.enemies || []).filter(e => e.hp > 0);
+    const alivePlayerCheck = (this.currentBattle.allies || []).some(a => a.isPlayer && a.hp > 0);
+    if (!this.isAnimatingCombat && this.currentBattle.status !== 'executing' && aliveEnemiesCheck.length === 0) {
+      this.endBattle('victory');
+      return;
+    }
+    if (!this.isAnimatingCombat && this.currentBattle.status !== 'executing' && !alivePlayerCheck) {
+      this.endBattle('defeat');
+      return;
+    }
 
     const turnQueue = (this.currentBattle && this.currentBattle.turnQueue) || [];
 
@@ -5372,6 +7103,7 @@ class GameApp2D {
               </span>
               <span>${this.playerData ? `[Lv.${this.playerData.level || 1}] ${this.playerData.name}` : '侠士'}</span>
             </div>
+
           </div>
         </div>
 
@@ -5379,9 +7111,9 @@ class GameApp2D {
         <div class="battle-timeline-bar" style="margin: 3px 10px 1px 10px; padding: 2px 8px; font-size: 10px; border-radius: 4px; display:flex; align-items:center; gap:6px; overflow-x:auto;">
           <span class="timeline-title" style="font-size:10px;flex-shrink:0;">📜 行动序:</span>
           ${turnQueue.map(item => {
-            const rId = getBattleRoleId(item);
-            const pSvg = window.Portraits ? window.Portraits.getPortraitSvg(rId, 16) : '';
-            return `
+      const rId = getBattleRoleId(item.unit || item);
+      const pSvg = window.Portraits ? window.Portraits.getPortraitSvg(rId, 16) : '';
+      return `
               <div class="timeline-badge ${item.side === 'ally' ? 'timeline-ally' : 'timeline-enemy'}" style="padding: 1px 6px; font-size: 10px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
                 <span style="display:inline-block;width:14px;height:14px;border-radius:50%;overflow:hidden;border:1px solid ${item.side === 'ally' ? '#ffd700' : '#ff4757'};">
                   ${pSvg}
@@ -5390,19 +7122,19 @@ class GameApp2D {
                 <span class="timeline-name">[Lv.${item.level || 1}] ${item.name}</span>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
 
         <!-- 动效浮层 (飘字、刀光、雷霆) -->
         <div id="battle-fx-layer" class="battle-fx-layer"></div>
 
         <!-- 2. 战场主舞台：Canvas模型站立阵列 + 中央六边形蜂窝操作矩阵 -->
-        <div class="battle-stage-area" id="battle-stage-area" style="flex:1;position:relative;width:100%;min-height:280px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <div class="battle-stage-area" id="battle-stage-area" style="flex:1;position:relative;width:100%;min-height:0;display:flex;align-items:center;justify-content:center;overflow:${this.battleTargetMenuOpen ? 'visible' : 'hidden'};">
           <!-- 战场全景与角色模型 Canvas -->
           <canvas id="battle-scene-canvas"></canvas>
 
           <!-- 3. 中央：暗红漆金蜂窝六边形按键矩阵 (复刻图3核心按键) 与 绝技选择面板 (常驻DOM，稳定定位) -->
-          <div class="battle-honeycomb-menu-container" id="battle-honeycomb-menu" style="${this.currentBattle.status === 'executing' ? 'opacity:0.35;pointer-events:none;' : 'opacity:1;pointer-events:auto;'}">
+          <div class="battle-honeycomb-menu-container ${this.battleTargetMenuOpen ? 'is-targeting' : ''}" id="battle-honeycomb-menu" style="${this.currentBattle.status === 'executing' ? 'opacity:0.35;pointer-events:none;' : 'opacity:1;pointer-events:auto;'}">
             <!-- 常驻七蜂窝指令矩阵 -->
             <svg viewBox="0 0 148 240" class="hex-btn-cluster" id="battle-hex-svg" style="display:${(this.battleSkillMenuOpen || this.battleTargetMenuOpen) ? 'none' : 'block'};width:142px;height:230px;">
               <defs>
@@ -5471,41 +7203,85 @@ class GameApp2D {
                 <span>✨ 施展门派绝技</span>
                 <span style="font-size:10.5px;cursor:pointer;color:#ffd700;" onclick="window.App2D.toggleSkillMenu(false)">✕ 返回指令</span>
               </div>
-              ${skills.length === 0 ? `<div style="font-size:10px;color:#888;text-align:center;padding:10px 0;">尚未领悟绝技</div>` : skills.map(sk => `
-                <button class="battle-skill-item-btn" onclick="window.App2D.onSkillButtonClick('${sk.id}')">
+              ${skills.length === 0 ? `<div style="font-size:10px;color:#888;text-align:center;padding:10px 0;">尚未领悟绝技</div>` : skills.map(sk => {
+      const cost = this.getSkillMpCost(sk, curAlly);
+      const isShort = curAlly && curAlly.mp < cost;
+      return `
+                <button class="battle-skill-item-btn" onclick="window.App2D.onSkillButtonClick('${sk.id}')" style="${isShort ? 'opacity:0.8;' : ''}">
                   <div>
                     <div style="color:#ffd700;font-weight:bold;font-size:11.5px;">${sk.icon || '🔥'} ${sk.name}</div>
-                    <div style="font-size:9px;color:#a8e6cf;">消耗: ${sk.costMp ? `${sk.costMp}精力` : '无'}</div>
+                    <div style="font-size:9px;color:${isShort ? '#ff6b6b' : '#a8e6cf'};">消耗: ${cost ? `${cost}精力` : '无'}${isShort ? ' (不足)' : ''}</div>
                   </div>
-                  <span style="font-size:10px;color:#f5cd79;">出招 ▶</span>
+                  <span style="font-size:10px;color:${isShort ? '#ff6b6b' : '#f5cd79'};">出招 ▶</span>
                 </button>
-              `).join('')}
+              `;
+    }).join('')}
               <button class="mrp-vertical-btn" style="padding:4px;font-size:11px;margin-top:2px;" onclick="window.App2D.toggleSkillMenu(false)">◀ 返回指令</button>
             </div>
 
-            <!-- 目标单体选择面板 (当敌方>=2且单体绝技时精准唤起) -->
+            <!-- 目标单体选择面板 (先选指令再选目标，严格仅展示HP与MP) -->
             <div class="battle-skill-popup-panel" id="battle-target-panel" style="display:${this.battleTargetMenuOpen ? 'flex' : 'none'};">
               <div style="font-size:12px;font-weight:bold;color:#ffd700;border-bottom:1px solid #c59b27;padding-bottom:3px;display:flex;justify-content:space-between;align-items:center;">
-                <span>🎯 选择施法目标</span>
-                <span style="font-size:10.5px;cursor:pointer;color:#ffd700;" onclick="window.App2D.cancelCombatTargetSelection()">✕ 返回绝技</span>
+                <span title="${this.pendingCombatAction?.actionName || '出招'}">🎯 选择目标</span>
+                <span style="font-size:10.5px;cursor:pointer;color:#ffd700;" onclick="window.App2D.cancelCombatTargetSelection()">✕ 返回</span>
               </div>
-              <div style="display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto;padding:3px 0;">
-                ${this.currentBattle.enemies.map((e, idx) => {
-                  if (e.hp <= 0) return '';
-                  const actualIdx = e.enemyIndex !== undefined ? e.enemyIndex : idx;
-                  const hpPct = Math.max(0, Math.min(100, Math.round((e.hp / (e.maxHp || e.hp || 1)) * 100)));
-                  return `
-                    <button class="battle-skill-item-btn" onclick="window.App2D.confirmCombatSkillTarget(${actualIdx})" style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-left:3px solid #ff4757;">
-                      <div style="text-align:left;">
-                        <div style="color:#ffd700;font-weight:bold;font-size:11px;">[Lv.${e.level || 1}] ${e.name}</div>
-                        <div style="font-size:9.5px;color:#ff6b6b;">气血: ${e.hp}/${e.maxHp || e.hp} (${hpPct}%)</div>
-                      </div>
-                      <span style="font-size:10px;color:#f5cd79;background:rgba(214,48,49,0.3);padding:2px 6px;border-radius:3px;border:1px solid #d63031;">锁定 🎯</span>
-                    </button>
-                  `;
-                }).join('')}
+              <div class="battle-target-content" style="display:flex;flex-direction:column;gap:5px;overflow-y:auto;padding:3px 0;">
+                ${(() => {
+        const pending = this.pendingCombatAction || this.pendingSkillAction || { targetSide: 'enemy' };
+        const isAlly = (pending.targetSide === 'ally');
+        const targets = isAlly
+          ? (this.currentBattle.allies || []).filter(a => a.hp > 0)
+          : (this.currentBattle.enemies || []).filter(e => e.hp > 0);
+
+        if (targets.length === 0) return '<div style="font-size:10px;color:#aaa;text-align:center;padding:10px 0;">暂无存活可选目标</div>';
+
+        let focusIdx = Number(this.targetFocusIndex || 0);
+        if (focusIdx < 0 || focusIdx >= targets.length) focusIdx = 0;
+        const focused = targets[focusIdx] || targets[0];
+        const hp = Math.max(0, focused.hp);
+        const maxHp = Math.max(1, focused.maxHp || focused.hp || 1);
+        const hpPct = Math.min(100, Math.round((hp / maxHp) * 100));
+        const mp = Math.max(0, focused.mp !== undefined ? focused.mp : 0);
+        const maxMp = Math.max(1, focused.maxMp || (focused.mp !== undefined ? focused.mp : 100));
+        const mpPct = Math.min(100, Math.round((mp / maxMp) * 100));
+
+        return `
+      <!-- 目标切换标签行 (纯文字/数字切换，绝不预先展示全员血蓝) -->
+      <div class="target-picker-pills-row">
+        ${targets.map((t, idx) => `
+          <button class="target-picker-pill ${idx === focusIdx ? 'active' : ''}" onclick="window.App2D.setCombatFocusedTarget(${idx})" title="按数字键 ${idx + 1} 或点击切换">
+            ${idx + 1}. ${t.name}
+          </button>
+        `).join('')}
+      </div>
+
+      <!-- 单目标聚焦状态卡片：仅展示当前选定目标的血量与法力，支持自由切换 -->
+      <div class="battle-target-item-card is-focused-single ${isAlly ? 'is-ally' : ''}" aria-live="polite">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="color:#ffd700;font-weight:bold;font-size:11px;">[Lv.${focused.level || 1}] ${focused.name}</div>
+          <span style="font-size:9.5px;color:#fde047;background:rgba(0,0,0,0.4);padding:1px 5px;border-radius:3px;border:1px solid ${isAlly ? '#2ed573' : '#d63031'};">🎯 当前选定</span>
+        </div>
+        <div class="battle-target-bar-wrap">
+          <span style="color:#ff7675;flex-shrink:0;">气血</span>
+          <div class="battle-target-mini-bar">
+            <div class="battle-target-mini-fill-hp" style="width:${hpPct}%;"></div>
+          </div>
+          <span style="color:#ffb8b8;font-size:9px;flex-shrink:0;">${hp}/${maxHp}</span>
+        </div>
+        <div class="battle-target-bar-wrap">
+          <span style="color:#74b9ff;flex-shrink:0;">法力</span>
+          <div class="battle-target-mini-bar">
+            <div class="battle-target-mini-fill-mp" style="width:${mpPct}%;"></div>
+          </div>
+          <span style="color:#cce5ff;font-size:9px;flex-shrink:0;">${mp}/${maxMp}</span>
+        </div>
+      </div>
+
+    `;
+      })()}
               </div>
-              <button class="mrp-vertical-btn" style="padding:4px;font-size:11px;margin-top:2px;" onclick="window.App2D.cancelCombatTargetSelection()">◀ 返回重新选技</button>
+              <button class="battle-target-confirm-btn" onclick="window.App2D.confirmCurrentCombatAction()">⚔️ 确认出招 (Enter / 空格)</button>
+              <button class="mrp-vertical-btn" style="padding:4px;font-size:11px;margin-top:2px;" onclick="window.App2D.cancelCombatTargetSelection()">◀ 重新选指令 (Esc)</button>
             </div>
           </div>
         </div>
@@ -5550,13 +7326,11 @@ class GameApp2D {
     if (!canvas) return;
 
     const container = document.getElementById('battle-stage-area');
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      canvas.width = Math.max(560, Math.floor(rect.width));
-      canvas.height = Math.max(280, Math.floor(rect.height));
-    } else {
+    if (!container) {
       canvas.width = 640;
       canvas.height = 320;
+    } else {
+      this.resizeBattleCanvas(canvas);
     }
 
     canvas.onclick = (e) => {
@@ -5570,12 +7344,37 @@ class GameApp2D {
     };
   }
 
+  // 舞台随窗口改变，画布同步真实尺寸，避免转屏后人物和技能特效被拉伸。
+  resizeBattleCanvas(canvas) {
+    const rect = document.getElementById('battle-stage-area')?.getBoundingClientRect?.();
+    if (!canvas || !rect || rect.width <= 0 || rect.height <= 0) return;
+    const width = Math.max(1, Math.floor(rect.width));
+    const height = Math.max(1, Math.floor(rect.height));
+    // 重绘指令面板会创建新的 Canvas，不能拿新元素默认的 300×150 缩放旧演出坐标。
+    const previousWidth = this.battleCanvasWidth > 0 ? this.battleCanvasWidth : canvas.width;
+    const previousHeight = this.battleCanvasHeight > 0 ? this.battleCanvasHeight : canvas.height;
+    if (previousWidth !== width || previousHeight !== height) {
+      const scaleX = previousWidth > 0 ? width / previousWidth : 1;
+      const scaleY = previousHeight > 0 ? height / previousHeight : 1;
+      for (const unit of [...(this.currentBattle?.allies || []), ...(this.currentBattle?.enemies || [])]) {
+        if (unit._roundBattlePos) {
+          unit._roundBattlePos.x *= scaleX;
+          unit._roundBattlePos.y *= scaleY;
+        }
+      }
+    }
+    this.battleCanvasWidth = width;
+    this.battleCanvasHeight = height;
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+  }
+
   // 点击画布判定选择目标与切换友方
   handleBattleCanvasClick(clickX, clickY) {
     if (!this.currentBattle) return;
 
     // 左侧区域：指定敌方目标
-    if (clickX < this.battleCanvasWidth * 0.42 || clickX < 240) {
+    if (clickX < this.battleCanvasWidth * 0.42) {
       const enemies = this.currentBattle.enemies;
       let closestIdx = -1;
       let minDis = 99999;
@@ -5592,15 +7391,17 @@ class GameApp2D {
       });
       if (closestIdx !== -1) {
         if (this.battleTargetMenuOpen) {
-          const actualIdx = (enemies[closestIdx] && enemies[closestIdx].enemyIndex !== undefined) ? enemies[closestIdx].enemyIndex : closestIdx;
-          this.confirmCombatSkillTarget(actualIdx);
+          const pending = this.pendingCombatAction || this.pendingSkillAction;
+          if (pending?.targetSide !== 'ally') {
+            this.setCombatFocusedTarget(enemies.filter(e => e.hp > 0).indexOf(enemies[closestIdx]));
+          }
         } else {
           this.selectTarget(closestIdx);
         }
       }
     }
     // 右侧区域：切换受指派友方角色
-    else if (clickX > this.battleCanvasWidth * 0.58 || clickX > 360) {
+    else if (clickX > this.battleCanvasWidth * 0.58) {
       const allies = this.currentBattle.allies;
       let closestAlly = null;
       let minDis = 99999;
@@ -5616,7 +7417,14 @@ class GameApp2D {
         }
       });
       if (closestAlly) {
-        this.selectAlly(closestAlly.id);
+        if (this.battleTargetMenuOpen) {
+          const pending = this.pendingCombatAction || this.pendingSkillAction;
+          if (pending?.targetSide === 'ally') {
+            this.setCombatFocusedTarget(allies.filter(a => a.hp > 0).indexOf(closestAlly));
+          }
+        } else {
+          this.selectAlly(closestAlly.id);
+        }
       }
     }
   }
@@ -5625,6 +7433,7 @@ class GameApp2D {
   renderBattleCanvasFrame() {
     const canvas = document.getElementById('battle-scene-canvas');
     if (!canvas || !this.currentBattle) return;
+    this.resizeBattleCanvas(canvas);
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
@@ -5656,11 +7465,29 @@ class GameApp2D {
     ctx.fillStyle = radial;
     ctx.fillRect(0, 0, width, height);
 
+    // 1.5 绘制正在生效的法术全景战场环境与全屏特效背景 (舍生取义暗黑虚空、雷霆万钧暴风夜空与天雷、飞沙走石狂风树林等)
+    this.renderBattleBackdropEffects(ctx, width, height);
+
     const animTimer = Date.now() / 150;
 
     // 2. 左侧：敌方阵容 (动态自适应居中排列：1人居中50%，2人居中38%与64%)
     const enemies = this.currentBattle.enemies;
-    const aliveEnemies = enemies.filter(e => e.hp > 0);
+    const trueAliveEnemies = enemies.filter(e => e.hp > 0);
+    const trueAliveAllies = this.currentBattle.allies.filter(a => a.isPlayer && a.hp > 0);
+
+    // 每一帧防死锁判定：非交锋状态下，若全部敌方已阵亡立即退出结算胜利；若己方全灭立即退出结算战败
+    if (!this.isAnimatingCombat && this.currentBattle.status !== 'executing') {
+      if (trueAliveEnemies.length === 0) {
+        this.endBattle('victory');
+        return;
+      }
+      if (!trueAliveAllies.length) {
+        this.endBattle('defeat');
+        return;
+      }
+    }
+
+    const aliveEnemies = enemies.filter(e => e.hp > 0 || (e._displayHp !== undefined && e._displayHp > 0) || (e._defeatUntil && e._defeatUntil > Date.now()));
     const enemyX = Math.floor(width * 0.18);
 
     aliveEnemies.forEach((e, idx) => {
@@ -5675,16 +7502,20 @@ class GameApp2D {
         ey = Math.floor(height * (0.18 + idx * 0.20));
       }
 
+      if (e._roundBattlePos && !isNaN(e._roundBattlePos.y)) ey = e._roundBattlePos.y;
       e._baseBattlePos = { x: enemyX, y: ey };
-      const dX = e._dashOffset ? e._dashOffset.x : 0;
-      const dY = e._dashOffset ? e._dashOffset.y : 0;
-      const sX = e._shakeOffset ? e._shakeOffset.x : 0;
-      const sY = e._shakeOffset ? e._shakeOffset.y : 0;
-      const renderX = enemyX + dX + sX;
-      const renderY = ey + dY + sY;
+      const dX = (e._dashOffset && !isNaN(e._dashOffset.x)) ? e._dashOffset.x : 0;
+      const dY = (e._dashOffset && !isNaN(e._dashOffset.y)) ? e._dashOffset.y : 0;
+      const sX = (e._shakeOffset && !isNaN(e._shakeOffset.x)) ? e._shakeOffset.x : 0;
+      const sY = (e._shakeOffset && !isNaN(e._shakeOffset.y)) ? e._shakeOffset.y : 0;
+      const rawX = enemyX + dX + sX;
+      const rawY = ey + dY + sY;
+      const renderX = Math.max(30, Math.min(width - 30, isNaN(rawX) ? enemyX : rawX));
+      const renderY = Math.max(30, Math.min(height - 30, isNaN(rawY) ? ey : rawY));
       e._battlePos = { x: renderX, y: renderY };
+      this.renderBattleUnitStatus(ctx, e, renderX, renderY);
 
-      const isTargeted = (this.selectedTargetIndex === e.enemyIndex || (this.selectedTargetIndex === idx));
+      const isTargeted = this.selectedTargetIndex === e.enemyIndex;
 
       // 若被锁定为攻击目标，脚底绘制赤金锁定法阵光环
       if (isTargeted) {
@@ -5754,6 +7585,27 @@ class GameApp2D {
         else mId = (window.Character ? window.Character.inferMonsterType(n, e.id) : 'hooligan');
       }
 
+      // 绘制冲锋残影拖尾 (Ghost Trail)
+      if (e._ghosts && e._ghosts.length > 0 && window.CharacterRenderer) {
+        e._ghosts.forEach(g => {
+          ctx.save();
+          ctx.globalAlpha = g.alpha || 0.3;
+          window.CharacterRenderer.drawModel(ctx, g.x, g.y, mId, {
+            direction: 'right',
+            scale: 1.35,
+            animTimer: animTimer + idx,
+            isActing: false
+          });
+          ctx.restore();
+        });
+      }
+
+      ctx.save();
+      if (e._dashTilt) {
+        ctx.translate(renderX, renderY);
+        ctx.rotate(e._dashTilt);
+        ctx.translate(-renderX, -renderY);
+      }
       if (window.CharacterRenderer) {
         window.CharacterRenderer.drawModel(ctx, renderX, renderY, mId, {
           direction: 'right',
@@ -5762,19 +7614,20 @@ class GameApp2D {
           isActing: false
         });
       }
+      ctx.restore();
 
       // 头顶醒目姓名 (粗白字 + 纯黑描边，附带等级显示)
       const enemyDisplayName = `[Lv.${e.level || 1}] ${e.name}`;
       ctx.save();
-      ctx.font = 'bold 13px "Microsoft YaHei", sans-serif';
+      ctx.font = `bold ${width < 560 ? 10 : 13}px "Microsoft YaHei", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 3.5;
       ctx.lineJoin = 'round';
-      ctx.strokeText(enemyDisplayName, renderX, renderY - 30);
+      ctx.strokeText(enemyDisplayName, renderX, renderY - 30, Math.min(160, width * 0.3));
       ctx.fillStyle = isTargeted ? '#ff4757' : (e.isBoss ? '#ffd700' : '#ffffff');
-      ctx.fillText(enemyDisplayName, renderX, renderY - 30);
+      ctx.fillText(enemyDisplayName, renderX, renderY - 30, Math.min(160, width * 0.3));
 
       // 头顶锁定小红箭头指示
       if (isTargeted) {
@@ -5796,7 +7649,7 @@ class GameApp2D {
       const barH = 9;
       const barX = renderX - barW / 2;
       const barY = renderY + 22;
-      const hpPct = Math.max(0, Math.min(1, e.hp / e.maxHp));
+      const hpPct = Math.max(0, Math.min(1, (e._displayHp ?? e.hp) / e.maxHp));
 
       // 底槽
       ctx.fillStyle = 'rgba(10, 8, 6, 0.9)';
@@ -5849,7 +7702,7 @@ class GameApp2D {
     });
 
     // 3. 右侧：我方阵容 (动态自适应居中：1人居中50%，2人居中38%与64%，彻底消除任何锁槽位)
-    const aliveAllies = this.currentBattle.allies.filter(a => a.hp > 0);
+    const aliveAllies = this.currentBattle.allies.filter(a => a.hp > 0 || (a._displayHp !== undefined && a._displayHp > 0) || (a._defeatUntil && a._defeatUntil > Date.now()));
     const allyX = Math.floor(width * 0.82);
 
     aliveAllies.forEach((ally, idx) => {
@@ -5864,14 +7717,18 @@ class GameApp2D {
         ay = Math.floor(height * (0.18 + idx * 0.20));
       }
 
+      if (ally._roundBattlePos && !isNaN(ally._roundBattlePos.y)) ay = ally._roundBattlePos.y;
       ally._baseBattlePos = { x: allyX, y: ay };
-      const dX = ally._dashOffset ? ally._dashOffset.x : 0;
-      const dY = ally._dashOffset ? ally._dashOffset.y : 0;
-      const sX = ally._shakeOffset ? ally._shakeOffset.x : 0;
-      const sY = ally._shakeOffset ? ally._shakeOffset.y : 0;
-      const renderX = allyX + dX + sX;
-      const renderY = ay + dY + sY;
+      const dX = (ally._dashOffset && !isNaN(ally._dashOffset.x)) ? ally._dashOffset.x : 0;
+      const dY = (ally._dashOffset && !isNaN(ally._dashOffset.y)) ? ally._dashOffset.y : 0;
+      const sX = (ally._shakeOffset && !isNaN(ally._shakeOffset.x)) ? ally._shakeOffset.x : 0;
+      const sY = (ally._shakeOffset && !isNaN(ally._shakeOffset.y)) ? ally._shakeOffset.y : 0;
+      const rawX = allyX + dX + sX;
+      const rawY = ay + dY + sY;
+      const renderX = Math.max(30, Math.min(width - 30, isNaN(rawX) ? allyX : rawX));
+      const renderY = Math.max(30, Math.min(height - 30, isNaN(rawY) ? ay : rawY));
       ally._battlePos = { x: renderX, y: renderY };
+      this.renderBattleUnitStatus(ctx, ally, renderX, renderY);
 
       const isPlayerSlot = ally.isPlayer;
       const isActing = (this.selectedAllyId === ally.id);
@@ -5903,6 +7760,27 @@ class GameApp2D {
         else mId = mId || 'tieshan';
       }
 
+      // 绘制冲锋残影拖尾 (Ghost Trail)
+      if (ally._ghosts && ally._ghosts.length > 0 && window.CharacterRenderer) {
+        ally._ghosts.forEach(g => {
+          ctx.save();
+          ctx.globalAlpha = g.alpha || 0.3;
+          window.CharacterRenderer.drawModel(ctx, g.x, g.y, mId, {
+            direction: 'left',
+            scale: 1.35,
+            animTimer: animTimer + 2,
+            isActing: false
+          });
+          ctx.restore();
+        });
+      }
+
+      ctx.save();
+      if (ally._dashTilt) {
+        ctx.translate(renderX, renderY);
+        ctx.rotate(ally._dashTilt);
+        ctx.translate(-renderX, -renderY);
+      }
       if (window.CharacterRenderer) {
         window.CharacterRenderer.drawModel(ctx, renderX, renderY, mId, {
           direction: 'left',
@@ -5911,26 +7789,27 @@ class GameApp2D {
           isActing: isActing
         });
       }
+      ctx.restore();
 
       // 头顶清晰姓名 (加粗白色 + 黑色描边，附带等级显示)
       const allyDisplayName = `[Lv.${ally.level || 1}] ${ally.name}`;
       ctx.save();
-      ctx.font = 'bold 12.5px "Microsoft YaHei", sans-serif';
+      ctx.font = `bold ${width < 560 ? 10 : 12.5}px "Microsoft YaHei", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 3.5;
       ctx.lineJoin = 'round';
-      ctx.strokeText(allyDisplayName, renderX, renderY - 28);
+      ctx.strokeText(allyDisplayName, renderX, renderY - 28, Math.min(160, width * 0.3));
       ctx.fillStyle = isActing ? '#fffa65' : (isPlayerSlot ? '#ffeaa7' : '#f5cd79');
-      ctx.fillText(allyDisplayName, renderX, renderY - 28);
+      ctx.fillText(allyDisplayName, renderX, renderY - 28, Math.min(160, width * 0.3));
 
       // 脚底大号立体水晶生命/精力槽 (宽度68px, 高度9px)
       const barW = 68;
       const barH = 9;
       const barX = renderX - barW / 2;
       const barY = renderY + 20;
-      const hpPct = Math.max(0, Math.min(1, ally.hp / ally.maxHp));
+      const hpPct = Math.max(0, Math.min(1, (ally._displayHp ?? ally.hp) / ally.maxHp));
 
       // 生命底槽
       ctx.fillStyle = 'rgba(10, 8, 6, 0.9)';
@@ -6006,9 +7885,318 @@ class GameApp2D {
 
     // 4. 绘制上层法术技能与刀光特效队列 (烈火炎柱、天雷霹雳、玄冰突刺、金刚护盾等)
     this.renderBattleCanvasEffects(ctx);
+    if (this.currentBattle.status === 'executing' && this.battleCastCue && this.battleCastCue.until > Date.now()) {
+      ctx.save();
+      ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(20, 14, 24, 0.86)';
+      ctx.beginPath();
+      ctx.roundRect(width / 2 - 110, 8, 220, 28, 8);
+      ctx.fill();
+      ctx.fillStyle = '#f8df9c';
+      ctx.fillText(this.battleCastCue.text, width / 2, 27, 208);
+      ctx.restore();
+    } else if (this.currentBattle.status !== 'executing') {
+      this.battleCastCue = null;
+    }
   }
 
-  // 渲染正在生效的战斗法术特效
+  // 渲染正在生效的战斗全屏与环境背景特效 (舍生取义暗黑虚空、雷霆万钧暴风夜空与天雷、飞沙走石狂风撕碎树林古木等)
+  renderBattleBackdropEffects(ctx, width, height) {
+    if (!this.activeBattleEffects || this.activeBattleEffects.length === 0) return;
+    const now = Date.now();
+
+    this.activeBattleEffects.forEach(fx => {
+      if (fx.localOnly) return;
+      const elapsed = now - fx.startTime;
+      if (elapsed > fx.duration) return;
+      const progress = elapsed / fx.duration;
+
+      ctx.save();
+
+      // 1. 舍生取义：背景变黑，并呈现横向能量光束 -> 突然缩小成射线
+      if (fx.type === 'sacrifice') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.35);
+        ctx.fillStyle = `rgba(5, 4, 12, ${0.88 * fade})`;
+        ctx.fillRect(0, 0, width, height);
+
+        // 虚空粒子尘埃微粒
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
+        for (let i = 0; i < 12; i++) {
+          const px = ((i * 73 + progress * width * 0.8) % width);
+          const py = ((i * 47) % height);
+          ctx.fillRect(px, py, 2, 2);
+        }
+
+        const beamY = fx.beamY || (height * 0.5);
+        // 阶段：横向有一道光束 -> 突然缩小成一道射线
+        if (fx.phase ? fx.phase === 'beam_wide' : progress < 0.25) {
+          // 横向宽幅能量光束 (宽 52px，白金与赤红流光交织)
+          const beamH = 52 * (0.8 + Math.sin(progress * 20) * 0.2);
+          const grad = ctx.createLinearGradient(0, beamY - beamH / 2, 0, beamY + beamH / 2);
+          grad.addColorStop(0, 'rgba(255, 60, 80, 0)');
+          grad.addColorStop(0.25, 'rgba(255, 80, 100, 0.8)');
+          grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.98)');
+          grad.addColorStop(0.75, 'rgba(255, 180, 50, 0.8)');
+          grad.addColorStop(1, 'rgba(255, 60, 80, 0)');
+          ctx.fillStyle = grad;
+          ctx.shadowColor = '#ff304a';
+          ctx.shadowBlur = 24;
+          ctx.fillRect(0, beamY - beamH / 2, width, beamH);
+        } else if (fx.phase ? ['ray_collapse', 'ray_dash'].includes(fx.phase) : progress < 0.55) {
+          // 突然缩小成一道高能炽烈极细激光射线 (高度仅 3px，但散发耀眼爆鸣强光)
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3.5;
+          ctx.shadowColor = '#ff2b4f';
+          ctx.shadowBlur = 22;
+          ctx.beginPath();
+          ctx.moveTo(0, beamY);
+          ctx.lineTo(width, beamY);
+          ctx.stroke();
+
+          // 核心光核脉冲
+          ctx.strokeStyle = 'rgba(255, 240, 150, 0.9)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, beamY);
+          ctx.lineTo(width, beamY);
+          ctx.stroke();
+        }
+      }
+      // 2. 雷霆万钧：背景变黑，夜幕雷暴云翻涌，远景闪电天光映照
+      else if (fx.type === 'thunder') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.35);
+        ctx.fillStyle = `rgba(6, 9, 24, ${0.92 * fade})`;
+        ctx.fillRect(0, 0, width, height);
+
+        // 苍穹翻滚的墨黑劫云与电芒反光
+        const cloudGrad = ctx.createLinearGradient(0, 0, 0, height * 0.4);
+        cloudGrad.addColorStop(0, 'rgba(20, 24, 52, 0.95)');
+        cloudGrad.addColorStop(0.7, 'rgba(15, 18, 40, 0.85)');
+        cloudGrad.addColorStop(1, 'rgba(6, 9, 24, 0)');
+        ctx.fillStyle = cloudGrad;
+        ctx.fillRect(0, 0, width, height * 0.4);
+
+        // 劫云电闪微光闪烁
+        if (Math.sin(progress * 28) > 0.4) {
+          ctx.fillStyle = 'rgba(192, 132, 252, 0.18)';
+          ctx.fillRect(0, 0, width, height * 0.35);
+        }
+      }
+      // 3. 飞沙走石：背景有一堆古木树林，突然狂风大作把树叶全刮砍没了，树木化为光秃残枝！
+      else if (fx.type === 'sand') {
+        const treeXList = [width * 0.10, width * 0.28, width * 0.48, width * 0.70, width * 0.90];
+        const treeBaseY = height * 0.68;
+        const isWindActive = progress >= 0.28;
+        const leafRatio = progress < 0.28 ? 1 : Math.max(0, 1 - (progress - 0.28) / 0.34);
+
+        // 绘制古木主干与分叉枝丫 (即使叶子被刮没了，枝干依然在狂风中剧烈晃动)
+        treeXList.forEach((tx, tIdx) => {
+          const trunkW = 11;
+          const trunkH = 55;
+          const windSway = isWindActive ? Math.sin((progress * 30) + tIdx) * (6 * (1 - leafRatio + 0.3)) : 0;
+
+          // 树干深褐色木质纹理
+          ctx.fillStyle = '#3e2415';
+          ctx.beginPath();
+          ctx.moveTo(tx - trunkW / 2, treeBaseY);
+          ctx.lineTo(tx - trunkW * 0.35 + windSway * 0.5, treeBaseY - trunkH);
+          ctx.lineTo(tx + trunkW * 0.35 + windSway * 0.5, treeBaseY - trunkH);
+          ctx.lineTo(tx + trunkW / 2, treeBaseY);
+          ctx.closePath();
+          ctx.fill();
+
+          // 苍劲分叉树枝
+          ctx.strokeStyle = '#2d180c';
+          ctx.lineWidth = 3.2;
+          ctx.lineCap = 'round';
+          // 左大枝
+          ctx.beginPath();
+          ctx.moveTo(tx + windSway * 0.5, treeBaseY - trunkH * 0.7);
+          ctx.quadraticCurveTo(tx - 18 + windSway, treeBaseY - trunkH * 1.05, tx - 28 + windSway * 1.2, treeBaseY - trunkH * 1.2);
+          ctx.stroke();
+          // 右大枝
+          ctx.beginPath();
+          ctx.moveTo(tx + windSway * 0.5, treeBaseY - trunkH * 0.8);
+          ctx.quadraticCurveTo(tx + 16 + windSway, treeBaseY - trunkH * 1.1, tx + 26 + windSway * 1.2, treeBaseY - trunkH * 1.25);
+          ctx.stroke();
+          // 顶梢直枝
+          ctx.beginPath();
+          ctx.moveTo(tx + windSway * 0.5, treeBaseY - trunkH);
+          ctx.lineTo(tx + windSway * 1.3, treeBaseY - trunkH * 1.38);
+          ctx.stroke();
+
+          // 树叶树冠团簇 (随着风暴推进，树叶急剧减小、被狂风剥落并彻底消失)
+          if (leafRatio > 0.02) {
+            const leafClusters = [
+              { ox: -22, oy: -trunkH * 1.15, rx: 18, ry: 13, color: '#2e7d32' },
+              { ox: 20, oy: -trunkH * 1.2, rx: 17, ry: 12, color: '#388e3c' },
+              { ox: 0, oy: -trunkH * 1.35, rx: 22, ry: 16, color: '#43a047' },
+              { ox: -10, oy: -trunkH * 0.95, rx: 14, ry: 10, color: '#f59e0b' }
+            ];
+
+            leafClusters.forEach(c => {
+              ctx.save();
+              ctx.fillStyle = c.color;
+              ctx.beginPath();
+              ctx.ellipse(
+                tx + c.ox + windSway,
+                treeBaseY + c.oy,
+                Math.max(0.1, c.rx * leafRatio),
+                Math.max(0.1, c.ry * leafRatio),
+                0.2, 0, Math.PI * 2
+              );
+              ctx.fill();
+              ctx.restore();
+            });
+          }
+        });
+
+        // 狂暴风刃呼啸切过，漫天飞舞被刮飞撕碎的落叶！
+        if (isWindActive) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+          ctx.lineWidth = 2.2;
+          ctx.shadowColor = '#eab308';
+          ctx.shadowBlur = 10;
+          for (let w = 0; w < 4; w++) {
+            const wy = height * (0.35 + w * 0.12);
+            const wx = ((progress - 0.28) * 2.8 * width) - (w * 80);
+            ctx.beginPath();
+            ctx.moveTo(wx - 120, wy + (w % 2 ? 8 : -8));
+            ctx.lineTo(wx, wy);
+            ctx.stroke();
+          }
+
+          // 被狂风从树上刮砍拔掉、在半空中急速飞掠旋转的无数碎叶
+          const flyingLeafCount = 36;
+          for (let l = 0; l < flyingLeafCount; l++) {
+            const baseTreeIdx = l % treeXList.length;
+            const startTreeX = treeXList[baseTreeIdx];
+            const leafSpeed = 1.3 + (l % 5) * 0.25;
+            const lx = startTreeX + (progress - 0.28) * width * leafSpeed;
+            const ly = treeBaseY - 60 + Math.sin(progress * 14 + l) * 26 + (l % 7) * 7;
+            const lRot = progress * 15 + l;
+
+            ctx.save();
+            ctx.translate(lx, ly);
+            ctx.rotate(lRot);
+            ctx.fillStyle = (l % 3 === 0) ? '#eab308' : ((l % 3 === 1) ? '#22c55e' : '#15803d');
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 5, 2.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+      }
+      // 4. 如来神掌：九霄金顶佛光云海与大日金轮
+      else if (fx.type === 'palm') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.2);
+        const skyGrad = ctx.createRadialGradient(width * 0.5, height * 0.2, 20, width * 0.5, height * 0.2, width * 0.7);
+        skyGrad.addColorStop(0, `rgba(254, 240, 138, ${0.45 * fade})`);
+        skyGrad.addColorStop(0.5, `rgba(245, 158, 11, ${0.28 * fade})`);
+        skyGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.translate(width * 0.5, height * 0.22);
+        ctx.rotate(progress * 1.5);
+        ctx.strokeStyle = `rgba(253, 224, 71, ${0.65 * fade})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 48, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let s = 0; s < 8; s++) {
+          const ang = (s * Math.PI) / 4;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(ang) * 48, Math.sin(ang) * 48);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      // 5. 三昧真火：地底烈焰熔岩裂隙与焦土地热
+      else if (fx.type === 'fire') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.2);
+        ctx.strokeStyle = `rgba(239, 68, 68, ${0.85 * fade})`;
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 12;
+        for (let cr = -2; cr <= 2; cr++) {
+          const cx = fx.x + cr * 32;
+          ctx.beginPath();
+          ctx.moveTo(cx, fx.y + 12);
+          ctx.lineTo(cx + (cr % 2 ? 14 : -14), fx.y + 24);
+          ctx.lineTo(cx + (cr % 2 ? -8 : 10), fx.y + 36);
+          ctx.stroke();
+        }
+      }
+      // 6. 佛光普照：天界破晓降下万道金光
+      else if (fx.type === 'buddha') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.2);
+        for (let ray = -3; ray <= 3; ray++) {
+          const rx = fx.x + ray * 45;
+          const rGrad = ctx.createLinearGradient(rx, 0, rx, height);
+          rGrad.addColorStop(0, `rgba(254, 240, 138, ${0.4 * fade})`);
+          rGrad.addColorStop(0.6, `rgba(250, 204, 21, ${0.15 * fade})`);
+          rGrad.addColorStop(1, 'rgba(250, 204, 21, 0)');
+          ctx.fillStyle = rGrad;
+          ctx.fillRect(rx - 15, 0, 30, height);
+        }
+      }
+      // 7. 金刚护体：地面太极八卦金盘阵法
+      else if (fx.type === 'shield' || fx.type === 'gold') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.2);
+        ctx.save();
+        ctx.translate(fx.x, fx.y + 14);
+        ctx.scale(1, 0.45);
+        ctx.rotate(progress * 2.2);
+        ctx.strokeStyle = `rgba(250, 204, 21, ${0.75 * fade})`;
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(0, 0, 38, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * 32, Math.sin(a) * 32);
+          ctx.lineTo(Math.cos(a) * 38, Math.sin(a) * 38);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      // 8. 玄冰刺：地面极寒九幽冰霜之印
+      else if (fx.type === 'ice') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.2);
+        ctx.strokeStyle = `rgba(186, 230, 253, ${0.8 * fade})`;
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 12;
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3;
+          const dist = 36 * progress;
+          ctx.beginPath();
+          ctx.moveTo(fx.x, fx.y + 12);
+          ctx.lineTo(fx.x + Math.cos(a) * dist, fx.y + 12 + Math.sin(a) * (dist * 0.45));
+          ctx.stroke();
+        }
+      }
+      // 9. 万毒攻心：地底腐蚀剧毒绿雾
+      else if (fx.type === 'poison') {
+        const fade = Math.min(1, Math.sin(progress * Math.PI) * 1.2);
+        ctx.fillStyle = `rgba(74, 222, 128, ${0.2 * fade})`;
+        ctx.beginPath();
+        ctx.ellipse(fx.x, fx.y + 14, 42 * progress, 14 * progress, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    });
+  }
+
+  // 渲染正在生效的战斗前景法术与打击特效 (普攻刀光、舍生爆开、神雷轰击、狂暴风沙等)
   renderBattleCanvasEffects(ctx) {
     if (!this.activeBattleEffects || this.activeBattleEffects.length === 0) return;
     const now = Date.now();
@@ -6022,191 +8210,655 @@ class GameApp2D {
       const x = fx.x;
       const y = fx.y;
 
-      // 特效1：普通攻击·银白撕裂剑光 (半月刀光与金色碎星)
+      // 特效1：普通攻击·银白撕裂剑弧、耀眼神兵挥砍与火花迸溅
       if (fx.type === 'slash') {
-        const slashAngle = -Math.PI / 4 + progress * Math.PI / 2;
-        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - progress})`;
-        ctx.lineWidth = 4.5 * (1 - progress);
+        const isAlly = fx.isAllyAttacker !== undefined ? fx.isAllyAttacker : true;
+        const slashAngle = isAlly ? (-Math.PI / 4 + progress * Math.PI * 0.7) : (Math.PI * 0.75 - progress * Math.PI * 0.7);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - progress)})`;
+        ctx.lineWidth = 5.5 * (1 - progress * 0.6);
         ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 18;
         ctx.beginPath();
-        ctx.arc(x, y, 32 * (0.6 + progress * 0.5), slashAngle - 0.7, slashAngle + 0.7);
+        ctx.arc(x, y - 6, 38 * (0.5 + progress * 0.6), slashAngle - 0.75, slashAngle + 0.75);
         ctx.stroke();
 
-        // 金色火星迸溅
-        for (let i = 0; i < 4; i++) {
-          const spAngle = (i * Math.PI) / 2 + progress * 2;
-          const spDist = 18 + progress * 24;
-          ctx.fillStyle = '#fde047';
-          ctx.fillRect(x + Math.cos(spAngle) * spDist, y + Math.sin(spAngle) * spDist, 3, 3);
+        // 耀眼刀刃残影
+        ctx.strokeStyle = `rgba(56, 189, 248, ${Math.max(0, 0.8 - progress)})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(x, y - 6, 32 * (0.5 + progress * 0.6), slashAngle - 0.6, slashAngle + 0.6);
+        ctx.stroke();
+
+        // 挥舞的金色神兵轮廓 (瞬时闪现的刀剑光影)
+        ctx.save();
+        ctx.translate(x + (isAlly ? 10 : -10), y - 10);
+        ctx.rotate(slashAngle);
+        ctx.fillStyle = 'rgba(253, 224, 71, 0.9)';
+        ctx.fillRect(-2, -26, 4, 30);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(-6, 4, 12, 3);
+        ctx.fillRect(-2, 7, 4, 9);
+        ctx.restore();
+
+        // 命中爆发的璀璨火星碎屑与十字星芒
+        for (let i = 0; i < 8; i++) {
+          const spAngle = (i * Math.PI) / 4 + progress * 3;
+          const spDist = 12 + progress * 36;
+          ctx.fillStyle = (i % 2 === 0) ? '#fde047' : '#ff4757';
+          ctx.fillRect(x + Math.cos(spAngle) * spDist, y - 8 + Math.sin(spAngle) * spDist, 3, 3);
+        }
+
+        // 核心受击爆光星芒
+        if (progress < 0.45) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.beginPath();
+          ctx.ellipse(x, y - 8, 14 * (1 - progress * 2), 2.5, 0, 0, Math.PI * 2);
+          ctx.ellipse(x, y - 8, 2.5, 14 * (1 - progress * 2), 0, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
-      // 特效2：烈火咒 / 三昧真火 (冲天爆裂火焰光柱与火凰赤芒)
+      // 特效2：舍生取义·汇聚在目标身上的能量剧烈爆开！(Shockwave Detonation)
+      else if (fx.type === 'sacrifice') {
+        if (fx.phase ? fx.phase === 'energy_detonate' : progress >= 0.50) {
+          const blastProg = Math.max(0, Math.min(1, fx.impactTime !== undefined
+            ? (now - fx.impactTime) / (fx.blastDuration || 400) : (progress - 0.50) / 0.50));
+          const blastR = 18 + blastProg * 75;
+          const bGrad = ctx.createRadialGradient(x, y - 10, 0, x, y - 10, blastR);
+          bGrad.addColorStop(0, `rgba(255, 255, 255, ${Math.max(0, 1 - blastProg)})`);
+          bGrad.addColorStop(0.3, `rgba(255, 48, 74, ${Math.max(0, 0.9 - blastProg)})`);
+          bGrad.addColorStop(0.7, `rgba(255, 215, 0, ${Math.max(0, 0.6 - blastProg)})`);
+          bGrad.addColorStop(1, 'rgba(255, 48, 74, 0)');
+          ctx.fillStyle = bGrad;
+          ctx.beginPath();
+          ctx.arc(x, y - 10, blastR, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 双重剧烈向外炸开的冲击波光环
+          ctx.strokeStyle = `rgba(255, 48, 74, ${Math.max(0, 1 - blastProg * 1.2)})`;
+          ctx.lineWidth = 5 * (1 - blastProg);
+          ctx.shadowColor = '#ff304a';
+          ctx.shadowBlur = 24;
+          ctx.beginPath();
+          ctx.arc(x, y - 10, 16 + blastProg * 88, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = `rgba(255, 230, 100, ${Math.max(0, 1 - blastProg)})`;
+          ctx.lineWidth = 3 * (1 - blastProg);
+          ctx.beginPath();
+          ctx.arc(x, y - 10, 10 + blastProg * 65, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // 360 度四射迸溅的赤金能量箭芒与破体火花 (18 道破体神枪光芒)
+          for (let s = 0; s < 18; s++) {
+            const ang = (s * Math.PI) / 9 + blastProg * 1.5;
+            const dist = 14 + blastProg * 92;
+            const len = 18 * (1 - blastProg);
+            ctx.strokeStyle = (s % 2 === 0) ? '#ff4757' : '#ffd700';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(x + Math.cos(ang) * (dist - len), y - 10 + Math.sin(ang) * (dist - len));
+            ctx.lineTo(x + Math.cos(ang) * dist, y - 10 + Math.sin(ang) * dist);
+            ctx.stroke();
+          }
+
+          // 目标体表交叉破甲十字血芒
+          ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - blastProg * 1.5)})`;
+          ctx.lineWidth = 4;
+          for (const side of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(x - 36, y - 10 + side * 28);
+            ctx.lineTo(x + 36, y - 10 - side * 28);
+            ctx.stroke();
+          }
+        }
+      }
+      // 特效3：雷霆万钧·满天雷电轰鸣 + 终极九天神雷狂暴劈落目标！
+      else if (fx.type === 'thunder') {
+        const stageProg = progress;
+        // 前半程 (0% ~ 65%)：很多道雷电从天上往全场各处接连狂劈！
+        if (stageProg < 0.65) {
+          const boltPoints = [
+            { ox: -140, hitGround: 0.72 },
+            { ox: 110, hitGround: 0.68 },
+            { ox: -60, hitGround: 0.78 },
+            { ox: 170, hitGround: 0.65 },
+            { ox: -210, hitGround: 0.70 },
+            { ox: 50, hitGround: 0.76 },
+            { ox: -100, hitGround: 0.80 },
+            { ox: 140, hitGround: 0.74 }
+          ];
+
+          boltPoints.forEach((bp, bIdx) => {
+            const triggerTime = bIdx * 0.07;
+            if (stageProg >= triggerTime && stageProg <= triggerTime + 0.22) {
+              const bAlpha = 1 - (stageProg - triggerTime) / 0.22;
+              const bx = x + bp.ox;
+              const bGroundY = (this.battleCanvasHeight || 420) * bp.hitGround;
+
+              ctx.strokeStyle = `rgba(224, 231, 255, ${bAlpha})`;
+              ctx.lineWidth = 3.2;
+              ctx.shadowColor = '#818cf8';
+              ctx.shadowBlur = 18;
+
+              ctx.beginPath();
+              ctx.moveTo(bx, 0);
+              ctx.lineTo(bx + (bIdx % 2 ? 18 : -18), bGroundY * 0.3);
+              ctx.lineTo(bx + (bIdx % 2 ? -15 : 15), bGroundY * 0.6);
+              ctx.lineTo(bx + (bIdx % 2 ? 10 : -10), bGroundY * 0.85);
+              ctx.lineTo(bx, bGroundY);
+              ctx.stroke();
+
+              ctx.fillStyle = `rgba(168, 85, 247, ${bAlpha * 0.5})`;
+              ctx.beginPath();
+              ctx.ellipse(bx, bGroundY, 18, 6, 0, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          });
+        }
+
+        // 后半程 (50% ~ 100%)：最终汇聚并在目标身上轰隆劈下绝世神雷！
+        if (stageProg >= 0.50) {
+          const finalProg = (stageProg - 0.50) / 0.50;
+          const finalAlpha = Math.max(0, 1 - finalProg * 0.85);
+
+          // 直贯天灵的九天劫雷巨柱 (宽 28px，耀眼纯白与蓝紫雷光)
+          ctx.strokeStyle = `rgba(255, 255, 255, ${finalAlpha})`;
+          ctx.lineWidth = 14 * (1 - finalProg * 0.5);
+          ctx.shadowColor = '#a855f7';
+          ctx.shadowBlur = 30;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, y + 10);
+          ctx.stroke();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, y + 10);
+          ctx.stroke();
+
+          // 缠绕目标身躯的狂暴电弧狂澜
+          for (let a = -2; a <= 2; a++) {
+            ctx.strokeStyle = (a % 2 === 0) ? '#818cf8' : '#c084fc';
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.moveTo(x + a * 16, y - 45);
+            ctx.lineTo(x + a * 8 + (Math.sin(finalProg * 25 + a) * 16), y - 15);
+            ctx.lineTo(x, y + 10);
+            ctx.stroke();
+          }
+
+          // 目标脚底炸开的环形雷电震波与四射电火花
+          ctx.strokeStyle = `rgba(192, 132, 252, ${finalAlpha})`;
+          ctx.lineWidth = 4 * (1 - finalProg);
+          ctx.beginPath();
+          ctx.ellipse(x, y + 10, 46 * (0.3 + finalProg * 0.7), 16 * (0.3 + finalProg * 0.7), 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          for (let p = 0; p < 12; p++) {
+            const pAng = (p * Math.PI) / 6 + finalProg * 3;
+            const pDist = 18 + finalProg * 48;
+            ctx.fillStyle = '#e0e7ff';
+            ctx.fillRect(x + Math.cos(pAng) * pDist, y + 8 + Math.sin(pAng) * (pDist * 0.4), 3, 3);
+          }
+        }
+      }
+      // 特效4：飞沙走石·落叶狂风暴风眼与乱石飞沙重创
+      else if (fx.type === 'sand') {
+        const isStormActive = progress >= 0.25;
+        if (isStormActive) {
+          const stormProg = (progress - 0.25) / 0.75;
+          const stormAlpha = Math.max(0, 1 - stormProg * 0.6);
+
+          // 狂暴横扫目标的金色神风气刃
+          ctx.strokeStyle = `rgba(254, 240, 138, ${stormAlpha})`;
+          ctx.lineWidth = 3.5;
+          ctx.shadowColor = '#eab308';
+          ctx.shadowBlur = 16;
+          for (let s = -2; s <= 2; s++) {
+            const sy = y + s * 16 - stormProg * 14;
+            ctx.beginPath();
+            ctx.moveTo(x - 75 + stormProg * 40, sy + 12);
+            ctx.quadraticCurveTo(x, sy - 22, x + 72 + stormProg * 25, sy - 4);
+            ctx.stroke();
+          }
+
+          // 环绕目标疯狂旋舞的碎叶暴风眼 (叶子被刮没后全在这里撕扯旋转)
+          for (let l = 0; l < 22; l++) {
+            const lAng = l * 0.55 + stormProg * 9;
+            const lDistX = 22 + (l % 4) * 14 + stormProg * 25;
+            const lDistY = (lDistX * 0.45);
+            const lx = x + Math.cos(lAng) * lDistX;
+            const ly = y - 10 + Math.sin(lAng) * lDistY;
+
+            ctx.save();
+            ctx.translate(lx, ly);
+            ctx.rotate(lAng + Math.PI / 4);
+            ctx.fillStyle = (l % 2 === 0) ? '#22c55e' : '#f59e0b';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 5.5, 2.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // 漫天飞沙乱石重轰目标
+          ctx.fillStyle = '#d97706';
+          for (let r = 0; r < 14; r++) {
+            const rx = x - 55 + ((r * 19 + stormProg * 130) % 110);
+            const ry = y + (Math.sin(r * 3 + stormProg * 12) * 22) - 8;
+            const rSize = 3 + (r % 4);
+            ctx.fillRect(rx, ry, rSize, rSize);
+          }
+
+          // 地面弥漫的风沙土尘气旋
+          ctx.fillStyle = `rgba(217, 119, 6, ${0.35 * stormAlpha})`;
+          ctx.beginPath();
+          ctx.ellipse(x, y + 10, 52 * (0.5 + stormProg * 0.5), 18 * (0.5 + stormProg * 0.5), 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // 特效5：如来神掌 (金刚通天巨掌压落与地底佛印破空)
+      else if (fx.type === 'palm') {
+        if (progress < 0.45) {
+          const fallProg = progress / 0.45;
+          const palmY = y - 140 + fallProg * 130;
+          ctx.save();
+          ctx.translate(x, palmY);
+          ctx.scale(1.35, 1.35);
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = '#ffd700';
+          ctx.shadowBlur = 25;
+
+          ctx.beginPath();
+          ctx.ellipse(0, 10, 24, 28, 0, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          for (let f = -2; f <= 2; f++) {
+            const fLen = 38 - Math.abs(f) * 6;
+            ctx.beginPath();
+            ctx.roundRect(f * 10 - 4, -fLen, 8, fLen + 10, 4);
+            ctx.fill(); ctx.stroke();
+          }
+          ctx.restore();
+
+          ctx.strokeStyle = `rgba(253, 224, 71, ${0.8 * fallProg})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.ellipse(x, y + 10, 48 * fallProg, 16 * fallProg, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          const slamProg = (progress - 0.45) / 0.55;
+          const slamAlpha = Math.max(0, 1 - slamProg * 0.85);
+
+          ctx.save();
+          ctx.translate(x, y + 10);
+          ctx.scale(1.2, 0.45);
+          ctx.fillStyle = `rgba(245, 158, 11, ${slamAlpha * 0.65})`;
+          ctx.strokeStyle = `rgba(253, 224, 71, ${slamAlpha})`;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 24;
+
+          ctx.beginPath();
+          ctx.ellipse(0, 8, 26, 30, 0, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          for (let f = -2; f <= 2; f++) {
+            const fLen = 36 - Math.abs(f) * 6;
+            ctx.beginPath();
+            ctx.roundRect(f * 11 - 4, -fLen, 9, fLen + 8, 4);
+            ctx.fill(); ctx.stroke();
+          }
+          ctx.restore();
+
+          for (let f = -2; f <= 2; f++) {
+            const fxOffset = f * 12;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${slamAlpha * 0.9})`;
+            ctx.lineWidth = 5 * (1 - slamProg);
+            ctx.beginPath();
+            ctx.moveTo(x + fxOffset, y + 5);
+            ctx.lineTo(x + fxOffset, 0);
+            ctx.stroke();
+          }
+
+          for (let p = 0; p < 12; p++) {
+            const pAng = (p * Math.PI) / 6 + slamProg * 2;
+            const pDist = 20 + slamProg * 65;
+            ctx.fillStyle = '#fde047';
+            ctx.fillRect(x + Math.cos(pAng) * pDist, y + 5 + Math.sin(pAng) * (pDist * 0.45), 4, 4);
+          }
+        }
+      }
+      // 特效6：三昧真火 (冲天爆裂火焰神柱与火凰赤芒)
       else if (fx.type === 'fire') {
-        const pillarW = 48 * (1 - progress * 0.3);
-        const pillarH = 110 * (0.4 + progress * 0.6);
-        const fGrad = ctx.createLinearGradient(x, y + 10, x, y - pillarH);
-        fGrad.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
-        fGrad.addColorStop(0.3, 'rgba(249, 115, 22, 0.9)');
-        fGrad.addColorStop(0.7, 'rgba(220, 38, 38, 0.75)');
+        const pillarW = 58 * (1 - progress * 0.25);
+        const pillarH = 135 * (0.3 + progress * 0.7);
+
+        const fGrad = ctx.createLinearGradient(x, y + 12, x, y - pillarH);
+        fGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+        fGrad.addColorStop(0.2, 'rgba(254, 240, 138, 0.95)');
+        fGrad.addColorStop(0.5, 'rgba(249, 115, 22, 0.9)');
+        fGrad.addColorStop(0.85, 'rgba(220, 38, 38, 0.8)');
         fGrad.addColorStop(1, 'rgba(153, 27, 27, 0)');
 
         ctx.fillStyle = fGrad;
         ctx.shadowColor = '#f97316';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 26;
         ctx.beginPath();
         ctx.ellipse(x, y - pillarH / 2, pillarW / 2, pillarH / 2, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 环绕火球飞升
-        for (let j = 0; j < 5; j++) {
-          const fAng = j * (Math.PI * 2 / 5) + progress * 4;
-          const fxX = x + Math.cos(fAng) * (pillarW * 0.7);
-          const fxY = y - progress * pillarH * 0.9;
-          ctx.fillStyle = '#fde047';
+        if (progress > 0.25 && progress < 0.85) {
+          const phY = y - progress * pillarH * 0.85;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.arc(fxX, fxY, 4 * (1 - progress), 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      // 特效3：天雷斩 / 五雷轰顶 (苍穹降下蓝紫霹雳电弧)
-      else if (fx.type === 'thunder') {
-        ctx.strokeStyle = `rgba(224, 231, 255, ${1 - progress})`;
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = '#818cf8';
-        ctx.shadowBlur = 18;
-
-        // 3道霹雳折线从天而降
-        for (let b = -1; b <= 1; b++) {
-          const bx = x + b * 16;
-          ctx.beginPath();
-          ctx.moveTo(bx, 0);
-          ctx.lineTo(bx + (Math.random() - 0.5) * 20, y * 0.35);
-          ctx.lineTo(bx + (Math.random() - 0.5) * 25, y * 0.7);
-          ctx.lineTo(x, y);
+          ctx.moveTo(x, phY);
+          ctx.quadraticCurveTo(x - 32, phY - 24, x - 52, phY - 8);
+          ctx.moveTo(x, phY);
+          ctx.quadraticCurveTo(x + 32, phY - 24, x + 52, phY - 8);
           ctx.stroke();
         }
 
-        // 目标地面雷电光圈
-        ctx.fillStyle = 'rgba(129, 140, 248, 0.4)';
-        ctx.beginPath();
-        ctx.ellipse(x, y + 10, 30 * (1 - progress), 10 * (1 - progress), 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // 特效4：玄冰刺 / 覆海翻江 (地面突刺深蓝冰棱并碎裂)
-      else if (fx.type === 'ice') {
-        ctx.fillStyle = 'rgba(186, 230, 253, 0.88)';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 1.8;
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 14;
-
-        // 3根尖锐晶莹冰锥
-        [-16, 0, 16].forEach((ox, i) => {
-          const h = (35 + (i === 1 ? 20 : 0)) * (0.3 + progress * 0.7);
+        for (let j = 0; j < 8; j++) {
+          const fAng = j * (Math.PI / 4) + progress * 7;
+          const fxX = x + Math.cos(fAng) * (pillarW * 0.75);
+          const fxY = y - progress * pillarH * 0.95 + (j % 3) * 12;
+          ctx.fillStyle = (j % 2 === 0) ? '#fde047' : '#ef4444';
           ctx.beginPath();
-          ctx.moveTo(x + ox - 8, y + 10);
-          ctx.lineTo(x + ox, y + 10 - h);
-          ctx.lineTo(x + ox + 8, y + 10);
+          ctx.arc(fxX, fxY, 4.5 * (1 - progress * 0.8), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // 特效7：佛光普照 (八瓣琉璃金莲与三重大日圣环)
+      else if (fx.type === 'buddha') {
+        const bAlpha = Math.max(0, 1 - progress);
+        ctx.save();
+        ctx.translate(x, y + 10);
+        ctx.scale(1, 0.45);
+        ctx.rotate(progress * 1.8);
+        ctx.fillStyle = `rgba(254, 240, 138, ${0.85 * bAlpha})`;
+        ctx.strokeStyle = `rgba(245, 158, 11, ${bAlpha})`;
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 20;
+
+        for (let p = 0; p < 8; p++) {
+          const pAng = (p * Math.PI) / 4;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(pAng) * 26, Math.sin(pAng) * 26, 12, 6, pAng, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+
+        for (let ring = 0; ring < 3; ring++) {
+          const ringR = 18 + ring * 18 + progress * 42;
+          ctx.strokeStyle = `rgba(255, 230, 100, ${(1 - progress) * (0.9 - ring * 0.25)})`;
+          ctx.lineWidth = 3.5 - ring;
+          ctx.beginPath();
+          ctx.arc(x, y - 10, ringR, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        for (let f = 0; f < 6; f++) {
+          const fy = y + 5 - progress * 75 - f * 8;
+          const fxPos = x + Math.sin(progress * 4 + f) * 28;
+          ctx.fillStyle = '#fffa65';
+          ctx.beginPath();
+          ctx.arc(fxPos, fy, 3.5 * bAlpha, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // 特效8：金刚护体 (琉璃金钟罩、蜂窝结界与六枚太古梵文字符)
+      else if (fx.type === 'shield' || fx.type === 'gold') {
+        const ringR = 38 * (0.85 + progress * 0.2);
+        const sAlpha = Math.max(0, 1 - progress * 0.5);
+
+        ctx.strokeStyle = `rgba(250, 204, 21, ${sAlpha})`;
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(x, y - 8, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.18)';
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(x, y - 8);
+        ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)';
+        ctx.lineWidth = 1.2;
+        for (let h = 0; h < 6; h++) {
+          const hAng = (h * Math.PI) / 3 + progress * 0.8;
+          const hx = Math.cos(hAng) * 20;
+          const hy = Math.sin(hAng) * 20;
+          ctx.beginPath();
+          ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        for (let r = 0; r < 6; r++) {
+          const rAng = (r * Math.PI) / 3 + progress * 2.5;
+          const rx = x + Math.cos(rAng) * (ringR + 5);
+          const ry = y - 8 + Math.sin(rAng) * (ringR * 0.5);
+          ctx.fillStyle = '#fffa65';
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('卍', rx, ry);
+        }
+      }
+      // 特效9：万毒攻心 (万毒灵蛇扑咬、腐蚀飞溅毒滴与骷髅毒雾)
+      else if (fx.type === 'poison') {
+        const pAlpha = Math.max(0, 1 - progress);
+        ctx.strokeStyle = `rgba(74, 222, 128, ${pAlpha})`;
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 18;
+
+        ctx.beginPath();
+        ctx.moveTo(x - 35, y + 20);
+        ctx.quadraticCurveTo(x - 25, y - 35, x, y - 15);
+        ctx.stroke();
+
+        ctx.fillStyle = '#a855f7';
+        ctx.beginPath();
+        ctx.moveTo(x - 12, y - 32);
+        ctx.lineTo(x + 10, y - 18);
+        ctx.lineTo(x - 6, y - 10);
+        ctx.closePath();
+        ctx.fill();
+
+        for (let i = 0; i < 14; i++) {
+          const a = i * 2.2 + progress * 6;
+          const r = 10 + i * 2.8 + progress * 20;
+          ctx.fillStyle = (i % 2 === 0) ? '#4ade80' : '#c084fc';
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(a) * r, y - 10 + Math.sin(a) * r - progress * 16, 2.5 + i % 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // 特效10：封印诀 (四象降魔金符飞射锚定 + 巨型赤金封印宝印)
+      else if (fx.type === 'seal') {
+        const sAlpha = Math.max(0, 1 - progress);
+        [-1, 1].forEach(sx => {
+          [-1, 1].forEach(sy => {
+            const dist = 42 * (1 - progress * 0.4);
+            const fxPos = x + sx * dist;
+            const fyPos = y - 10 + sy * dist * 0.7;
+            ctx.save();
+            ctx.translate(fxPos, fyPos);
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(-6, -11, 12, 22);
+            ctx.fillStyle = '#b91c1c';
+            ctx.fillRect(-3, -7, 6, 14);
+            ctx.restore();
+
+            ctx.strokeStyle = `rgba(250, 204, 21, ${0.7 * sAlpha})`;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 10);
+            ctx.lineTo(fxPos, fyPos);
+            ctx.stroke();
+          });
+        });
+
+        ctx.save();
+        ctx.translate(x, y - 10);
+        ctx.scale(1 + (1 - progress) * 0.6, 1 + (1 - progress) * 0.6);
+        ctx.strokeStyle = `rgba(250, 204, 21, ${sAlpha})`;
+        ctx.lineWidth = 2.8;
+        ctx.strokeRect(-24, -24, 48, 48);
+        ctx.strokeRect(-18, -18, 36, 36);
+
+        ctx.font = 'bold 22px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = `rgba(255, 75, 75, ${sAlpha})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('封', 0, 0);
+        ctx.restore();
+      }
+      // 特效11：定身法 (三维螺旋缚仙金索 + 虚空琥珀定神晶体)
+      else if (fx.type === 'bind') {
+        const bAlpha = Math.max(0, 1 - progress);
+        ctx.strokeStyle = `rgba(56, 189, 248, ${bAlpha})`;
+        ctx.lineWidth = 3.2;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 18;
+
+        for (let side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(x + side * 44, y - 48);
+          ctx.bezierCurveTo(x - side * 28, y - 28, x + side * 32, y - 5, x, y + 20);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = `rgba(56, 189, 248, ${0.2 * bAlpha})`;
+        ctx.beginPath();
+        ctx.ellipse(x, y - 12, 28, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.font = 'bold 26px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = `rgba(255, 255, 255, ${bAlpha})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 16;
+        ctx.fillText('定', x, y - 12);
+        ctx.restore();
+      }
+      // 特效12：乱魂诀 (迷魂幽冥魅影旋转 + 眩晕金星)
+      else if (fx.type === 'mind') {
+        const mAlpha = Math.max(0, 1 - progress);
+        for (let i = 0; i < 3; i++) {
+          const a = (i * Math.PI * 2 / 3) + progress * 6;
+          const mx = x + Math.cos(a) * 34;
+          const my = y - 16 + Math.sin(a) * 14;
+
+          ctx.fillStyle = (i === 0 ? '#c084fc' : (i === 1 ? '#f472b6' : '#a855f7'));
+          ctx.shadowColor = '#c084fc';
+          ctx.shadowBlur = 16;
+          ctx.beginPath();
+          ctx.ellipse(mx, my, 10, 6, a, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = `rgba(192, 132, 252, ${0.6 * mAlpha})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(mx, my);
+          ctx.lineTo(x, y - 16);
+          ctx.stroke();
+        }
+
+        for (let s = 0; s < 4; s++) {
+          const sa = (s * Math.PI) / 2 + progress * 8;
+          const sx = x + Math.cos(sa) * 20;
+          const sy = y - 38 + Math.sin(sa) * 7;
+          ctx.fillStyle = '#fde047';
+          ctx.fillRect(sx - 2, sy - 2, 4, 4);
+        }
+      }
+      // 特效13：隐身术 (水墨青烟遁入虚空像素崩解)
+      else if (fx.type === 'vanish') {
+        const vAlpha = Math.max(0, 1 - progress);
+        for (let i = 0; i < 4; i++) {
+          ctx.strokeStyle = `rgba(176, 241, 239, ${vAlpha * (0.9 - i * 0.18)})`;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.ellipse(x, y - 12 - i * 10, 24 + i * 8 + progress * 14, 8 + i * 2, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        for (let b = 0; b < 16; b++) {
+          const bx = x + ((b * 13) % 40) - 20;
+          const by = y - 25 + ((b * 17) % 50) - 25 - progress * 30;
+          ctx.fillStyle = `rgba(176, 241, 239, ${vAlpha})`;
+          ctx.fillRect(bx, by, 3, 3);
+        }
+      }
+      // 特效14：玄冰刺 (拔地而起的五道九幽冰棱晶刺与碎冰)
+      else if (fx.type === 'ice') {
+        const iAlpha = Math.max(0, 1 - progress);
+        ctx.fillStyle = `rgba(186, 230, 253, ${0.9 * iAlpha})`;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 18;
+
+        [-24, -12, 0, 12, 24].forEach((ox, i) => {
+          const h = (38 + (i % 2 === 0 ? 18 : 0)) * (0.3 + progress * 0.7);
+          ctx.beginPath();
+          ctx.moveTo(x + ox - 8, y + 12);
+          ctx.lineTo(x + ox, y + 12 - h);
+          ctx.lineTo(x + ox + 8, y + 12);
           ctx.closePath();
           ctx.fill();
           ctx.stroke();
         });
+
+        for (let s = 0; s < 10; s++) {
+          const sang = (s * Math.PI) / 5 + progress * 2;
+          const sdist = 16 + progress * 42;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(x + Math.cos(sang) * sdist, y - 10 + Math.sin(sang) * (sdist * 0.5), 3, 3);
+        }
       }
-      // 特效5：金刚护体 / 舍生取义 (金色八卦太极金钟罩)
-      else if (fx.type === 'shield' || fx.type === 'gold') {
-        const ringR = 34 * (0.8 + progress * 0.25);
-        ctx.strokeStyle = `rgba(250, 204, 21, ${1 - progress * 0.6})`;
+      // 特效15：甘露回春 (生机涌现水波与升腾翠绿灵环)
+      else if (fx.type === 'heal') {
+        const hAlpha = Math.max(0, 1 - progress);
+        ctx.strokeStyle = `rgba(74, 222, 128, ${hAlpha})`;
         ctx.lineWidth = 2.5;
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 18;
+        ctx.shadowColor = '#4ade80';
+        ctx.shadowBlur = 16;
+
         ctx.beginPath();
-        ctx.arc(x, y - 10, ringR, 0, Math.PI * 2);
+        ctx.ellipse(x, y + 10, 28 * (0.4 + progress * 0.6), 12 * (0.4 + progress * 0.6), 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        ctx.fillStyle = 'rgba(250, 204, 21, 0.2)';
-        ctx.fill();
-      }
-      // 特效6：甘露回春 / 神佑仙法 (翠绿太极灵光与飞羽)
-      else if (fx.type === 'heal') {
-        ctx.strokeStyle = `rgba(74, 222, 128, ${1 - progress})`;
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#4ade80';
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.ellipse(x, y + 10 - progress * 40, 24 * (1 - progress * 0.3), 12 * (1 - progress * 0.3), 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      else if (fx.type === 'sacrifice') {
-        // 舍生：血色交叉枪芒，与普攻的单弧剑光区分。
-        ctx.strokeStyle = `rgba(255, 85, 103, ${1 - progress})`;
-        ctx.shadowColor = '#ff304a'; ctx.shadowBlur = 20; ctx.lineWidth = 7 * (1 - progress) + 1;
-        for (const side of [-1, 1]) {
-          ctx.beginPath(); ctx.moveTo(x - 34, y + side * 30);
-          ctx.quadraticCurveTo(x + 4, y - side * 12, x + 38, y - side * 34); ctx.stroke();
+        for (let l = 0; l < 3; l++) {
+          const ly = y + 5 - progress * 55 - l * 12;
+          ctx.beginPath();
+          ctx.ellipse(x, ly, 18 * (1 - progress * 0.3), 7 * (1 - progress * 0.3), 0, 0, Math.PI * 2);
+          ctx.stroke();
         }
       }
-      else if (fx.type === 'buddha' || fx.type === 'palm') {
-        // 佛光是向心光轮；如来神掌是从上方压落的掌印。
-        ctx.strokeStyle = `rgba(255, 223, 124, ${1 - progress})`;
-        ctx.fillStyle = `rgba(255, 200, 69, ${(1 - progress) * 0.27})`;
-        ctx.shadowColor = '#ffd76e'; ctx.shadowBlur = 24; ctx.lineWidth = 3;
-        if (fx.type === 'buddha') {
-          for (let ring = 0; ring < 3; ring++) {
-            ctx.beginPath(); ctx.arc(x, y - 9, 13 + ring * 13 + progress * 16, 0, Math.PI * 2); ctx.stroke();
-          }
-          ctx.beginPath(); ctx.moveTo(x, y - 72); ctx.lineTo(x, y + 24); ctx.stroke();
-        } else {
-          ctx.save(); ctx.translate(x, y - 60 + progress * 54); ctx.scale(1 + progress * 0.4, 1 + progress * 0.4);
-          ctx.beginPath(); ctx.ellipse(0, 9, 20, 24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          for (let finger = -2; finger <= 2; finger++) {
-            ctx.beginPath(); ctx.roundRect(finger * 9 - 3, -24 - (2 - Math.abs(finger)) * 5, 7, 34, 4); ctx.fill(); ctx.stroke();
-          }
-          ctx.restore();
-        }
-      }
-      else if (fx.type === 'poison' || fx.type === 'sand' || fx.type === 'mind' ||
-               fx.type === 'seal' || fx.type === 'bind' || fx.type === 'vanish' || fx.type === 'arcane') {
-        const colors = { poison: '#8cef69', sand: '#e8c486', mind: '#c996ff', seal: '#ffdf79',
-          bind: '#7cc7f6', vanish: '#b0f1ef', arcane: '#a7a5ff' };
-        const color = colors[fx.type];
-        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.shadowColor = color;
-        ctx.shadowBlur = 16; ctx.globalAlpha = Math.max(0, 1 - progress); ctx.lineWidth = 2.5;
-        if (fx.type === 'poison') {
-          for (let i = 0; i < 9; i++) {
-            const a = i * 2.4 + progress * 5;
-            const r = 8 + i * 2.6 + progress * 15;
-            ctx.beginPath(); ctx.arc(x + Math.cos(a) * r, y - 12 + Math.sin(a) * r - progress * 12, 2 + i % 3, 0, Math.PI * 2); ctx.fill();
-          }
-        } else if (fx.type === 'sand') {
-          for (let i = -3; i <= 3; i++) {
-            const yy = y + i * 9 - progress * 11;
-            ctx.beginPath(); ctx.moveTo(x - 54 + progress * 32, yy + 8);
-            ctx.quadraticCurveTo(x, yy - 17, x + 51 + progress * 8, yy - 4); ctx.stroke();
-          }
-        } else if (fx.type === 'mind') {
-          for (let i = 0; i < 3; i++) {
-            ctx.beginPath(); ctx.ellipse(x, y - 12, 10 + progress * 28 + i * 8, 5 + progress * 12 + i * 5,
-              progress * 2 + i * 1.05, 0, Math.PI * 2); ctx.stroke();
-          }
-        } else if (fx.type === 'seal') {
-          ctx.save(); ctx.translate(x, y - 12); ctx.rotate(progress * 0.7);
-          ctx.strokeRect(-25, -25, 50, 50); ctx.strokeRect(-17, -17, 34, 34);
-          ctx.beginPath(); ctx.moveTo(-19, 0); ctx.lineTo(19, 0); ctx.moveTo(0, -19); ctx.lineTo(0, 19); ctx.stroke(); ctx.restore();
-        } else if (fx.type === 'bind') {
-          for (let side of [-1, 1]) {
-            ctx.beginPath(); ctx.moveTo(x + side * 42, y - 44);
-            ctx.bezierCurveTo(x - side * 25, y - 27, x + side * 30, y - 4, x, y + 22); ctx.stroke();
-          }
-        } else if (fx.type === 'vanish') {
-          for (let i = 0; i < 3; i++) {
-            ctx.beginPath(); ctx.ellipse(x, y - 10 - i * 11, 23 + i * 7 + progress * 8, 8, 0, 0, Math.PI * 2); ctx.stroke();
-          }
-        } else {
-          for (let i = 0; i < 6; i++) {
-            const a = i * Math.PI / 3 + progress * 2;
-            ctx.beginPath(); ctx.moveTo(x, y - 10); ctx.lineTo(x + Math.cos(a) * 33, y - 10 + Math.sin(a) * 33); ctx.stroke();
-          }
+      // 特效16：通用秘法 (星云法球爆发)
+      else {
+        const aAlpha = Math.max(0, 1 - progress);
+        ctx.strokeStyle = `rgba(167, 165, 255, ${aAlpha})`;
+        ctx.lineWidth = 2.4;
+        ctx.shadowColor = '#a7a5ff';
+        ctx.shadowBlur = 16;
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4 + progress * 3;
+          ctx.beginPath();
+          ctx.moveTo(x, y - 10);
+          ctx.lineTo(x + Math.cos(a) * (36 + progress * 15), y - 10 + Math.sin(a) * (36 + progress * 15));
+          ctx.stroke();
         }
       }
 
@@ -6215,15 +8867,207 @@ class GameApp2D {
     });
   }
 
+  // 技能法术差异化演出标准时长 (毫秒)
+  getBattleAnimationScale() {
+    return this.combatSpeedMultiplier === 2 ? 0.5 : 1;
+  }
+
+  waitBattleAnimation(ms) {
+    return new Promise(resolve => setTimeout(resolve, Math.round(ms * this.getBattleAnimationScale())));
+  }
+
+  async animateBattleMotion(ms, update) {
+    const duration = Math.max(1, ms * this.getBattleAnimationScale());
+    const started = Date.now();
+    let progress = 0;
+    update(0);
+    while (progress < 1) {
+      await new Promise(resolve => setTimeout(resolve, 16));
+      progress = Math.min(1, (Date.now() - started) / duration);
+      update(progress);
+    }
+  }
+
+  prepareBattlePresentation(battle) {
+    for (const unit of [...battle.enemies, ...battle.allies]) {
+      unit._displayHp = unit.hp;
+      unit._displayMp = unit.mp;
+      unit._displayBuffs = [...(unit.buffs || [])];
+      unit._roundBattlePos = unit._baseBattlePos ? { ...unit._baseBattlePos } : null;
+    }
+  }
+
+  commitBattlePresentation(battle) {
+    for (const unit of [...battle.enemies, ...battle.allies]) {
+      if (unit._displayHp > 0 && unit.hp <= 0) {
+        unit._defeatUntil = Date.now() + 180 * this.getBattleAnimationScale();
+      }
+      unit._displayHp = unit.hp;
+      unit._displayMp = unit.mp;
+      unit._displayBuffs = [...(unit.buffs || [])];
+    }
+  }
+
+  clearBattlePresentation(battle) {
+    for (const unit of [...battle.enemies, ...battle.allies]) {
+      delete unit._displayHp;
+      delete unit._displayMp;
+      delete unit._displayBuffs;
+      delete unit._roundBattlePos;
+      delete unit._defeatUntil;
+      unit._dashOffset = { x: 0, y: 0 };
+      unit._shakeOffset = { x: 0, y: 0 };
+      unit._dashTilt = 0;
+      unit._ghosts = [];
+    }
+    if (this.currentBattle === battle) {
+      this.activeBattleEffects = [];
+      this.battleCastCue = null;
+    }
+  }
+
+  renderBattleUnitStatus(ctx, unit, x, y) {
+    const labels = { fengyin: '封', dingshen: '定', luanhun: '乱', wandu: '毒', yinshen: '隐' };
+    const tags = [...new Set((unit._displayBuffs || unit.buffs || []).map(b => labels[b.id] ||
+      (b.name === '金刚护体' ? '护' : b.name === '防御' ? '防' : null)).filter(Boolean))].slice(0, 4);
+    if (!tags.length) return;
+    ctx.save();
+    ctx.font = 'bold 11px "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    tags.forEach((tag, i) => {
+      const tx = x + (i - (tags.length - 1) / 2) * 20;
+      ctx.fillStyle = 'rgba(18, 15, 28, 0.9)';
+      ctx.fillRect(tx - 8, y + 35, 16, 16);
+      ctx.fillStyle = tag === '毒' ? '#a3e635' : '#f8df9c';
+      ctx.fillText(tag, tx, y + 47);
+    });
+    ctx.restore();
+  }
+
+  async playBattleStep(step, battle) {
+    if (this.currentBattle !== battle) return;
+    const enemyAttacker = (step.attacker || '').startsWith('enemy_');
+    const selfDamage = step.attacker === 'self';
+    const attacker = enemyAttacker
+      ? battle.enemies.find(e => 'enemy_' + e.enemyIndex === step.attacker)
+      : battle.allies.find(a => a.id === step.attacker);
+    const hits = step.hits || (step.targetIds ? step.targetIds.map(target => ({ ...step, target })) : [step]);
+    const entries = hits.map(hit => ({
+      hit, unit: hit.targetIndex !== undefined
+        ? battle.enemies[hit.targetIndex] : battle.allies.find(a => a.id === hit.target)
+    }));
+    const positioned = entries.filter(entry => entry.unit?._battlePos);
+    const effectType = this.getBattleEffectType(step);
+    const offensive = ['damage', 'revive', 'dodge', 'cast', 'sealed', 'dingshen', 'luanhun'].includes(step.type);
+    const duration = this.getSkillEffectDuration(effectType);
+
+    if (step.skillName && !selfDamage) {
+      this.battleCastCue = {
+        text: `${attacker?.name || '施法'} · ${step.skillName}`,
+        until: Date.now() + (duration + 240) * this.getBattleAnimationScale()
+      };
+    }
+    const impact = () => {
+      if (this.currentBattle !== battle) return;
+      this.commitBattlePresentation(battle);
+      if ((step.isCrit || effectType === 'sacrifice') && step.type !== 'dodge' && !selfDamage) {
+        const stage = document.getElementById('battle-stage-area');
+        if (stage) {
+          stage.classList.add('arena-shake');
+          setTimeout(() => stage.classList.remove('arena-shake'), 160 * this.getBattleAnimationScale());
+        }
+      }
+      if (window.Sound && !selfDamage && ['slash', 'sacrifice', 'thunder'].includes(effectType)) {
+        if (step.type === 'dodge') window.Sound.playFailure();
+        else if (step.isCrit || effectType === 'sacrifice' || effectType === 'thunder') window.Sound.playCrit();
+        else if (offensive) window.Sound.playHit();
+      }
+      for (const { hit, unit } of positioned) {
+        const kind = hit.type === 'dodge' || hit.type === 'resist' ? 'dodge' :
+          hit.type === 'mana' ? 'mana' : ['heal', 'revive', 'buff', 'invis'].includes(hit.type) ? 'heal' :
+            ['sealed', 'dingshen', 'luanhun', 'defend', 'status_block'].includes(hit.type) ? 'status' : step.isCrit ? 'crit' : 'damage';
+        const text = hit.text || step.text;
+        if (text) this.spawnBattleFloatingTextAtCoords(unit._battlePos.x, unit._battlePos.y, text, kind);
+      }
+    };
+
+    if (offensive && !selfDamage && positioned.length) {
+      const primary = positioned[0].unit;
+      if (attacker && (effectType === 'slash' || effectType === 'sacrifice')) {
+        await this.playDashAttackAnimation(attacker, primary, !enemyAttacker, effectType, {
+          isDodge: step.type === 'dodge', onImpact: impact
+        });
+      } else {
+        positioned.forEach(({ unit }, index) => {
+          this.spawnBattleSkillEffect(effectType, unit._battlePos.x, unit._battlePos.y, duration,
+            { localOnly: index > 0 });
+        });
+        await this.waitBattleAnimation(duration * 0.5);
+        if (this.currentBattle !== battle) return;
+        impact();
+        const successful = positioned.filter(({ hit }) => hit.type === 'damage' && hit.damage > 0);
+        if (successful.length) {
+          await this.animateBattleMotion(110, t => successful.forEach(({ unit }) => {
+            unit._shakeOffset = { x: Math.sin(t * Math.PI * 4) * 5 * (1 - t), y: 0 };
+          }));
+        }
+        await this.waitBattleAnimation(Math.max(0, duration * 0.5 - (successful.length ? 110 : 0)));
+      }
+      // 连击共享一次突进，后续伤害清晰逐段展示。
+      for (const [index, damage] of (step.damages || []).slice(1).entries()) {
+        await this.waitBattleAnimation(100);
+        if (this.currentBattle !== battle) return;
+        const pos = primary._baseBattlePos || primary._battlePos;
+        this.spawnBattleSkillEffect('slash', pos.x, pos.y, 180, { localOnly: true });
+        this.spawnBattleFloatingTextAtCoords(pos.x, pos.y - 12 * (index + 1), `连击 -${damage}`, 'damage');
+      }
+    } else if (['heal', 'mana', 'buff', 'invis', 'defend'].includes(step.type)) {
+      positioned.forEach(({ unit }, index) => {
+        const type = ['buff', 'defend'].includes(step.type) ? 'shield' : step.type === 'invis' ? 'vanish' : 'heal';
+        this.spawnBattleSkillEffect(type, unit._battlePos.x, unit._battlePos.y, 500, { localOnly: index > 0 });
+      });
+      impact();
+      await this.waitBattleAnimation(500);
+    } else {
+      impact();
+    }
+    if (this.currentBattle !== battle) return;
+    await this.waitBattleAnimation(offensive ? 100 : 180);
+  }
+
+  getSkillEffectDuration(skillType) {
+    const durations = {
+      slash: 420,
+      sacrifice: 980,
+      thunder: 850,
+      sand: 900,
+      palm: 800,
+      fire: 800,
+      buddha: 800,
+      shield: 750,
+      poison: 750,
+      seal: 750,
+      bind: 750,
+      mind: 750,
+      vanish: 650,
+      ice: 750,
+      heal: 700,
+      arcane: 600
+    };
+    return durations[skillType] || 600;
+  }
+
   // 触发战斗法术差异化特效
-  spawnBattleSkillEffect(type, x, y, duration = 380) {
+  spawnBattleSkillEffect(type, x, y, duration = null, extra = {}) {
     this.activeBattleEffects = this.activeBattleEffects || [];
+    const dur = (duration !== null ? duration : this.getSkillEffectDuration(type)) * this.getBattleAnimationScale();
     this.activeBattleEffects.push({
       type: type,
       x: x,
       y: y,
       startTime: Date.now(),
-      duration: duration
+      duration: dur,
+      ...extra
     });
   }
 
@@ -6238,55 +9082,87 @@ class GameApp2D {
     };
     if (step.skillId && effects[step.skillId]) return effects[step.skillId];
     const name = step.skillName || '';
+    const names = {
+      '舍生取义': 'sacrifice', '佛光普照': 'buddha', '如来神掌': 'palm', '金刚护体': 'shield',
+      '封印咒': 'seal', '封印诀': 'seal', '定身咒': 'bind', '定身法': 'bind',
+      '乱魂咒': 'mind', '乱魂诀': 'mind', '隐身咒': 'vanish', '甘露回春': 'heal'
+    };
+    if (names[name]) return names[name];
     if (/雷|电/.test(name)) return 'thunder';
     if (/火|炎/.test(name)) return 'fire';
     if (/毒|瘴/.test(name)) return 'poison';
     if (/风|沙/.test(name)) return 'sand';
     if (/水|冰|霜|海/.test(name)) return 'ice';
-    if (/斧|钉耙|棒|刀|剑|枪/.test(name)) return 'sacrifice';
+    if (/斧|钉耙|棒|刀|剑|枪|撕咬|扑击/.test(name)) return 'slash';
     if (step.skillId || name) return 'arcane';
     return 'slash';
   }
 
-  // 播放攻击者极速冲锋滑步击打与平滑归位动画 (A冲B 或 B冲A)
-  async playDashAttackAnimation(attacker, target, isAllyAttacker, skillType = 'slash') {
+  // 播放攻击者极速冲锋滑步击打与平滑归位动画 (人飘移过去 -> 武器击打 -> 飘移归位；以及舍生取义电影级演出)
+  async playDashAttackAnimation(attacker, target, isAllyAttacker, skillType = 'slash', options = {}) {
     if (!attacker || !target) return;
-    const startX = attacker._baseBattlePos ? attacker._baseBattlePos.x : (attacker._battlePos?.x || 0);
-    const startY = attacker._baseBattlePos ? attacker._baseBattlePos.y : (attacker._battlePos?.y || 0);
-    const targetX = target._baseBattlePos ? target._baseBattlePos.x : (target._battlePos?.x || 0);
-    const targetY = target._baseBattlePos ? target._baseBattlePos.y : (target._battlePos?.y || 0);
-
-    // 计算冲锋突击终点 (在目标身前 46px 处急停挥砍)
-    const hitPointX = isAllyAttacker ? (targetX + 46) : (targetX - 46);
-    const hitPointY = targetY;
-    const totalDistX = hitPointX - startX;
-    const totalDistY = hitPointY - startY;
-
-    // 1. 极速滑步漂移冲锋阶段 (80ms~100ms)
-    const dashFrames = 5;
-    for (let f = 1; f <= dashFrames; f++) {
-      const ease = f / dashFrames;
-      attacker._dashOffset = { x: totalDistX * ease, y: totalDistY * ease };
-      await new Promise(r => setTimeout(r, 16));
+    const start = attacker._baseBattlePos || attacker._battlePos || { x: 0, y: 0 };
+    const goal = target._baseBattlePos || target._battlePos || { x: 0, y: 0 };
+    const dx = goal.x + (isAllyAttacker ? 44 : -44) - start.x;
+    const dy = goal.y - start.y;
+    const battle = this.currentBattle;
+    const stillActive = () => !battle || this.currentBattle === battle;
+    const move = (t, returning = false) => {
+      if (!stillActive()) return;
+      const ease = returning ? (1 - t) ** 2 : Math.sin(t * Math.PI / 2);
+      attacker._dashOffset = { x: dx * ease, y: dy * ease };
+      attacker._dashTilt = (isAllyAttacker ? -1 : 1) * (returning ? -0.08 * (1 - t) : 0.14);
+      attacker._ghosts = attacker._ghosts || [];
+      attacker._ghosts.forEach(g => g.alpha *= 0.65);
+      if (!returning) attacker._ghosts.push({ x: start.x + dx * ease, y: start.y + dy * ease, alpha: 0.32 });
+      attacker._ghosts = attacker._ghosts.filter(g => g.alpha > 0.04).slice(-4);
+    };
+    let fx;
+    try {
+      if (skillType === 'sacrifice') {
+        fx = {
+          type: 'sacrifice', x: goal.x, y: goal.y, attackerX: start.x, attackerY: start.y,
+          beamY: (start.y + goal.y) / 2, isAllyAttacker, startTime: Date.now(),
+          duration: 980 * this.getBattleAnimationScale(), phase: 'beam_wide'
+        };
+        this.activeBattleEffects = this.activeBattleEffects || [];
+        this.activeBattleEffects.push(fx);
+        await this.waitBattleAnimation(200);
+        if (!stillActive()) return;
+        fx.phase = 'ray_collapse';
+        await this.waitBattleAnimation(100);
+        fx.phase = 'ray_dash';
+      }
+      await this.animateBattleMotion(180, t => move(t));
+      if (!stillActive()) return;
+      if (fx) {
+        fx.phase = 'ray_vanish';
+        await this.waitBattleAnimation(80);
+        if (!stillActive()) return;
+        fx.phase = 'energy_detonate';
+        fx.impactTime = Date.now();
+        fx.blastDuration = 400 * this.getBattleAnimationScale();
+        fx.duration = fx.impactTime - fx.startTime + fx.blastDuration;
+      } else if (!options.isDodge) {
+        this.spawnBattleSkillEffect('slash', goal.x, goal.y, 300, { isAllyAttacker });
+      }
+      if (options.onImpact) options.onImpact();
+      if (options.isDodge) {
+        await this.animateBattleMotion(120, t => {
+          target._shakeOffset = { x: Math.sin(t * Math.PI) * (isAllyAttacker ? -18 : 18), y: 0 };
+        });
+      } else {
+        await this.animateBattleMotion(fx ? 220 : 120, t => {
+          target._shakeOffset = { x: Math.sin(t * Math.PI * 4) * (fx ? 12 : 7) * (1 - t), y: 0 };
+        });
+      }
+      await this.animateBattleMotion(160, t => move(t, true));
+    } finally {
+      attacker._dashOffset = { x: 0, y: 0 };
+      attacker._dashTilt = 0;
+      attacker._ghosts = [];
+      target._shakeOffset = { x: 0, y: 0 };
     }
-
-    // 2. 命中目标交锋打击与法术爆发阶段 (120ms~150ms)
-    // 触发目标受击抖动
-    target._shakeOffset = { x: (isAllyAttacker ? -7 : 7), y: (Math.random() - 0.5) * 4 };
-    this.spawnBattleSkillEffect(skillType, targetX, targetY, 420);
-
-    await new Promise(r => setTimeout(r, 60));
-    target._shakeOffset = { x: (isAllyAttacker ? 4 : -4), y: 0 };
-    await new Promise(r => setTimeout(r, 60));
-    target._shakeOffset = { x: 0, y: 0 };
-
-    // 3. 极速漂移倒退滑行归位阶段 (80ms~100ms)
-    for (let f = dashFrames - 1; f >= 0; f--) {
-      const ease = f / dashFrames;
-      attacker._dashOffset = { x: totalDistX * ease, y: totalDistY * ease };
-      await new Promise(r => setTimeout(r, 16));
-    }
-    attacker._dashOffset = { x: 0, y: 0 };
   }
 
   // 触发战斗动作动效与伤害飘字
@@ -6307,7 +9183,7 @@ class GameApp2D {
     }
 
     const el = document.createElement('div');
-    el.className = `floating-text ${type === 'crit' ? 'float-crit' : (type === 'heal' ? 'float-heal' : 'float-damage')}`;
+    el.className = `floating-text ${type === 'crit' ? 'float-crit' : (type === 'heal' ? 'float-heal' : type === 'mana' ? 'float-mana' : type === 'dodge' ? 'float-dodge' : type === 'status' ? 'float-status' : 'float-damage')}`;
     el.innerText = text;
     el.style.left = `${posX}px`;
     el.style.top = `${posY}px`;
@@ -6321,25 +9197,33 @@ class GameApp2D {
     if (!fxLayer) return;
 
     const el = document.createElement('div');
-    el.className = `floating-text ${type === 'crit' ? 'float-crit' : (type === 'heal' ? 'float-heal' : 'float-damage')}`;
+    el.className = `floating-text ${type === 'crit' ? 'float-crit' : (type === 'heal' ? 'float-heal' : type === 'mana' ? 'float-mana' : type === 'dodge' ? 'float-dodge' : type === 'status' ? 'float-status' : 'float-damage')}`;
     el.innerText = text;
-    el.style.left = `${posX - 20}px`;
-    el.style.top = `${posY - 30}px`;
+    const canvas = document.getElementById('battle-scene-canvas');
+    const canvasRect = canvas?.getBoundingClientRect?.();
+    const layerRect = fxLayer.getBoundingClientRect?.();
+    const scaleX = canvasRect && canvas.width ? canvasRect.width / canvas.width : 1;
+    const scaleY = canvasRect && canvas.height ? canvasRect.height / canvas.height : 1;
+    el.style.left = `${posX * scaleX + (canvasRect && layerRect ? canvasRect.left - layerRect.left : 0) - 20}px`;
+    el.style.top = `${posY * scaleY + (canvasRect && layerRect ? canvasRect.top - layerRect.top : 0) - 30}px`;
 
     fxLayer.appendChild(el);
     setTimeout(() => el.remove(), 850);
   }
 
-  // 选择当前角色的战斗指令，并自动推进或执行
-  chooseCombatAction(type, skillId = null) {
+  // 选择当前角色的战斗指令，并自动推进或执行 (支持显式指定敌方目标下标与友方目标ID)
+  chooseCombatAction(type, skillId = null, explicitTargetIdx = null, explicitAllyId = null) {
     if (!this.currentBattle || this.currentBattle.status === 'executing') return;
 
     this.battleSkillMenuOpen = false;
     this.battleTargetMenuOpen = false;
+    this.pendingCombatAction = null;
     this.pendingSkillAction = null;
 
-    // 智能校准选定存活目标，无需强迫玩家手动点选
-    let validTargetIdx = this.selectedTargetIndex;
+    // 确定敌方有效目标下标
+    let validTargetIdx = (explicitTargetIdx !== null && explicitTargetIdx !== undefined)
+      ? explicitTargetIdx
+      : this.selectedTargetIndex;
     if (validTargetIdx === undefined || validTargetIdx === null || !this.currentBattle.enemies[validTargetIdx] || this.currentBattle.enemies[validTargetIdx].hp <= 0) {
       const firstAliveIdx = this.currentBattle.enemies.findIndex(e => e.hp > 0);
       validTargetIdx = firstAliveIdx >= 0 ? firstAliveIdx : 0;
@@ -6352,10 +9236,18 @@ class GameApp2D {
     const curAllyId = this.selectedAllyId || 'player';
     const curAlly = this.currentBattle.allies.find(a => a.id === curAllyId) || this.currentBattle.allies[0];
 
+    const curAllySkills = curAlly.isPlayer
+      ? (this.playerData?.getSkills ? this.playerData.getSkills() : (this.playerData?.skills || curAlly.skills || []))
+      : (curAlly.skills || []);
+    const defaultSkill = curAllySkills[0];
+    const defaultSkillId = defaultSkill?.id || defaultSkill?.name || null;
+    const finalSkillId = skillId || defaultSkillId;
+
     const actionData = {
       type: type,
       targetIndex: validTargetIdx,
-      skillId: skillId || (curAlly && curAlly.skills && curAlly.skills[0] ? curAlly.skills[0].id : null),
+      targetAllyId: explicitAllyId || curAlly.id,
+      skillId: finalSkillId,
       itemId: medicineItem ? medicineItem.itemId : 'jinchuang_yao'
     };
 
@@ -6381,13 +9273,104 @@ class GameApp2D {
     }
   }
 
+  // 统一权威的战斗结束与界面清退总控函数，杜绝任何死锁与卡顿
+  endBattle(status = 'victory') {
+    if (!this.currentBattle || this.isAnimatingCombat) return false;
+    if (status === 'victory' && this.currentBattle.enemies.some(e => e.hp > 0)) return false;
+    if (status === 'defeat' && this.currentBattle.allies.some(a => a.isPlayer && a.hp > 0)) return false;
+    if (status === 'escaped' && this.currentBattle.status !== 'escaped') return false;
+    const layer = document.getElementById('battle-screen-layer');
+    if (!this.currentBattle && (!layer || layer.style.display === 'none')) return;
+
+    const battle = this.currentBattle;
+    this.stopBattleLoop();
+    this.stopBattleCountdown();
+    this.battleSkillMenuOpen = false;
+    this.battleTargetMenuOpen = false;
+    this.pendingSkillAction = null;
+    this.isAnimatingCombat = false;
+    this.battleCastCue = null;
+    this.activeBattleEffects = [];
+
+    if (battle) {
+      try {
+        if (typeof battle.syncStateBack === 'function') battle.syncStateBack();
+        this.clearBattlePresentation(battle);
+      } catch (e) {
+        console.warn('清退战场表现数据捕获异常:', e);
+      }
+    }
+
+    if (layer) layer.style.display = 'none';
+    this.isPaused = false;
+
+    const vCb = this.battleVictoryCallback;
+    const dCb = this.battleDefeatCallback;
+    this.currentBattle = null;
+    this.battleVictoryCallback = null;
+    this.battleDefeatCallback = null;
+    this.autoMovePath = [];
+    this.autoMoveTargetCallback = null;
+    this.keysDown = {};
+    this._encounterCooldownUntil = Date.now() + 1800;
+
+    if (status === 'victory') {
+      // 参战宠获得全额经验，备战宠半额；本场新招降的宠不追领经验。
+      const petExp = battle.enemies.filter(e => !e.isCaptured).reduce((sum, e) => sum + 50 + (e.level || 1) * 25, 0);
+      for (const pet of this.pets || []) {
+        if (!battle.trainingPetIds?.includes(pet.instanceId)) continue;
+        const participated = battle.allies.some(a => a.entity?.instanceId === pet.instanceId);
+        window.PetSystem.gainExp(pet, participated ? petExp : Math.floor(petExp / 2));
+      }
+      if (window.Sound && window.Sound.playVictory) {
+        try { window.Sound.playVictory(); } catch (e) { }
+      }
+      window.showGameMessage('🎉【对决得胜】敌军溃败！斩妖除魔大获全胜！', 'success', 3500);
+      if (vCb) {
+        try { vCb(); } catch (cbErr) { console.error('战斗胜利回调异常:', cbErr); }
+      }
+    } else if (status === 'defeat') {
+      if (window.Sound && window.Sound.playFailure) {
+        try { window.Sound.playFailure(); } catch (e) { }
+      }
+      window.showGameMessage('⚠️【气血枯竭】负伤败退，天界神泉已重新抚平体魄……', 'error', 3500);
+      if (this.playerData) this.playerData.hp = this.playerData.maxHp;
+      if (dCb) {
+        try { dCb(); } catch (cbErr) { console.error('战斗失败回调异常:', cbErr); }
+      }
+    } else if (status === 'escaped') {
+      if (window.Sound && window.Sound.playBeep) {
+        try { window.Sound.playBeep(); } catch (e) { }
+      }
+      window.showGameMessage('💨【险象环生】施展遁地妙术成功脱离了战斗！', 'info', 2500);
+    }
+    this.updatePlayerHud();
+    this.saveAutoProgress();
+    return true;
+  }
+
   // 执行战斗交锋回合与动作打击演算
   async executeCombatRound() {
-    if (!this.currentBattle || this.currentBattle.status === 'executing') return;
+    if (!this.currentBattle || this.isAnimatingCombat || this.currentBattle.status === 'executing') return;
+
+    // 敌方若已全部阵亡，立即判定胜利结案
+    const aliveEnemiesBefore = (typeof this.currentBattle.getAliveEnemies === 'function')
+      ? this.currentBattle.getAliveEnemies()
+      : (this.currentBattle.enemies || []).filter(e => e.hp > 0);
+    if (aliveEnemiesBefore.length === 0) {
+      this.endBattle('victory');
+      return;
+    }
+    const alivePlayerBefore = (this.currentBattle.allies || []).some(a => a.isPlayer && a.hp > 0);
+    if (!alivePlayerBefore) {
+      this.endBattle('defeat');
+      return;
+    }
 
     this.battleSkillMenuOpen = false;
     this.battleTargetMenuOpen = false;
     this.pendingSkillAction = null;
+    this.battleCastCue = null;
 
     // 锁定指令菜单，杜绝交锋演算期间鼠标滑过触发重排与重叠
     const menuContainer = document.getElementById('battle-honeycomb-menu');
@@ -6414,10 +9397,14 @@ class GameApp2D {
       }
     });
 
-    const speedDelay = (this.combatSpeedMultiplier === 2) ? 320 : 600;
+    const battle = this.currentBattle;
+    this.isAnimatingCombat = true;
+    this.stopBattleCountdown();
 
     try {
-      await this.currentBattle.executeRound(async (step) => {
+      this.prepareBattlePresentation(battle);
+      await battle.executeRound(async (step) => {
+        if (this.currentBattle !== battle) return;
         // 实时更新底部战报条，无需摧毁主舞台DOM
         const logBox = document.getElementById('battle-log-box-2d');
         if (logBox && this.currentBattle && this.currentBattle.logs) {
@@ -6425,99 +9412,17 @@ class GameApp2D {
           logBox.scrollTop = logBox.scrollHeight;
         }
 
-        const stage = document.getElementById('battle-stage-area');
-
-        // 视觉打击感与极速冲锋滑步漂移交锋反馈 (完美解决站桩无动效问题)
-        if (step.type === 'damage' || step.type === 'dodge') {
-          const isSelfAttacker = step.attacker === 'self';
-          const isAllyAttacker = !isSelfAttacker && (!step.attacker || !step.attacker.startsWith('enemy_'));
-
-          let attackerEntity = null;
-          let targetEntity = null;
-
-          if (isSelfAttacker) {
-            attackerEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
-            targetEntity = attackerEntity;
-          } else if (isAllyAttacker) {
-            attackerEntity = this.currentBattle.allies.find(a => a.id === step.attacker) || this.currentBattle.allies[0];
-            targetEntity = (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex])
-              ? this.currentBattle.enemies[step.targetIndex]
-              : (this.currentBattle.enemies.find(e => e.hp > 0) || this.currentBattle.enemies[0]);
-          } else {
-            attackerEntity = this.currentBattle.enemies.find(e => ('enemy_' + e.enemyIndex) === step.attacker) || this.currentBattle.enemies[0];
-            targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
-          }
-
-          const skillType = this.getBattleEffectType(step);
-
-          // 近战突进；远程法术由施法位置引到目标，避免所有绝技都像普攻滑步。
-          if (!isSelfAttacker && attackerEntity && targetEntity) {
-            if (skillType === 'slash' || skillType === 'sacrifice') {
-              await this.playDashAttackAnimation(attackerEntity, targetEntity, isAllyAttacker, skillType);
-            } else if (targetEntity._battlePos) {
-              const pos = targetEntity._battlePos;
-              this.spawnBattleSkillEffect(skillType, pos.x, pos.y, 540);
-            }
-          }
-
-          // 受击飘字与震屏
-          if (targetEntity && targetEntity._battlePos) {
-            this.spawnBattleFloatingTextAtCoords(
-              targetEntity._battlePos.x,
-              targetEntity._battlePos.y,
-              step.text,
-              step.type === 'dodge' ? 'damage' : (step.isCrit ? 'crit' : 'damage')
-            );
-          }
-
-          if (stage) {
-            stage.classList.add('arena-shake');
-            setTimeout(() => stage.classList.remove('arena-shake'), 280);
-          }
-        } else if (step.type === 'heal' || step.type === 'mana') {
-          const targetEntity = this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0];
-          if (targetEntity && targetEntity._battlePos) {
-            this.spawnBattleSkillEffect('heal', targetEntity._battlePos.x, targetEntity._battlePos.y, 400);
-            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
-          }
-        } else if (step.type === 'buff' || step.type === 'invis') {
-          const targets = step.target === 'allies'
-            ? this.currentBattle.allies.filter(a => a.hp > 0 && a._battlePos)
-            : [this.currentBattle.allies.find(a => a.id === step.target) || this.currentBattle.allies[0]];
-          for (const targetEntity of targets) {
-            if (!targetEntity?._battlePos) continue;
-            this.spawnBattleSkillEffect(this.getBattleEffectType(step) === 'slash' ? 'shield' : this.getBattleEffectType(step), targetEntity._battlePos.x, targetEntity._battlePos.y, 500);
-            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'heal');
-          }
-        } else if (step.type === 'cast' && step.targetIndex !== undefined) {
-          const targetEntity = this.currentBattle.enemies[step.targetIndex];
-          if (targetEntity?._battlePos) {
-            this.spawnBattleSkillEffect(this.getBattleEffectType(step), targetEntity._battlePos.x, targetEntity._battlePos.y, 500);
-          }
-        } else if (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex] &&
-                   ['luanhun', 'sealed', 'dingshen'].includes(step.type)) {
-          const targetEntity = this.currentBattle.enemies[step.targetIndex];
-          if (targetEntity._battlePos) {
-            this.spawnBattleSkillEffect(this.getBattleEffectType(step), targetEntity._battlePos.x, targetEntity._battlePos.y, 540);
-            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'damage');
-          }
-        } else if (step.text) {
-          const targetEntity = (step.targetIndex !== undefined && this.currentBattle.enemies[step.targetIndex]) || this.currentBattle.allies[0];
-          if (targetEntity && targetEntity._battlePos) {
-            this.spawnBattleFloatingTextAtCoords(targetEntity._battlePos.x, targetEntity._battlePos.y, step.text, 'damage');
-          }
-        }
-
-        await new Promise(r => setTimeout(r, Math.max(120, Math.floor(speedDelay * 0.7))));
+        await this.playBattleStep(step, battle);
       });
     } catch (roundErr) {
       console.error('战斗演算异常捕获，已自动恢复输入状态:', roundErr);
-      if (this.currentBattle && this.currentBattle.status === 'executing') {
+      if (this.currentBattle === battle && battle.status === 'executing') {
         this.currentBattle.status = 'player_input';
       }
     } finally {
-      this.isAnimatingCombat = false;
-      const menuContainer = document.getElementById('battle-honeycomb-menu');
+      this.clearBattlePresentation(battle);
+      if (this.currentBattle === battle) this.isAnimatingCombat = false;
+      const menuContainer = this.currentBattle === battle && document.getElementById('battle-honeycomb-menu');
       if (menuContainer) {
         menuContainer.style.pointerEvents = 'auto';
         menuContainer.style.opacity = '1';
@@ -6525,50 +9430,23 @@ class GameApp2D {
     }
 
     if (!this.currentBattle) return;
+    if (this.currentBattle !== battle) return;
 
-    // 检查战斗胜负状态
-    if (this.currentBattle.status === 'victory') {
-      this.stopBattleLoop();
-      this.stopBattleCountdown();
-      window.Sound.playVictory();
-      window.showGameMessage('🎉【对决得胜】敌军溃败！斩妖除魔大获全胜！', 'success', 3500);
-      const layer = document.getElementById('battle-screen-layer');
-      if (layer) layer.style.display = 'none';
+    // 智能胜负兜底保障：只要敌方全部阵亡，必须判胜并彻底清退！
+    const aliveEnemiesAfter = (typeof this.currentBattle.getAliveEnemies === 'function')
+      ? this.currentBattle.getAliveEnemies()
+      : (this.currentBattle.enemies || []).filter(e => e.hp > 0);
+    const alivePlayer = (this.currentBattle.allies || []).some(a => a.isPlayer && a.hp > 0);
 
-      this.isPaused = false;
-      this.currentBattle = null;
-
-      if (this.battleVictoryCallback) {
-        const vCb = this.battleVictoryCallback;
-        this.battleVictoryCallback = null;
-        this.battleDefeatCallback = null;
-        vCb();
-      }
-    } else if (this.currentBattle.status === 'defeat') {
-      this.stopBattleLoop();
-      this.stopBattleCountdown();
-      window.Sound.playFailure();
-      window.showGameMessage('⚠️【气血枯竭】负伤败退，天界神泉已重新抚平体魄……', 'error', 3500);
-      const layer = document.getElementById('battle-screen-layer');
-      if (layer) layer.style.display = 'none';
-      this.isPaused = false;
-      this.playerData.hp = this.playerData.maxHp;
-      const dCb = this.battleDefeatCallback;
-      this.currentBattle = null;
-      this.battleDefeatCallback = null;
-      this.battleVictoryCallback = null;
-      if (dCb) {
-        dCb();
-      }
+    if (aliveEnemiesAfter.length === 0 || this.currentBattle.status === 'victory') {
+      this.endBattle('victory');
+      return;
+    } else if (!alivePlayer || this.currentBattle.status === 'defeat') {
+      this.endBattle('defeat');
+      return;
     } else if (this.currentBattle.status === 'escaped') {
-      this.stopBattleLoop();
-      this.stopBattleCountdown();
-      window.Sound.playBeep();
-      window.showGameMessage('💨【险象环生】施展遁地妙术成功脱离了战斗！', 'info', 2500);
-      const layer = document.getElementById('battle-screen-layer');
-      if (layer) layer.style.display = 'none';
-      this.isPaused = false;
-      this.currentBattle = null;
+      this.endBattle('escaped');
+      return;
     } else {
       this.selectedAllyId = 'player';
       this.startBattleCountdown();
@@ -6577,7 +9455,7 @@ class GameApp2D {
       // 若开启了自动出招，自动进入下一回合
       if (this.autoCombatEnabled) {
         setTimeout(() => {
-          if (this.currentBattle && this.autoCombatEnabled && this.currentBattle.status !== 'executing') {
+          if (this.currentBattle === battle && this.autoCombatEnabled && !this.isAnimatingCombat && battle.status !== 'executing') {
             this.executeCombatRound();
           }
         }, 600);
@@ -6591,7 +9469,7 @@ class GameApp2D {
   }
 
 
-// 仙宠专属：战斗中替换出战仙宠 (保留原血量)
+  // 仙宠专属：战斗中替换出战仙宠 (保留原血量)
   openSwitchPetModal(allyId) {
     const backupPets = this.pets.filter(p => !this.currentBattle.allies.some(a => a.entity?.instanceId === p.instanceId));
 
@@ -6612,7 +9490,7 @@ class GameApp2D {
                 <div style="background:#20140b;border:1px solid #5c4732;border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center;">
                   <div>
                     <div style="color:#ffd700;font-weight:bold;">${p.name} (Lv.${p.level})</div>
-                    <div style="font-size:10px;color:${p.hp<p.maxHp?'#ff6b81':'#2ecc71'};">
+                    <div style="font-size:10px;color:${p.hp < p.maxHp ? '#ff6b81' : '#2ecc71'};">
                       气血: ${p.hp} / ${p.maxHp} · 法力: ${p.mp} / ${p.maxMp}
                     </div>
                   </div>
@@ -6718,7 +9596,7 @@ class GameApp2D {
                         <div style="display:flex;justify-content:space-between;">
                           <span style="color:#ffd700;font-weight:bold;font-size:12px;">${sk.name}</span>
                           <span style="font-size:10px;color:#7bed9f;">
-                            消耗: ${sk.costMp ? `${sk.costMp}精力` : '无'}${sk.costHpRatio ? ` + 自损${Math.floor(sk.costHpRatio*100)}%当前HP` : ''}
+                            消耗: ${sk.costMp ? `${sk.costMp}精力` : '无'}${sk.costHpRatio ? ` + 自损${Math.floor(sk.costHpRatio * 100)}%当前HP` : ''}
                           </span>
                         </div>
                         <div style="font-size:10px;color:#eee;margin-top:2px;line-height:1.4;">${sk.desc}</div>
@@ -6785,6 +9663,10 @@ class GameApp2D {
 
     // 6. 怪物
     this.monsters.forEach(m => {
+      if (m.x >= this.camera.x - 32 && m.x <= this.camera.x + this.camera.viewportWidth + 32 &&
+        m.y >= this.camera.y - 32 && m.y <= this.camera.y + this.camera.viewportHeight + 32) {
+        this.getShanhai().observe(m, this.currentMapId);
+      }
       m.render(this.ctx, this.camera, false);
     });
 
@@ -6985,7 +9867,7 @@ class GameApp2D {
     }
 
     const jllCount = this.inventory ? this.inventory.getItemCount('jin_liu_lu') : 0;
-    const wash = this.tempWashResult;
+    const wash = this.tempWashResult?.instanceId === pet.instanceId ? this.tempWashResult : null;
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
@@ -7000,22 +9882,34 @@ class GameApp2D {
               <div style="display:flex;align-items:center;gap:10px;">
                 <div style="width:42px;height:42px;border-radius:50%;border:1.8px solid #ffd700;overflow:hidden;background:#2d1a0d;box-shadow:0 0 10px rgba(255,215,0,0.4);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
                   ${(() => {
-                    const pName = (pet.name || '').toLowerCase();
-                    let rId = 'rat';
-                    if (pName.includes('龟') || pName.includes('玄武')) rId = 'turtle';
-                    else if (pName.includes('蛇')) rId = 'snake';
-                    else if (pName.includes('狐')) rId = 'fox';
-                    else if (pName.includes('狼')) rId = 'wolf';
-                    else if (pName.includes('虎')) rId = 'tiger';
-                    else if (pName.includes('熊')) rId = 'bear';
-                    else if (pName.includes('蚌')) rId = 'clam';
-                    else if (pName.includes('蟹')) rId = 'crab';
-                    else if (pName.includes('虾')) rId = 'shrimp';
-                    else if (pName.includes('猪')) rId = 'pig';
-                    else if (pName.includes('猿') || pName.includes('猴')) rId = 'ape';
-                    else if (pName.includes('龙')) rId = 'xiaobailong';
-                    return window.Portraits ? window.Portraits.getPortraitSvg(rId, 42) : `<span style="font-size:24px;">${pet.icon || '🐾'}</span>`;
-                  })()}
+        const pId = pet.templateId || pet.id;
+        if (pId && window.Portraits?.customMonsterImages?.[pId]) {
+          return window.Portraits.getPortraitSvg(pId, 42);
+        }
+        const pName = (pet.name || '').toLowerCase();
+        let rId = 'rat';
+        if (pName.includes('猿猴将') || pName.includes('猛猿')) rId = 'yuanhou_jiang';
+        else if (pName.includes('猕猴将') || pName.includes('灵猕')) rId = 'mihou_jiang';
+        else if (pName.includes('树精') || pName.includes('枯树')) rId = 'kushu_jing';
+        else if (pName.includes('树妖')) rId = 'shuyao';
+        else if (pName.includes('青蛇') || pName.includes('小花蛇')) rId = 'xiaohua_she';
+        else if (pName.includes('蛇妖')) rId = 'sheyao';
+        else if (pName.includes('啸月') || pName.includes('狼妖')) rId = 'langyao';
+        else if (pName.includes('野狼') || pName.includes('山狼')) rId = 'wolf_wild';
+        else if (pName.includes('龟') || pName.includes('玄武')) rId = 'turtle';
+        else if (pName.includes('蛇')) rId = 'snake';
+        else if (pName.includes('狐')) rId = 'fox';
+        else if (pName.includes('狼')) rId = 'wolf';
+        else if (pName.includes('虎')) rId = 'tiger';
+        else if (pName.includes('熊')) rId = 'bear';
+        else if (pName.includes('蚌')) rId = 'clam';
+        else if (pName.includes('蟹')) rId = 'crab';
+        else if (pName.includes('虾')) rId = 'shrimp';
+        else if (pName.includes('猪')) rId = 'pig';
+        else if (pName.includes('猿') || pName.includes('猴')) rId = 'ape';
+        else if (pName.includes('龙')) rId = 'xiaobailong';
+        return window.Portraits ? window.Portraits.getPortraitSvg(rId, 42) : `<span style="font-size:24px;">${pet.icon || '🐾'}</span>`;
+      })()}
                 </div>
                 <div>
                   <div style="font-weight:bold;font-size:13px;color:#ffd700;">${pet.name} (Lv.${pet.level})</div>
@@ -7036,7 +9930,7 @@ class GameApp2D {
                   📜 当前资质与成长
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>等级:</span><span style="color:#aaa;">Lv.${pet.level}</span></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>状态:</span><span style="color:${pet.isMutated?'#ffd700':'#aaa'};">${pet.isMutated?'✨变异宝宝':'原版灵宠'}</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>状态:</span><span style="color:${pet.isMutated ? '#ffd700' : '#aaa'};">${pet.isMutated ? '✨变异宝宝' : '原版灵宠'}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>成长率:</span><span style="color:#ffd700;font-weight:bold;">${pet.growth}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>气血资质:</span><span>${pet.aptitudes.hp}</span></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>攻击资质:</span><span>${pet.aptitudes.atk}</span></div>
@@ -7046,47 +9940,47 @@ class GameApp2D {
               </div>
 
               <!-- 洗炼后新资质预览 -->
-              <div style="background:#150d06;border:1px solid ${wash?'#2ed573':'#332211'};border-radius:6px;padding:10px;">
-                <div style="font-weight:bold;color:${wash?'#2ed573':'#887766'};border-bottom:1px solid #332211;padding-bottom:4px;margin-bottom:8px;text-align:center;">
+              <div style="background:#150d06;border:1px solid ${wash ? '#2ed573' : '#332211'};border-radius:6px;padding:10px;">
+                <div style="font-weight:bold;color:${wash ? '#2ed573' : '#887766'};border-bottom:1px solid #332211;padding-bottom:4px;margin-bottom:8px;text-align:center;">
                   ✨ 洗炼预览结果
                 </div>
                 ${wash ? `
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>洗后等级:</span><span style="color:#2ed573;">Lv.1 幼年</span></div>
-                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>洗后形态:</span><span style="color:${wash.isMutated?'#ffd700':'#2ed573'};font-weight:bold;">${wash.name}</span></div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>洗后形态:</span><span style="color:${wash.isMutated ? '#ffd700' : '#2ed573'};font-weight:bold;">${wash.name}</span></div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                     <span>成长率:</span>
-                    <span style="font-weight:bold;color:${wash.growth>=pet.growth?'#2ed573':'#ff4757'};">
-                      ${wash.growth} ${wash.growth>=pet.growth?'▲':'▼'}
+                    <span style="font-weight:bold;color:${wash.growth >= pet.growth ? '#2ed573' : '#ff4757'};">
+                      ${wash.growth} ${wash.growth >= pet.growth ? '▲' : '▼'}
                     </span>
                   </div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                     <span>气血资质:</span>
-                    <span style="color:${wash.aptitudes.hp>=pet.aptitudes.hp?'#2ed573':'#ff4757'};">
-                      ${wash.aptitudes.hp} ${wash.aptitudes.hp>=pet.aptitudes.hp?'▲':'▼'}
+                    <span style="color:${wash.aptitudes.hp >= pet.aptitudes.hp ? '#2ed573' : '#ff4757'};">
+                      ${wash.aptitudes.hp} ${wash.aptitudes.hp >= pet.aptitudes.hp ? '▲' : '▼'}
                     </span>
                   </div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                     <span>攻击资质:</span>
-                    <span style="color:${wash.aptitudes.atk>=pet.aptitudes.atk?'#2ed573':'#ff4757'};">
-                      ${wash.aptitudes.atk} ${wash.aptitudes.atk>=pet.aptitudes.atk?'▲':'▼'}
+                    <span style="color:${wash.aptitudes.atk >= pet.aptitudes.atk ? '#2ed573' : '#ff4757'};">
+                      ${wash.aptitudes.atk} ${wash.aptitudes.atk >= pet.aptitudes.atk ? '▲' : '▼'}
                     </span>
                   </div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                     <span>防御资质:</span>
-                    <span style="color:${wash.aptitudes.def>=pet.aptitudes.def?'#2ed573':'#ff4757'};">
-                      ${wash.aptitudes.def} ${wash.aptitudes.def>=pet.aptitudes.def?'▲':'▼'}
+                    <span style="color:${wash.aptitudes.def >= pet.aptitudes.def ? '#2ed573' : '#ff4757'};">
+                      ${wash.aptitudes.def} ${wash.aptitudes.def >= pet.aptitudes.def ? '▲' : '▼'}
                     </span>
                   </div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                     <span>法力资质:</span>
-                    <span style="color:${wash.aptitudes.matk>=pet.aptitudes.matk?'#2ed573':'#ff4757'};">
-                      ${wash.aptitudes.matk} ${wash.aptitudes.matk>=pet.aptitudes.matk?'▲':'▼'}
+                    <span style="color:${wash.aptitudes.matk >= pet.aptitudes.matk ? '#2ed573' : '#ff4757'};">
+                      ${wash.aptitudes.matk} ${wash.aptitudes.matk >= pet.aptitudes.matk ? '▲' : '▼'}
                     </span>
                   </div>
                   <div style="display:flex;justify-content:space-between;">
                     <span>速度资质:</span>
-                    <span style="color:${wash.aptitudes.spd>=pet.aptitudes.spd?'#2ed573':'#ff4757'};">
-                      ${wash.aptitudes.spd} ${wash.aptitudes.spd>=pet.aptitudes.spd?'▲':'▼'}
+                    <span style="color:${wash.aptitudes.spd >= pet.aptitudes.spd ? '#2ed573' : '#ff4757'};">
+                      ${wash.aptitudes.spd} ${wash.aptitudes.spd >= pet.aptitudes.spd ? '▲' : '▼'}
                     </span>
                   </div>
                 ` : `
@@ -7137,10 +10031,13 @@ class GameApp2D {
   confirmPetWash(instanceId) {
     const pet = this.pets.find(p => p.instanceId === instanceId);
     if (!pet || !this.tempWashResult) return;
-    window.PetSystem.applyWashResult(pet, this.tempWashResult);
+    if (!window.PetSystem.applyWashResult(pet, this.tempWashResult)) {
+      window.showGameMessage('这份洗炼结果属于另一只仙宠，请返回原仙宠确认。', 'warning');
+      return;
+    }
     this.tempWashResult = null;
     window.Sound.playCrit();
-    window.showGameMessage(`🎉【蜕变重生】${pet.name} 资质与成长已重铸完成，成为绝世宝宝！`, 'success', 4500);
+    window.showGameMessage(`🎉 ${pet.name} 洗炼完成，成长与资质已更新。`, 'success', 4500);
     this.openPetWashModal(instanceId);
   }
 
@@ -7187,13 +10084,13 @@ class GameApp2D {
               <div style="color:#aaa;font-size:10px;margin-bottom:4px;">当前已领悟被动神技 (打书可能顶替旧技能)：</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 ${[0, 1, 2, 3].map(i => {
-                  const p = pet.passives[i];
-                  if (p) {
-                    return `<span style="background:#2c3e50;border:1px solid #f39c12;border-radius:4px;padding:2px 6px;color:#f1c40f;font-size:10px;">${p.icon || '📖'} ${p.name}</span>`;
-                  } else {
-                    return `<span style="border:1px dashed #555;border-radius:4px;padding:2px 6px;color:#666;font-size:10px;">[空槽位]</span>`;
-                  }
-                }).join('')}
+      const p = pet.passives[i];
+      if (p) {
+        return `<span style="background:#2c3e50;border:1px solid #f39c12;border-radius:4px;padding:2px 6px;color:#f1c40f;font-size:10px;">${p.icon || '📖'} ${p.name}</span>`;
+      } else {
+        return `<span style="border:1px dashed #555;border-radius:4px;padding:2px 6px;color:#666;font-size:10px;">[空槽位]</span>`;
+      }
+    }).join('')}
               </div>
             </div>
 
@@ -7292,7 +10189,7 @@ class GameApp2D {
             <!-- 部位切换标签 -->
             <div style="display:flex;gap:4px;margin-bottom:12px;background:#150d06;padding:4px;border-radius:6px;">
               ${Object.keys(slotNames).map(k => `
-                <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${selectedSlotKey===k?'background:#c59b27;color:#000;font-weight:bold;':''}" onclick="window.App2D.openForgeModal('${k}')">
+                <button class="dialogue-opt-btn" style="flex:1;padding:4px;font-size:10px;${selectedSlotKey === k ? 'background:#c59b27;color:#000;font-weight:bold;' : ''}" onclick="window.App2D.openForgeModal('${k}')">
                   ${slotNames[k]}
                 </button>
               `).join('')}
@@ -7312,7 +10209,7 @@ class GameApp2D {
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    <div style="color:#ffd700;font-weight:bold;font-size:14px;">${'⭐'.repeat(Math.min(curStar, 6))}${curStar>6?` (+${curStar})`:''}</div>
+                    <div style="color:#ffd700;font-weight:bold;font-size:14px;">${'⭐'.repeat(Math.min(curStar, 6))}${curStar > 6 ? ` (+${curStar})` : ''}</div>
                     <div style="font-size:9px;color:#aaa;">最高可强化至 +12 星</div>
                   </div>
                 </div>
@@ -7346,19 +10243,19 @@ class GameApp2D {
                     </div>
                     <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                       <span>需要强化材料:</span>
-                      <span style="color:${totalStones>=info.costStones?'#2ecc71':'#e74c3c'};font-weight:bold;">
+                      <span style="color:${totalStones >= info.costStones ? '#2ecc71' : '#e74c3c'};font-weight:bold;">
                         强化石/陨铁: ${totalStones} / ${info.costStones} 颗
                       </span>
                     </div>
                     <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                       <span>所需锻造银两:</span>
-                      <span style="color:${this.playerData.silver>=info.costSilver?'#2ecc71':'#e74c3c'};">
+                      <span style="color:${this.playerData.silver >= info.costSilver ? '#2ecc71' : '#e74c3c'};">
                         ${info.costSilver} 两 (拥有: ${this.playerData.silver}两)
                       </span>
                     </div>
                     ${info.penalty !== 'none' ? `
                       <div style="color:#ff6b81;font-size:10px;margin-top:4px;">
-                        ⚠️ 淬火失手惩罚：若失败可能掉落 ${info.penalty==='down_1'?'1':'2'} 星！可使用定星石保护。
+                        ⚠️ 淬火失手惩罚：若失败可能掉落 ${info.penalty === 'down_1' ? '1' : '2'} 星！可使用定星石保护。
                       </div>
                     ` : ''}
                   </div>
@@ -7473,9 +10370,9 @@ class GameApp2D {
             </div>
             <div style="max-height:280px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               ${shopItems.map(item => {
-                const it = window.GAME_DATA.ITEMS[item.id];
-                if (!it) return '';
-                return `
+      const it = window.GAME_DATA.ITEMS[item.id];
+      if (!it) return '';
+      return `
                   <div style="background:#20140b;border:1px solid #4a331c;border-radius:6px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;">
                     <div>
                       <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
@@ -7493,7 +10390,7 @@ class GameApp2D {
                     </div>
                   </div>
                 `;
-              }).join('')}
+    }).join('')}
             </div>
           </div>
         </div>
@@ -7790,110 +10687,386 @@ class GameApp2D {
   }
 
   // =========================================================================
-  // 6. 任务卷轴追踪面板 (快捷键 Q 打开)
+  // 6. 任务卷轴追踪面板与八十一难历练功德簿 (快捷键 Q 打开)
   // =========================================================================
+  getOrdealAndQuestInfo() {
+    const sp = this.storyPhase || 'liujiacun_start';
+    const trees = this.questKills?.trees || 0;
+    const rats = this.questKills?.rats || 0;
+    const mushrooms = this.questKills?.mushrooms || 0;
+    const hooligans = this.questKills?.chentangHooligans || 0;
+
+    let ordealNumber = '【第一难·两界投生】';
+    let ordealName = '凡尘苏醒 · 刘家村启程';
+    let ordealDesc = '从天界谪落凡尘两界山下，肉身受创，得猎户刘伯钦搭救，暂居刘家村调养。需帮刘伯钦拾柴做饭，肃清害虫，踏出取经凡尘第一步。';
+    let chapter = '第一回 · 凡尘始觉';
+    let stepName = '与刘伯钦对话';
+    let stepTarget = '与救命恩人刘伯钦交谈，接下生火造饭差事';
+    let stepProgress = '0/1';
+    let stepProgressRatio = 0;
+    let stepHint = '在刘家村中央与猎户刘伯钦交谈';
+    let isDone = false;
+
+    const ultimateGoal = '求取大乘真经三十五部，普度东土受苦众生，匡扶天道秩序，证得无上金身正果！';
+
+    if (sp.startsWith('heaven_')) {
+      ordealNumber = '【序章·天宫风云】';
+      ordealName = '瑶池蟠桃与大闹天宫';
+      ordealDesc = '天庭蟠桃胜会前夕，仙界暗潮汹涌，亲历大圣闹天宫与诸仙贬谪，勘破凡圣之谜。';
+      chapter = '序章 · 仙界浩劫';
+      stepName = '平息天宫风暴';
+      stepTarget = '护送嫦娥离开水阁，并前往凌霄宝殿化解争端';
+      stepProgress = '进行中';
+      stepProgressRatio = 0.5;
+      stepHint = '沿天宫走廊前行探索';
+    } else if (sp === 'liujiacun_start') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '凡尘苏醒 · 刘家村启程';
+      stepName = '拜见恩人刘伯钦';
+      stepTarget = '与刘伯钦对话，了解当前处境并领受差事';
+      stepProgress = '0/1';
+      stepProgressRatio = 0;
+      stepHint = '刘伯钦就在刘家村中间草屋前';
+    } else if (sp === 'liujiacun_find_mushrooms') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '生火造饭 · 采摘青菇';
+      stepName = '采摘野生青蘑菇';
+      stepTarget = `在刘家村南草丛中采摘2朵新鲜野生青蘑菇 (${mushrooms}/2)`;
+      stepProgress = `${mushrooms}/2`;
+      stepProgressRatio = Math.min(1, mushrooms / 2);
+      stepHint = '前往村南草丛边，点击青蘑菇即可采摘';
+      isDone = mushrooms >= 2;
+    } else if (sp === 'liujiacun_mushrooms_collected') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '生火造饭 · 交付青菇';
+      stepName = '向刘伯钦交付青蘑菇';
+      stepTarget = '青蘑菇已采齐！将蘑菇交给刘伯钦下锅';
+      stepProgress = '2/2 (待交差)';
+      stepProgressRatio = 1;
+      stepHint = '找刘伯钦对话完成交付';
+      isDone = true;
+    } else if (sp === 'liujiacun_go_cut_wood' || sp === 'liujiacun_wood_gathering') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '劈柴取火 · 降伏枯树精';
+      stepName = '击败枯树精取坚韧柴木';
+      stepTarget = `前往五行山小径击败百年枯树精取柴 (${trees}/4)`;
+      stepProgress = `${trees}/4`;
+      stepProgressRatio = Math.min(1, trees / 4);
+      stepHint = '从刘家村左侧路口进入五行山小径，击败一组枯树精可获得柴木';
+      isDone = trees >= 4;
+    } else if (sp === 'liujiacun_wood_collected') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '劈柴取火 · 交付柴木';
+      stepName = '交付坚韧柴木';
+      stepTarget = '4捆坚韧柴木已收集齐全！向刘伯钦复命生火';
+      stepProgress = '4/4 (待交差)';
+      stepProgressRatio = 1;
+      stepHint = '回到刘家村与刘伯钦对话';
+      isDone = true;
+    } else if (sp === 'liujiacun_rat_hunting') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '粮仓守卫 · 除灭硕鼠';
+      stepName = '消灭偷粮硕鼠';
+      stepTarget = `在村中粮仓旁击败作祟偷粮硕鼠 (${rats}/4)`;
+      stepProgress = `${rats}/4`;
+      stepProgressRatio = Math.min(1, rats / 4);
+      stepHint = '在刘家村粮仓附近遭遇偷粮硕鼠并战胜它们';
+      isDone = rats >= 4;
+    } else if (sp === 'liujiacun_rats_cleared') {
+      ordealNumber = '【第一难·两界投生】';
+      ordealName = '粮仓守卫 · 硕鼠剿除';
+      stepName = '向刘伯钦复命';
+      stepTarget = '4只偷粮硕鼠已全部消灭！回禀刘伯钦领取谢礼';
+      stepProgress = '4/4 (待交差)';
+      stepProgressRatio = 1;
+      stepHint = '与刘伯钦对话，准备启程前往长安';
+      isDone = true;
+    } else if (sp === 'liujiacun_go_changan' || sp === 'changan_arrived') {
+      ordealNumber = '【第二难·长安受戒】';
+      ordealName = '大唐国都 · 长安拜帝';
+      ordealDesc = '别过刘家村，前往盛唐繁华国都长安城，面见唐太宗李世民，拜竭金蝉转世玄奘法师，领西行取经大旨。';
+      chapter = '第二回 · 皇都盛世';
+      stepName = '前往长安城金銮殿';
+      stepTarget = '前往长安城拜见太宗皇帝与玄奘法师';
+      stepProgress = sp === 'changan_arrived' ? '1/1 已抵达' : '0/1 前往中';
+      stepProgressRatio = sp === 'changan_arrived' ? 1 : 0.5;
+      stepHint = '经由官道传送至长安城';
+    } else if (sp.startsWith('chentang_') || sp.startsWith('donghai_') || sp.startsWith('longgong_')) {
+      ordealNumber = '【第三难·陈塘除恶】';
+      ordealName = '总兵李靖 · 平定混混';
+      ordealDesc = '陈塘关街头地痞恶霸混混横行，总兵李靖下令肃清街市；东海龙宫波涛汹涌，探访定海神针异动。';
+      chapter = '第三回 · 陈塘海潮';
+      stepName = sp === 'chentang_defeat_hooligans' ? '制伏街头作恶混混' : '调查陈塘异动';
+      stepTarget = sp === 'chentang_defeat_hooligans' ? `击败街头作恶的混混 (${hooligans}/4)` : '前往陈塘关总兵府向李靖复命或探访东海';
+      stepProgress = sp === 'chentang_defeat_hooligans' ? `${hooligans}/4` : (sp === 'chentang_hooligans_done' ? '4/4 (待交差)' : '进行中');
+      stepProgressRatio = sp === 'chentang_defeat_hooligans' ? Math.min(1, hooligans / 4) : 1;
+      stepHint = '在陈塘关街市巡察混混踪迹';
+      isDone = hooligans >= 4 || sp === 'chentang_hooligans_done';
+    } else if (sp === 'wuxingshan_ready' || sp === 'wuxing_freed') {
+      ordealNumber = '【第四难·五行脱困】';
+      ordealName = '五指山巅 · 揭印解封';
+      ordealDesc = '齐天大圣孙悟空被如来佛祖压在五行山下五百年，受尽铜汁铁丸之苦。需登上崖顶揭去六字真言神符，助大圣重获自由！';
+      chapter = '第四回 · 齐天再起';
+      stepName = '揭开如来神印';
+      stepTarget = '登上五行山山顶绝壁，揭除【唵嘛呢叭咪吽】神符，救出孙悟空';
+      stepProgress = sp === 'wuxing_freed' ? '已揭印脱困' : '待揭除神印';
+      stepProgressRatio = sp === 'wuxing_freed' ? 1 : 0.5;
+      stepHint = '沿五行山石阶一路登顶，触碰金光神符';
+      isDone = sp === 'wuxing_freed';
+    } else if (sp.startsWith('yingchou_')) {
+      ordealNumber = '【第五难·鹰愁收龙】';
+      ordealName = '深涧寒潭 · 白龙化马';
+      ordealDesc = '西海龙王三太子因纵火烧毁明珠获罪，贬在鹰愁涧中。需降伏白龙，使其化为白龙马常伴取经人身侧。';
+      chapter = '第五回 · 鹰愁飞龙';
+      stepName = '战胜玉龙三太子';
+      stepTarget = '在鹰愁涧深潭降伏白龙，收为坐骑';
+      stepProgress = '已平复';
+      stepProgressRatio = 1;
+      stepHint = '鹰愁涧水阁石桥前探索';
+      isDone = true;
+    } else if (sp.startsWith('gaolao_')) {
+      ordealNumber = '【第六难·高老招婿】';
+      ordealName = '高老庄招亲 · 天蓬归正';
+      ordealDesc = '福陵山云栈洞猪刚鬣强占高太公三女儿翠兰。需前去降伏八戒，化解高老庄灾厄，收天蓬为二师弟。';
+      chapter = '第六回 · 高老烟云';
+      stepName = '降伏猪八戒';
+      stepTarget = '前往云栈洞降伏猪刚鬣，收为取经徒弟';
+      stepProgress = '已收降';
+      stepProgressRatio = 1;
+      stepHint = '前往高老庄内宅了解详情';
+      isDone = true;
+    } else if (sp.startsWith('huangfeng_')) {
+      ordealNumber = '【第七难·黄风三昧】';
+      ordealName = '黄风山神沙 · 定风灵珠';
+      ordealDesc = '黄风怪刮起漫天黄风，三昧神风吹天地暗。需往小须弥山求取定风丹，破除神风降伏恶怪。';
+      chapter = '第七回 · 黄风狂卷';
+      stepName = '破除三昧神风';
+      stepTarget = '借得定风灵珠，降除黄风大圣';
+      stepProgress = '已荡平';
+      stepProgressRatio = 1;
+      stepHint = '黄风岭怪石林立，借宝定风';
+      isDone = true;
+    } else if (sp.startsWith('liusha_')) {
+      ordealNumber = '【第八难·流沙收徒】';
+      ordealName = '流沙八百里 · 卷帘归真';
+      ordealDesc = '流沙河八百里深不可测，鹅毛飘不起，芦花定底沉。降伏卷帘大将沙悟净，收为三师弟。';
+      chapter = '第八回 · 流沙浩荡';
+      stepName = '收服沙和尚';
+      stepTarget = '降伏流沙河卷帘大将，师徒四人齐聚';
+      stepProgress = '已归正';
+      stepProgressRatio = 1;
+      stepHint = '流沙河渡口以佛珠为舟渡过险水';
+      isDone = true;
+    } else if (sp.startsWith('wuzhuang_')) {
+      ordealNumber = '【第九难·五庄人参】';
+      ordealName = '万寿山仙山 · 甘露救树';
+      ordealDesc = '万寿山五庄观人参果三千年一开花三千年一结果，大圣推倒宝树，需寻南海观音以玉净瓶甘露复活神树。';
+      chapter = '第九回 · 人参果会';
+      stepName = '甘露回春复活仙树';
+      stepTarget = '前往南海请得观音菩萨甘露，与镇元大仙结为异姓兄弟';
+      stepProgress = '已结义';
+      stepProgressRatio = 1;
+      stepHint = '五庄观大殿前与镇元大仙交谈';
+      isDone = true;
+    } else if (sp.startsWith('baihu_')) {
+      ordealNumber = '【第十难·尸魔三戏】';
+      ordealName = '白虎岭绝壁 · 三打白骨精';
+      ordealDesc = '白骨夫人狡黠多变，先后化作村姑、老妪、老翁戏弄唐僧离间师徒。需火眼金睛识破幻术，三打白骨彻底除根！';
+      chapter = '第十回 · 尸魔幻象';
+      stepName = sp === 'baihu_first_cleared' ? '识破白骨老妪' : (sp === 'baihu_second_cleared' ? '识破白骨老翁' : '诛灭白骨精真身');
+      stepTarget = '连续击破白骨夫人化身，荡平白虎岭妖氛';
+      stepProgress = sp === 'baihu_cleared' ? '妖氛已荡平' : (sp === 'baihu_second_cleared' ? '已击破2重化身' : '已击破1重化身');
+      stepProgressRatio = sp === 'baihu_cleared' ? 1 : (sp === 'baihu_second_cleared' ? 0.66 : 0.33);
+      stepHint = '白虎岭怪石嶙峋，留心路旁求助者';
+      isDone = sp === 'baihu_cleared';
+    } else if (sp.startsWith('baoxiang_')) {
+      ordealNumber = '【第十一难·宝象救主】';
+      ordealName = '波月洞救难 · 黄袍降伏';
+      ordealDesc = '二十八宿奎木狼私自下界化作黄袍怪，强掳宝象国百花羞公主十三载。降伏奎宿，解救公主与宝象国黎民。';
+      chapter = '第十一回 · 宝象风云';
+      stepName = '降伏黄袍怪救回百花羞';
+      stepTarget = '攻入波月洞降伏黄袍怪，护送百花羞公主回宝象国王宫';
+      stepProgress = sp === 'baoxiang_cleared' ? '功德圆满' : '进行中';
+      stepProgressRatio = sp === 'baoxiang_cleared' ? 1 : 0.5;
+      stepHint = '宝象国王宫与波月洞之间奔行救难';
+      isDone = sp === 'baoxiang_cleared';
+    } else if (sp.startsWith('pingding_')) {
+      ordealNumber = '【第十二难·莲花伏魔】';
+      ordealName = '平顶山莲花洞 · 金银双角';
+      ordealDesc = '太上老君金银童子下界为妖，携带紫金红葫芦、羊脂玉净瓶等五件至宝据守莲花洞。需收降猫妖狐众，智降老魔！';
+      chapter = '第十二回 · 莲花双魔';
+      stepName = '降伏金角银角大王';
+      stepTarget = '智斗老魔，夺取五件道祖至宝，平息平顶山大劫';
+      stepProgress = sp === 'pingding_cleared' ? '大获全胜' : '探险中';
+      stepProgressRatio = sp === 'pingding_cleared' ? 1 : 0.6;
+      stepHint = '平顶山林密洞深，小心猫妖围攻';
+      isDone = sp === 'pingding_cleared';
+    }
+
+    return {
+      ordealNumber,
+      ordealName,
+      ordealDesc,
+      ultimateGoal,
+      chapter,
+      stepName,
+      stepTarget,
+      stepProgress,
+      stepProgressRatio,
+      stepHint,
+      isDone
+    };
+  }
+
+  // 快捷交互：八十一难主线历练模态弹窗 (由右上角按钮或快捷键Q呼出)
+  openOrdealQuestModal() {
+    this.openQuestTrackerModal();
+  }
+
   openQuestTrackerModal() {
     if (window.Dialogue) window.Dialogue.close();
     document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
 
+    const info = this.getOrdealAndQuestInfo();
     const hasGhost = this.ghostQuest && this.ghostQuest.active;
     const hasEscort = this.escortQuest && this.escortQuest.active;
 
     const modalHtml = `
       <div class="modal-overlay" onclick="this.remove()">
-        <div class="modal-window" onclick="event.stopPropagation()" style="max-width:540px;width:95%;">
-          <div class="modal-header">
-            <span class="modal-title">📜 西游降魔历练卷轴 · 任务大览</span>
+        <div class="modal-window quest-tracker-window" onclick="event.stopPropagation()" style="max-width:540px;width:94%;background:radial-gradient(circle at 50% 8%, #2a1c12 0%, #16100b 55%, #0e0a07 100%);border:2px solid #8d6b38;box-shadow:0 0 30px rgba(0,0,0,0.9),inset 0 0 15px rgba(141,107,56,0.2);border-radius:6px;overflow:hidden;color:#f5e8d0;">
+          <div class="modal-header" style="background:linear-gradient(90deg, #3d2817, #22170e);padding:12px 16px;border-bottom:1px solid #6b4e28;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:16px;">📜</span>
+              <span class="modal-title" style="color:#fde047;font-size:15px;letter-spacing:1px;font-weight:bold;">西天取经 · 八十一难功德簿</span>
+            </div>
             <button class="modal-close-btn" onclick="this.closest('.modal-overlay').remove()">✕</button>
           </div>
-          <div class="modal-body" style="padding:12px;font-size:11px;color:#fef0cd;line-height:1.6;">
-            <!-- 主线任务卡片 -->
-            <div style="background:#20140b;border:1px solid #c59b27;border-radius:6px;padding:10px;margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-weight:bold;color:#ffd700;font-size:12px;">🌟【正统西游主线】</span>
-                <span style="font-size:10px;color:#2ecc71;">进行中</span>
+          <div class="modal-body" style="padding:14px;font-size:11.5px;color:#f5e8d0;line-height:1.6;display:flex;flex-direction:column;gap:10px;max-height:78vh;overflow-y:auto;">
+
+            <!-- 1. 当前属于哪一难 (主线天命核心卡片) -->
+            <div style="background:rgba(28,19,13,0.9);border:1.5px solid #a3733a;border-radius:6px;padding:12px;box-shadow:inset 0 0 12px rgba(0,0,0,0.6);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:15px;">⛩️</span>
+                  <span style="font-weight:bold;color:#fde047;font-size:13.5px;">【${info.ordealNumber}】</span>
+                  <span style="color:#fff;font-weight:bold;font-size:13px;">${info.ordealName}</span>
+                </div>
+                <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#422a18;border:1px solid #8d6b38;color:#fde047;">${info.chapter}</span>
               </div>
-              <div style="color:#eee;margin-bottom:4px;">
-                当前主线阶段：<span style="color:#ffd700;">${this.storyPhase}</span>
+              <div style="font-size:11px;color:#c9baa5;line-height:1.6;padding-top:2px;">
+                ${info.ordealDesc}
               </div>
-              <div style="font-size:10px;color:#bbb;margin-bottom:8px;">
-                历经天宫大闹、两界山苏醒、五行山揭帖破封救大圣、鹰愁涧收白龙、高老庄降八戒、黄风岭借定风丹、流沙河收沙僧、五庄观人参果、白虎岭三打白骨精、宝象国降伏奎木狼、斜月三星洞菩提祖师与南海落伽山！
-              </div>
-              <button class="dialogue-opt-btn" style="padding:4px 10px;font-size:10px;background:#c59b27;color:#000;font-weight:bold;" onclick="window.App2D.teleportToStoryLead()">
-                🎯 自动寻路 / 神行追踪主线目标
-              </button>
             </div>
 
-            <!-- 钟馗日常抓鬼卡片 -->
-            <div style="background:#150d06;border:1px solid #4a331c;border-radius:6px;padding:10px;margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-weight:bold;color:#e74c3c;font-size:12px;">👹【钟馗降妖除魔令】(每日抓鬼)</span>
-                <span style="font-size:10px;color:${hasGhost?(this.ghostQuest.completed?'#2ecc71':'#ffd700'):'#888'};">
-                  ${hasGhost ? (this.ghostQuest.completed ? '已击杀(待领赏)' : '除魔中') : '未接取'}
+            <!-- 2. 取经宏愿 -->
+            <div style="background:rgba(18,13,9,0.85);border:1px solid #5a3d20;border-left:3px solid #d4af37;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;">
+              <span style="color:#ffd700;font-weight:bold;font-size:12px;white-space:nowrap;">🌟 取经宏愿:</span>
+              <span style="color:#e2d5c2;font-size:11px;">${info.ultimateGoal}</span>
+            </div>
+
+            <!-- 3. 当前步骤目标与追踪 -->
+            <div style="background:rgba(32,22,14,0.92);border:1.5px solid #c59b27;border-radius:6px;padding:12px;box-shadow:0 0 12px rgba(197,155,39,0.15);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:14px;">🎯</span>
+                  <span style="font-weight:bold;color:#fde047;font-size:12.5px;">当前步骤:</span>
+                  <span style="font-weight:bold;color:#ffffff;font-size:12.5px;">${info.stepName}</span>
+                </div>
+                <span style="font-size:10.5px;font-weight:bold;color:${info.isDone ? '#34d399' : '#38bdf8'};background:rgba(10,8,6,0.7);padding:2px 8px;border-radius:4px;border:1px solid ${info.isDone ? '#059669' : '#0284c7'};">
+                  ${info.stepProgress}
                 </span>
               </div>
-              ${hasGhost ? `
-                <div style="font-size:11px;color:#fef0cd;margin-bottom:4px;">
-                  目标恶鬼：<span style="color:#e74c3c;font-weight:bold;">${this.ghostQuest.targetName}</span> (位于: ${this.ghostQuest.mapName})
-                </div>
-                <div style="font-size:10px;color:#aaa;margin-bottom:8px;">
-                  奖励：修行经验 +3500、纹银 +2000两、仙家洗宠圣水【金柳露】*1！
-                </div>
-                <button class="dialogue-opt-btn" style="padding:4px 10px;font-size:10px;background:#e74c3c;font-weight:bold;" onclick="window.App2D.trackZhongkuiGhostTarget()">
-                  🎯 立即神行前往除妖地点
-                </button>
-              ` : `
-                <div style="font-size:10px;color:#887766;margin-bottom:6px;">
-                  前往长安城化生寺旁拜见【伏魔天师·钟馗】，即可领取今日除妖通缉令！
-                </div>
-                <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;background:#34495e;" onclick="window.App2D.guideToMap('changan_city', '钟馗天师')">
-                  前往长安城钟馗处
-                </button>
-              `}
-            </div>
 
-            <!-- 大唐镖局运镖卡片 -->
-            <div style="background:#150d06;border:1px solid #4a331c;border-radius:6px;padding:10px;margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-weight:bold;color:#f39c12;font-size:12px;">🚩【大唐镖局军饷押运】(运镖赏金)</span>
-                <span style="font-size:10px;color:${hasEscort?'#2ecc71':'#888'};">
-                  ${hasEscort ? '护送运镖中' : '未接取'}
-                </span>
+              <!-- 进度条 -->
+              <div style="background:#1e140d;border-radius:3px;height:6px;overflow:hidden;margin-bottom:8px;border:1px solid #4a331c;">
+                <div style="background:linear-gradient(90deg, #d4af37, #34d399);height:100%;width:${Math.round(info.stepProgressRatio * 100)}%;transition:width 0.3s;"></div>
               </div>
-              ${hasEscort ? `
-                <div style="font-size:11px;color:#fef0cd;margin-bottom:4px;">
-                  护送目标：送达 <span style="color:#f1c40f;font-weight:bold;">【${this.escortQuest.targetMapName}·${this.escortQuest.targetNpcName}】</span>
-                </div>
-                <div style="font-size:10px;color:#aaa;margin-bottom:8px;">
-                  路线指引：${this.escortQuest.desc}（返还1000两押金，追加3500两白银、4000经验与稀世【魔兽要诀】）！
-                </div>
-              ` : `
-                <div style="font-size:10px;color:#887766;margin-bottom:6px;">
-                  前往长安城拜见【大唐镖头·程咬金】，支付 1000 两押金即可开启押运大唐朝廷军饷！
-                </div>
-                <button class="dialogue-opt-btn" style="padding:3px 8px;font-size:10px;background:#34495e;" onclick="window.App2D.guideToMap('changan_city', '大唐镖局')">
-                  前往长安城大唐镖局
+
+              <div style="font-size:11px;color:#d4c4b0;margin-bottom:4px;">
+                <span style="color:#8d7966;">指引：</span>${info.stepTarget}
+              </div>
+              <div style="font-size:10.5px;color:#8d7966;margin-bottom:10px;">
+                🧭 提示：${info.stepHint}
+              </div>
+
+              <div style="display:flex;justify-content:flex-end;">
+                <button class="dialogue-opt-btn" style="padding:5px 18px;font-size:11.5px;background:linear-gradient(180deg, #b4833e, #825a22);color:#fff;font-weight:bold;border:1px solid #d4af37;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.4);" onclick="window.App2D.teleportToStoryLead(); document.querySelectorAll('.modal-overlay').forEach(m => m.remove());">
+                  ✦ 立即寻路追踪 ✦
                 </button>
-              `}
+              </div>
             </div>
 
-            <!-- 每日蟠桃与龙宫试炼 -->
+            <!-- 4. 每日历练与修行功德 (统一典雅暗金风格，拒绝花哨混色) -->
+            <div style="font-size:11.5px;color:#d4af37;font-weight:bold;margin-top:2px;display:flex;align-items:center;gap:6px;">
+              <span>🎋</span><span>三界每日修行功德</span>
+            </div>
+
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <div style="background:#150d06;border:1px solid #4a331c;border-radius:6px;padding:8px;">
-                <div style="font-weight:bold;color:#ff6b81;margin-bottom:4px;">🍑 每日蟠桃盛宴</div>
-                <div style="font-size:9px;color:#aaa;margin-bottom:6px;">刘家村东侧土地公可直达蟠桃园大仙树前采摘仙桃加巨额经验！</div>
-                <button class="dialogue-opt-btn" style="padding:2px 6px;font-size:9px;background:#e84393;" onclick="window.App2D.teleportToPeachGarden()">
-                  前往蟠桃胜境采摘
+              <!-- 钟馗捉鬼 -->
+              <div style="background:rgba(24,17,11,0.85);border:1px solid #5a3d20;border-radius:6px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-weight:bold;color:#fde047;font-size:11px;">👹 钟馗伏魔令</span>
+                    <span style="font-size:9.5px;color:${hasGhost ? (this.ghostQuest.completed ? '#34d399' : '#f59e0b') : '#8d7966'};">
+                      ${hasGhost ? (this.ghostQuest.completed ? '已击杀' : '除魔中') : '未接取'}
+                    </span>
+                  </div>
+                  <div style="font-size:10px;color:#a89682;line-height:1.4;margin-bottom:6px;">
+                    ${hasGhost ? `目标恶鬼：${this.ghostQuest.targetName}` : '长安化生寺拜见伏魔天师钟馗。'}
+                  </div>
+                </div>
+                ${hasGhost ? `
+                  <button class="dialogue-opt-btn" style="width:100%;padding:3px;font-size:10px;background:#6b281b;border-color:#b91c1c;" onclick="window.App2D.trackZhongkuiGhostTarget()">
+                    神行除妖
+                  </button>
+                ` : `
+                  <button class="dialogue-opt-btn" style="width:100%;padding:3px;font-size:10px;" onclick="window.App2D.guideToMap('changan_city', '钟馗天师')">
+                    前往化生寺
+                  </button>
+                `}
+              </div>
+
+              <!-- 大唐运镖 -->
+              <div style="background:rgba(24,17,11,0.85);border:1px solid #5a3d20;border-radius:6px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-weight:bold;color:#fde047;font-size:11px;">🚩 大唐军饷镖</span>
+                    <span style="font-size:9.5px;color:${hasEscort ? '#34d399' : '#8d7966'};">
+                      ${hasEscort ? '护送中' : '未接取'}
+                    </span>
+                  </div>
+                  <div style="font-size:10px;color:#a89682;line-height:1.4;margin-bottom:6px;">
+                    ${hasEscort ? `送达：${this.escortQuest.targetMapName}` : '长安镖局程咬金处接取军饷押运。'}
+                  </div>
+                </div>
+                <button class="dialogue-opt-btn" style="width:100%;padding:3px;font-size:10px;" onclick="window.App2D.guideToMap('changan_city', '大唐镖局')">
+                  ${hasEscort ? '查看镖途' : '前往镖局'}
                 </button>
               </div>
-              <div style="background:#150d06;border:1px solid #4a331c;border-radius:6px;padding:8px;">
-                <div style="font-weight:bold;color:#3498db;margin-bottom:4px;">🌊 东海借宝神针</div>
-                <div style="font-size:9px;color:#aaa;margin-bottom:6px;">东海龙宫大殿敖广借宝试炼，力战蛟龙夺神珍铁！</div>
-                <button class="dialogue-opt-btn" style="padding:2px 6px;font-size:9px;background:#2980b9;" onclick="window.App2D.guideToMap('longgong_palace', '东海龙宫')">
+
+              <!-- 每日蟠桃盛宴 -->
+              <div style="background:rgba(24,17,11,0.85);border:1px solid #5a3d20;border-radius:6px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="font-weight:bold;color:#fde047;font-size:11px;margin-bottom:4px;">🍑 每日蟠桃盛宴</div>
+                  <div style="font-size:10px;color:#a89682;line-height:1.4;margin-bottom:6px;">蟠桃园仙树每日采摘仙桃大增元神经验！</div>
+                </div>
+                <button class="dialogue-opt-btn" style="width:100%;padding:3px;font-size:10px;" onclick="window.App2D.teleportToPeachGarden()">
+                  直达蟠桃园
+                </button>
+              </div>
+
+              <!-- 东海借宝 -->
+              <div style="background:rgba(24,17,11,0.85);border:1px solid #5a3d20;border-radius:6px;padding:9px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="font-weight:bold;color:#fde047;font-size:11px;margin-bottom:4px;">🌊 东海借宝试炼</div>
+                  <div style="font-size:10px;color:#a89682;line-height:1.4;margin-bottom:6px;">东海龙宫大殿敖广借宝试炼，战蛟龙夺神珍！</div>
+                </div>
+                <button class="dialogue-opt-btn" style="width:100%;padding:3px;font-size:10px;" onclick="window.App2D.guideToMap('longgong_palace', '东海龙宫')">
                   前往龙宫大殿
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -7988,12 +11161,207 @@ class GameApp2D {
     }
   }
 
+  getShanhai() {
+    if (!this.shanhai) this.shanhai = new window.ShanhaiSystem();
+    return this.shanhai;
+  }
+
+  hasExplorationModal() {
+    return Array.from(document.querySelectorAll('.modal-overlay, .roster-modal-overlay, .game-confirm-overlay, .profile-v3-overlay, .shanhai-pet-picker-overlay'))
+      .some(el => el.getClientRects?.().length > 0);
+  }
+
+  renderShanhaiRewards(quality) {
+    const book = this.getShanhai();
+    const count = book.counts()[quality];
+    const rewards = book.rewards().filter(r => r.quality === quality);
+    const ready = rewards.filter(r => r.unlocked && !r.claimed);
+    const next = rewards.find(r => !r.unlocked);
+    return `<div class="shanhai-rewards"><div><strong>献录赠礼 · 已收录 ${count} 种</strong>
+      <span>${next ? `下份赠礼：${next.threshold}种 · ${next.label}` : '本卷里程已全部达成'} · 只计不同物种</span></div>
+      ${ready.length ? `<div class="shanhai-reward-actions">${ready.map(r => `<button class="dialogue-opt-btn" onclick="App2D.claimShanhaiReward('${r.key}')">领取${r.threshold}种赠礼 · ${r.label}</button>`).join('')}</div>` : ''}</div>`;
+  }
+
+  renderShanhaiCollection(template) {
+    const book = this.getShanhai();
+    const isCollected = !!(book.entries && book.entries[template.id]);
+    if (isCollected) {
+      return `
+        <div class="shanhai-collection">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="shanhai-collected-badge">✅ 已收录入《山海经》· 灵韵永存</span>
+          </div>
+          <p style="margin-top:6px;">该物种已正式奉纳成篇。图鉴名称已点亮为绿色。再次招降的同种仙宠可以放心培养与出战。</p>
+        </div>
+      `;
+    }
+    const owned = (this.pets || []).filter(p => p.templateId === template.id && window.ShanhaiSystem.isCollectible(p));
+    return `
+      <div class="shanhai-collection">
+        <div class="shanhai-collection-heading">
+          <strong>${book.seen[template.id] ? '见闻待录' : '尚未遇见'} · 献录成篇</strong>
+          <button class="shanhai-collect-trigger-btn" onclick="window.App2D.openShanhaiPetPickerModal('${template.id}')">
+            📥 查看随行仙宠并献录
+          </button>
+        </div>
+        <p>献录的这一只仙宠将永久离开随行与出战阵列，转化为图鉴功德；同种其他仙宠保留。点击右侧按钮可查看并挑选当前仙宠。</p>
+        ${owned.map(p => `
+          <div class="shanhai-candidate">
+            <span>🐾 ${p.name} · Lv.${p.level} · 成长 ${p.growth || '标准'}${this.activeCombatPets?.some(a => a.instanceId === p.instanceId) ? ' · [出战中]' : ''}</span>
+            <button class="dialogue-opt-btn" onclick="window.App2D.confirmShanhaiCollection('${p.instanceId}')">选择献录</button>
+          </div>
+        `).join('') || '<div style="font-size:10.5px;color:#94a3b8;padding:4px 0;">当前随行仙宠中暂无该物种，可在野外战斗中招降。</div>'}
+      </div>
+    `;
+  }
+
+  // 打开挑选当前随行仙宠献录模态框
+  openShanhaiPetPickerModal(templateId) {
+    if (typeof document === 'undefined') return;
+    if (this.currentBattle || this.isTransitioning) {
+      window.showGameMessage('请在战斗结束、场景切换完成后献录。', 'warning');
+      return;
+    }
+    this.closeShanhaiPetPickerModal();
+
+    const template = window.GAME_DATA?.PETS?.[templateId] || Object.values(window.GAME_DATA?.PETS || {}).find(p => p.id === templateId);
+    if (!template) {
+      window.showGameMessage('未找到该物种图鉴档案！', 'warning');
+      return;
+    }
+
+    if (this.getShanhai().entries[template.id]) {
+      window.showGameMessage('该物种已收录，同种仙宠无需再次献录。', 'info');
+      return;
+    }
+    this.keysDown = {};
+    const allPlayerPets = this.pets || [];
+    const matchingPets = allPlayerPets.filter(p => p.templateId === template.id && window.ShanhaiSystem.isCollectible(p));
+    const nonMatchingPets = allPlayerPets.filter(p => !matchingPets.includes(p));
+
+    const overlay = document.createElement('div');
+    overlay.id = 'shanhai-pet-picker-modal';
+    overlay.className = 'shanhai-pet-picker-overlay';
+    overlay.onclick = (e) => {
+      if (e.target === overlay) this.closeShanhaiPetPickerModal();
+    };
+
+    overlay.innerHTML = `
+      <div class="shanhai-pet-picker-box" onclick="event.stopPropagation()">
+        <div class="shanhai-picker-header">
+          <span class="shanhai-picker-title">📥 挑选随行仙宠 · 献录【${template.name}】</span>
+          <button class="modal-close-btn" onclick="window.App2D.closeShanhaiPetPickerModal()">✕</button>
+        </div>
+        <div style="padding:10px 14px 4px 14px;font-size:11px;color:#cbd5e1;line-height:1.5;">
+          当前随行仙宠共 <strong>${allPlayerPets.length}</strong> 只。请选择符合【<strong style="color:#ffd700;">${template.name}</strong>】物种的仙宠奉纳献录：
+        </div>
+        <div class="shanhai-picker-body">
+          ${allPlayerPets.length === 0 ? `
+            <div style="text-align:center;padding:28px 10px;color:#94a3b8;font-size:12px;">
+              <div style="font-size:26px;margin-bottom:8px;">🎒</div>
+              <div>当前随行仙宠栏中尚无任何仙宠！</div>
+            </div>
+          ` : `
+            ${matchingPets.length === 0 ? `
+              <div style="margin:4px 0 8px 0;padding:10px;background:rgba(217,119,6,0.18);border:1.2px solid #d97706;border-radius:6px;font-size:11px;color:#fde047;line-height:1.6;">
+                💡 随行仙宠中暂无【<strong>${template.name}</strong>】！<br>
+                可前往其出没场景在战斗中施展【招降】收服入队后再来献录。
+              </div>
+            ` : ''}
+
+            <!-- 匹配可献录仙宠 -->
+            ${matchingPets.map(p => {
+      const isCombat = this.activeCombatPets?.some(a => a.instanceId === p.instanceId);
+      return `
+                <div class="shanhai-candidate-card is-match">
+                  <div>
+                    <div style="color:#ffd700;font-weight:bold;font-size:12px;">
+                      🐾 ${p.name} <span style="font-size:11px;color:#fde047;">(Lv.${p.level})</span>
+                      ${isCombat ? '<span style="font-size:9.5px;color:#f59e0b;border:1px solid #f59e0b;padding:0 4px;border-radius:3px;margin-left:4px;">出战中</span>' : ''}
+                    </div>
+                    <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">
+                      气血: ${p.hp}/${p.maxHp} · 法力: ${p.mp}/${p.maxMp} · 成长率: ${p.growth || '标准'}
+                    </div>
+                  </div>
+                  <button class="shanhai-collect-trigger-btn" onclick="window.App2D.confirmShanhaiCollection('${p.instanceId}')">
+                    选择献录
+                  </button>
+                </div>
+              `;
+    }).join('')}
+
+            <!-- 不匹配的其他仙宠列表 (置灰提示不可献录) -->
+            ${nonMatchingPets.map(p => `
+              <div class="shanhai-candidate-card not-match">
+                <div>
+                  <div style="color:#94a3b8;font-size:11px;">🐾 ${p.name} (Lv.${p.level})</div>
+                  <div style="font-size:9px;color:#64748b;">物种不符 (非${template.name})</div>
+                </div>
+                <span style="font-size:10px;color:#64748b;padding:2px 6px;">种类不符</span>
+              </div>
+            `).join('')}
+          `}
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #78350f;display:flex;justify-content:space-between;align-items:center;background:rgba(20,10,5,0.6);">
+          <span style="font-size:10.5px;color:#94a3b8;">仅移除选中的这一只仙宠 · Esc 返回</span>
+          <button class="dialogue-opt-btn" onclick="window.App2D.closeShanhaiPetPickerModal()">关闭取消</button>
+        </div>
+      </div>
+    `;
+
+    const viewport = document.getElementById('game-viewport') || document.body;
+    viewport.appendChild(overlay);
+    if (window.Sound && window.Sound.playBeep) window.Sound.playBeep();
+  }
+
+  closeShanhaiPetPickerModal() {
+    const el = document.getElementById('shanhai-pet-picker-modal');
+    if (el) el.remove();
+  }
+
+  // 二次确认献录随行仙宠至山海经
+  confirmShanhaiCollection(instanceId) {
+    const pet = this.pets?.find(p => p.instanceId === instanceId);
+    if (!pet) return;
+    const template = window.GAME_DATA?.PETS?.[pet.templateId] || { name: pet.name, quality: 'ordinary' };
+    this.showConfirmModal({
+      title: '⚠️ 山海经 · 二次确认献录',
+      confirmText: '确认奉纳收录',
+      cancelText: '暂不献录',
+      content: `确定要将随行仙宠【<strong>${pet.name} (Lv.${pet.level})</strong>】奉纳献录至《山海经》吗？<br><br>` +
+        `<span style="color:#f87171;font-weight:bold;">⚠️ 郑重提醒（不可逆）：</span><br>` +
+        `1. 献录后该仙宠将<strong>永久离开队伍与背包</strong>，其等级与培养进度将化为图鉴灵韵；<br>` +
+        `2. 永久点亮山海经【<strong>${template.name}</strong>】<span style="color:#4ade80;font-weight:bold;">绿色收录</span>成就与功德里程；<br>` +
+        `3. 只录同种一只，您保留的其他同种仙宠不受影响。`,
+      onConfirm: () => {
+        const result = this.getShanhai().collect(this, instanceId);
+        window.showGameMessage(result.msg, result.success ? 'success' : 'warning');
+        if (result.success) {
+          if (window.Sound && window.Sound.playLevelUp) window.Sound.playLevelUp();
+          this.closeShanhaiPetPickerModal();
+          if (!this.saveAutoProgress().success) window.showGameMessage('献录已完成，但本地存档失败，请手动保存。', 'warning');
+          this.renderSceneRosterModal(pet.templateId, template.quality);
+        }
+      }
+    });
+  }
+
+  claimShanhaiReward(key) {
+    const result = this.getShanhai().claim(this, key);
+    window.showGameMessage(result.msg, result.success ? 'success' : 'warning');
+    if (result.success) {
+      if (!this.saveAutoProgress().success) window.showGameMessage('赠礼已领取，但本地存档失败，请手动保存。', 'warning');
+      this.renderSceneRosterModal(null, key.split('_')[0]);
+    }
+  }
+
   // 切换场景生灵名册模态框 (Tab 键或右上角快捷按钮呼出)
   toggleSceneRosterModal(forceState) {
     if (typeof document === 'undefined') return;
     const existing = document.getElementById('scene-roster-modal');
     if (existing) {
       if (forceState === true) return;
+      this.closeShanhaiPetPickerModal();
       existing.remove();
       if (window.Sound && window.Sound.playBeep) window.Sound.playBeep();
       return;
@@ -8004,8 +11372,8 @@ class GameApp2D {
     if (window.Sound && window.Sound.playBeep) window.Sound.playBeep();
   }
 
-  // 渲染场景生灵名册 (NPC 排在上面，野怪排在下面，同种野怪严格去重且显示等级，点击展开详细属性并可寻路)
-  renderSceneRosterModal(selectedId = null) {
+  // 渲染场景生灵名册与三界生灵图鉴 (支持 本地生灵 / 普通野怪 / 散仙名册 / 金仙圣兽 标签切换)
+  renderSceneRosterModal(selectedId = null, tab = null) {
     if (typeof document === 'undefined') return;
     let modal = document.getElementById('scene-roster-modal');
     if (!modal) {
@@ -8018,6 +11386,11 @@ class GameApp2D {
       const viewport = document.getElementById('game-viewport') || document.body;
       viewport.appendChild(modal);
     }
+
+    const previousTab = this._currentRosterTab || 'scene';
+    const previousListScroll = modal.querySelector('.roster-list-panel')?.scrollTop || 0;
+    if (tab) this._currentRosterTab = tab;
+    const currentTab = this._currentRosterTab || 'scene'; // 'scene' | 'ordinary' | 'sanxian' | 'jinxian'
 
     const mapData = window.GAME_DATA?.MAPS_2D?.[this.currentMapId] || { name: '当前圣境', region: '三界' };
     const npcs = this.npcs || [];
@@ -8039,44 +11412,77 @@ class GameApp2D {
       }
     }
 
+    // 全局宠物与野怪名册图鉴数据（按品质筛选）
+    const book = this.getShanhai();
+    for (const pet of this.pets || []) book.observe(pet);
+    const allPets = Object.values(window.GAME_DATA?.PETS || {});
+    const codexMobs = allPets.filter(p => p.quality === currentTab);
+
     // 确定当前选中的生灵
     let selectedType = 'npc';
     let selectedObj = null;
 
-    if (selectedId) {
-      const foundNpc = npcs.find(n => n.id === selectedId);
-      if (foundNpc) {
-        selectedType = 'npc';
-        selectedObj = foundNpc;
-      } else {
-        const foundMob = uniqueMonsters.find(um => um.key === selectedId || um.instance.id === selectedId);
-        if (foundMob) {
-          selectedType = 'monster';
-          selectedObj = foundMob;
+    if (currentTab === 'scene') {
+      if (selectedId) {
+        const foundNpc = npcs.find(n => n.id === selectedId);
+        if (foundNpc) {
+          selectedType = 'npc';
+          selectedObj = foundNpc;
+        } else {
+          const foundMob = uniqueMonsters.find(um => um.key === selectedId || um.instance.id === selectedId);
+          if (foundMob) {
+            selectedType = 'monster';
+            selectedObj = foundMob;
+          }
         }
+      }
+
+      if (!selectedObj) {
+        if (npcs.length > 0) {
+          selectedType = 'npc';
+          selectedObj = npcs[0];
+        } else if (uniqueMonsters.length > 0) {
+          selectedType = 'monster';
+          selectedObj = uniqueMonsters[0];
+        }
+      }
+    } else {
+      // 图鉴标签页
+      selectedType = 'pet_codex';
+      if (selectedId) {
+        selectedObj = codexMobs.find(p => p.id === selectedId) || null;
+      }
+      if (!selectedObj && codexMobs.length > 0) {
+        selectedObj = codexMobs[0];
       }
     }
 
-    if (!selectedObj) {
-      if (npcs.length > 0) {
-        selectedType = 'npc';
-        selectedObj = npcs[0];
-      } else if (uniqueMonsters.length > 0) {
-        selectedType = 'monster';
-        selectedObj = uniqueMonsters[0];
-      }
-    }
+    const tabConfig = {
+      scene: { title: '当前场景万灵名册 · 任务探寻', tag: `🏯 ${mapData.name} (${mapData.region || '大唐'})` },
+      ordinary: { title: '山海经 · 凡兽卷', tag: '🐾 总体成长率 0.70 ~ 0.97' },
+      sanxian: { title: '山海经 · 散仙卷', tag: '🌟 总体成长率 0.87 ~ 1.08' },
+      jinxian: { title: '山海经 · 金仙卷', tag: '👑 总体成长率 0.97 ~ 1.18' }
+    };
+    const curTabInfo = tabConfig[currentTab] || tabConfig.scene;
+
+    const elemColors = {
+      gold: '#fbbf24',
+      wood: '#4ade80',
+      water: '#38bdf8',
+      fire: '#f87171',
+      earth: '#f59e0b'
+    };
 
     // 构建生灵与场景任务万象名册 HTML
     modal.innerHTML = `
-      <div class="roster-modal-box" onclick="event.stopPropagation()">
+      <div class="roster-modal-box ${currentTab !== 'scene' ? 'is-shanhai' : ''}" onclick="event.stopPropagation()">
         <!-- 顶栏双龙金匾 -->
         <div class="roster-dragon-header">
           <div class="roster-header-left">
             <span class="roster-dragon-crest">🐉</span>
             <div class="roster-header-title-box">
-              <span class="roster-header-main-title">当前场景万灵名册 · 任务探寻</span>
-              <span class="roster-scene-tag">🏯 ${mapData.name} (${mapData.region || '大唐'})</span>
+              <span class="roster-header-main-title">${curTabInfo.title}</span>
+              <span class="roster-scene-tag">${curTabInfo.tag}</span>
             </div>
           </div>
           <div class="roster-header-right">
@@ -8085,61 +11491,121 @@ class GameApp2D {
           </div>
         </div>
 
+        <!-- 标签栏导航 (本场景生灵 / 普通野怪 / 散仙名册 / 金仙圣兽) -->
+        <div class="roster-tabs" style="display:flex;background:#18110a;border-bottom:1.5px solid #78350f;padding:4px 8px;gap:6px;overflow-x:auto;">
+          <button class="dialogue-opt-btn" onclick="window.App2D.renderSceneRosterModal(null, 'scene')"
+            style="padding:3px 10px;font-size:11px;${currentTab === 'scene' ? 'background:#b45309;color:#fff;border-color:#f59e0b;font-weight:bold;' : 'opacity:0.75;'}">
+            📌 本地
+          </button>
+          <button class="dialogue-opt-btn" onclick="window.App2D.renderSceneRosterModal(null, 'ordinary')"
+            style="padding:3px 10px;font-size:11px;${currentTab === 'ordinary' ? 'background:#b45309;color:#fff;border-color:#f59e0b;font-weight:bold;' : 'opacity:0.75;'}">
+            🐾 凡兽卷
+          </button>
+          <button class="dialogue-opt-btn" onclick="window.App2D.renderSceneRosterModal(null, 'sanxian')"
+            style="padding:3px 10px;font-size:11px;${currentTab === 'sanxian' ? 'background:#b45309;color:#fff;border-color:#f59e0b;font-weight:bold;' : 'opacity:0.75;'}">
+            🌟 散仙卷
+          </button>
+          <button class="dialogue-opt-btn" onclick="window.App2D.renderSceneRosterModal(null, 'jinxian')"
+            style="padding:3px 10px;font-size:11px;${currentTab === 'jinxian' ? 'background:#b45309;color:#fff;border-color:#f59e0b;font-weight:bold;' : 'opacity:0.75;'}">
+            👑 金仙卷
+          </button>
+        </div>
+
+        ${currentTab !== 'scene' ? this.renderShanhaiRewards(currentTab) : ''}
         <!-- 主体：左侧名录 + 右侧生灵详案 -->
         <div class="roster-main-body">
           <!-- 左侧生灵两级列表 (固定宽 300px，自适应平滑滚动) -->
           <div class="roster-list-panel">
-            <!-- 1. NPC 任务仙民分组 -->
-            <div class="roster-group-title">
-              <span class="roster-group-icon">🏛️</span>
-              <span class="roster-group-name">场景仙民 / NPC (${npcs.length}位)</span>
-            </div>
-            <div class="roster-items-column">
-              ${npcs.length === 0 ? `<div class="roster-empty-tip">当前场景暂无往来仙民</div>` : npcs.map(n => {
-                const isSelected = (selectedType === 'npc' && selectedObj && selectedObj.id === n.id);
-                const roleId = window.Dialogue ? window.Dialogue.inferRoleId(n.name, n.title) : 'shaoxia';
-                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 32) : '👤';
-                const hasQuest = (n.questStatus === 'available');
-                return `
-                  <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${n.id}')">
-                    <div class="roster-item-avatar-frame">${portraitSvg}</div>
-                    <div class="roster-item-info">
-                      <div class="roster-item-title-row">
-                        <span class="roster-item-name-text">${n.name}</span>
-                        ${hasQuest ? '<span class="roster-quest-pulse-tag">🌟 任务</span>' : ''}
+            ${currentTab === 'scene' ? `
+              <!-- 1. NPC 任务仙民分组 -->
+              <div class="roster-group-title">
+                <span class="roster-group-icon">🏛️</span>
+                <span class="roster-group-name">场景仙民 / NPC (${npcs.length}位)</span>
+              </div>
+              <div class="roster-items-column">
+                ${npcs.length === 0 ? `<div class="roster-empty-tip">当前场景暂无往来仙民</div>` : npcs.map(n => {
+      const isSelected = (selectedType === 'npc' && selectedObj && selectedObj.id === n.id);
+      const roleId = window.Dialogue ? window.Dialogue.inferRoleId(n.name, n.title) : 'shaoxia';
+      const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 32) : '👤';
+      const hasQuest = (n.questStatus === 'available');
+      return `
+                    <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${n.id}', 'scene')">
+                      <div class="roster-item-avatar-frame">${portraitSvg}</div>
+                      <div class="roster-item-info">
+                        <div class="roster-item-title-row">
+                          <span class="roster-item-name-text">${n.name}</span>
+                          ${hasQuest ? '<span class="roster-quest-pulse-tag">🌟 任务</span>' : ''}
+                        </div>
+                        <div class="roster-item-desc-text">${n.title || '驻留仙民'} · [${Math.round(n.x / 32)}, ${Math.round(n.y / 32)}]</div>
                       </div>
-                      <div class="roster-item-desc-text">${n.title || '驻留仙民'} · [${Math.round(n.x/32)}, ${Math.round(n.y/32)}]</div>
                     </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
+                  `;
+    }).join('')}
+              </div>
 
-            <!-- 2. 野怪异兽分组 (每种严格只展示一个) -->
-            <div class="roster-group-title" style="margin-top:12px;">
-              <span class="roster-group-icon">🐾</span>
-              <span class="roster-group-name">出没异兽 / 野怪 (${uniqueMonsters.length}种)</span>
-            </div>
-            <div class="roster-items-column">
-              ${uniqueMonsters.length === 0 ? `<div class="roster-empty-tip">当前场景太平安谧，无恶煞出没</div>` : uniqueMonsters.map(um => {
-                const m = um.instance;
-                const isSelected = (selectedType === 'monster' && selectedObj && selectedObj.key === um.key);
-                const mobType = m.appearance || (window.Character ? window.Character.inferMonsterType(um.pureName, m.id) : 'wild_wolf');
-                const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 32) : '🐺';
-                return `
-                  <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${um.key}')">
-                    <div class="roster-item-avatar-frame">${portraitSvg}</div>
-                    <div class="roster-item-info">
-                      <div class="roster-item-title-row">
-                        <span class="roster-item-name-text">${um.pureName}</span>
-                        <span class="roster-mob-level-pill">Lv.${m.level || 5}</span>
+              <!-- 2. 野怪异兽分组 (每种严格只展示一个) -->
+              <div class="roster-group-title" style="margin-top:12px;">
+                <span class="roster-group-icon">🐾</span>
+                <span class="roster-group-name">出没异兽 / 野怪 (${uniqueMonsters.length}种)</span>
+              </div>
+              <div class="roster-items-column">
+                ${uniqueMonsters.length === 0 ? `<div class="roster-empty-tip">当前场景太平安谧，无恶煞出没</div>` : uniqueMonsters.map(um => {
+      const m = um.instance;
+      const isSelected = (selectedType === 'monster' && selectedObj && selectedObj.key === um.key);
+      const mobType = m.appearance || (window.Character ? window.Character.inferMonsterType(um.pureName, m.id) : 'wild_wolf');
+      const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(mobType, 32) : '🐺';
+      return `
+                    <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${um.key}', 'scene')">
+                      <div class="roster-item-avatar-frame">${portraitSvg}</div>
+                      <div class="roster-item-info">
+                        <div class="roster-item-title-row">
+                          <span class="roster-item-name-text">${um.pureName}</span>
+                          <span class="roster-mob-level-pill">Lv.${m.level || 5}</span>
+                        </div>
+                        <div class="roster-item-desc-text">气血: ${m.hp}/${m.maxHp} · 攻击: ${m.atk}</div>
                       </div>
-                      <div class="roster-item-desc-text">气血: ${m.hp}/${m.maxHp} · 攻击: ${m.atk}</div>
                     </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
+                  `;
+    }).join('')}
+              </div>
+            ` : `
+              <!-- 图鉴模式列表 -->
+              <div class="roster-group-title">
+                <span class="roster-group-icon">${currentTab === 'jinxian' ? '👑' : (currentTab === 'sanxian' ? '🌟' : '🐾')}</span>
+                <span class="roster-group-name">全录 ${codexMobs.length} 种 · 已收录 ${book.counts()[currentTab]} 种</span>
+              </div>
+              <div class="roster-items-column">
+                ${codexMobs.length ? '' : '<div class="roster-empty-tip">书页尚空。去野外结识生灵，招降后可献录成篇。</div>'}
+                ${codexMobs.map(p => {
+      const isSelected = (selectedType === 'pet_codex' && selectedObj && selectedObj.id === p.id);
+      const elemCol = elemColors[p.element] || '#ffd700';
+      const isCollected = !!(book.entries && book.entries[p.id]);
+      const isSeen = !isCollected && !!(book.seen && book.seen[p.id]);
+      const statusClass = isCollected ? 'status-green' : (isSeen ? 'status-white' : 'status-grey');
+      const statusTagHtml = isCollected
+        ? '<span class="shanhai-status-tag tag-green">✓ 已收录</span>'
+        : (isSeen ? '<span class="shanhai-status-tag tag-white">👁️ 已遇见</span>' : '<span class="shanhai-status-tag tag-grey">❓ 未遇见</span>');
+      return `
+                    <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${p.id}', '${currentTab}')">
+                      <div class="roster-item-avatar-frame" style="display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;width:34px;height:34px;flex-shrink:0;">${window.Portraits ? window.Portraits.getPortraitSvg(p.id, 34, { noBorder: true }) : `<span style="font-size:22px;">${p.icon || '🐾'}</span>`}</div>
+                      <div class="roster-item-info">
+                        <div class="roster-item-title-row">
+                          <span class="roster-item-name-text ${statusClass}">${p.name}</span>
+                          <div style="display:flex;align-items:center;gap:3px;">
+                            ${statusTagHtml}
+                            <span style="font-size:9.5px;padding:1px 4px;border-radius:3px;border:1px solid ${elemCol};color:${elemCol};background:rgba(0,0,0,0.5);font-weight:bold;">${p.elementName || '中立'}</span>
+                          </div>
+                        </div>
+                        <div class="roster-item-desc-text shanhai-list-growth" style="display:flex;justify-content:space-between;align-items:center;">
+                          <span>成长 ${p.growthRange ? `${p.growthRange[0].toFixed(2)}~${p.growthRange[1].toFixed(2)}` : '标准'}</span>
+                          ${!isCollected ? `<button class="shanhai-collect-trigger-btn" style="padding:1px 6px;font-size:9.5px;margin-left:auto;" onclick="event.stopPropagation(); window.App2D.openShanhaiPetPickerModal('${p.id}')">📥 献录</button>` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  `;
+    }).join('')}
+              </div>
+            `}
           </div>
 
           <!-- 右侧生灵精研档案详情 (自适应弹性填充) -->
@@ -8149,6 +11615,8 @@ class GameApp2D {
         </div>
       </div>
     `;
+    const listPanel = modal.querySelector('.roster-list-panel');
+    if (listPanel && previousTab === currentTab) listPanel.scrollTop = previousListScroll;
   }
 
   // 内部辅助：渲染名册右侧详案卡片 (国风玉简极度精细排版)
@@ -8187,9 +11655,9 @@ class GameApp2D {
               <span>${hasQuest ? '🌟 核心任务机缘与交接' : '🎯 往来仙道机缘'}</span>
             </div>
             <div class="roster-block-desc">
-              ${hasQuest 
-                ? '【重要提示】当前少侠正处于此人主持的剧情因缘中！与之交谈将触发关键剧情推进、领取神装或进入全新冒险章节！' 
-                : '闲暇神游于此方天地。少侠可前往与之探讨西行秘辛、市井风物或请教天地大道。'}
+              ${hasQuest
+          ? '【重要提示】当前少侠正处于此人主持的剧情因缘中！与之交谈将触发关键剧情推进、领取神装或进入全新冒险章节！'
+          : '闲暇神游于此方天地。少侠可前往与之探讨西行秘辛、市井风物或请教天地大道。'}
             </div>
           </div>
 
@@ -8199,9 +11667,9 @@ class GameApp2D {
               <span>📖 仙家生平与三界因缘</span>
             </div>
             <div class="roster-block-desc">
-              ${npc.dialogueKey 
-                ? '西游大世中举足轻重之关键神佛仙灵，一言一行牵动九重天阙与幽冥六道。' 
-                : '常年驻留于此的世外散仙凡灵，热心指引过往少侠历练修行。'}
+              ${npc.dialogueKey
+          ? '西游大世中举足轻重之关键神佛仙灵，一言一行牵动九重天阙与幽冥六道。'
+          : '常年驻留于此的世外散仙凡灵，热心指引过往少侠历练修行。'}
             </div>
           </div>
 
@@ -8211,6 +11679,101 @@ class GameApp2D {
               🚶 一键智能寻路前往拜会
             </button>
           </div>
+        </div>
+      `;
+    } else if (type === 'pet_codex') {
+      const p = obj;
+      const elemName = p.elementName || (window.FiveElements ? window.FiveElements.NAMES[p.element] : '中立');
+      const elemColors = { gold: '#fbbf24', wood: '#4ade80', water: '#38bdf8', fire: '#f87171', earth: '#f59e0b' };
+      const elemColor = elemColors[p.element] || '#ffd700';
+      const growthRangeStr = p.growthRange ? `${p.growthRange[0].toFixed(2)} ~ ${p.growthRange[1].toFixed(2)}` : '标准成长';
+      const tierOverallStr = p.quality === 'jinxian' ? '0.97 ~ 1.18' : (p.quality === 'sanxian' ? '0.87 ~ 1.08' : '0.70 ~ 0.97');
+      const skillsStr = p.skills && p.skills.length > 0 ? p.skills.join('、') : (p.quality === 'ordinary' ? '普通物理攻击' : '10级后于神坛免费传法一次：随机门派、随机适配性别的技能');
+      const locationStr = p.habitat || (p.desc?.includes('】') ? p.desc.split('】')[1].split('，')[0] : '西行途中可偶遇');
+
+      const bounds = (window.GAME_DATA?.getPetInitialBounds)
+        ? window.GAME_DATA.getPetInitialBounds(p)
+        : [
+          { name: '📈 成长率', init: p.growthRange ? ((p.growthRange[0] + p.growthRange[1]) / 2).toFixed(2) : '0.76', range: p.growthRange ? `${p.growthRange[0].toFixed(2)} ~ ${p.growthRange[1].toFixed(2)}` : '0.70 ~ 0.85' },
+          { name: '🩸 生命值', init: 55, range: '50 ~ 71' },
+          { name: '✨ 法力值', init: 45, range: '42 ~ 68' },
+          { name: '⚔️ 攻击力', init: 22, range: '15 ~ 38' },
+          { name: '🌪️ 出手速度', init: 5, range: '2 ~ 13' }
+        ];
+
+      const captureTip = p.quality === 'jinxian'
+        ? '需持有道祖至宝【紫金红葫芦】，在对战中施展【招降】指令即可收服，收服几率约 60%。'
+        : (p.quality === 'sanxian'
+          ? '需持有仙家法宝【收仙银壶】（紫竹银葫芦），在对战中施展【招降】指令即可收服，收服几率约 70%。'
+          : '在对战中直接使用【招降】指令即可收服，成功率约 80%（建议将其气血压制在 30% 以下更易成功）。');
+
+      const book = this.getShanhai();
+      const isCollected = !!(book.entries && book.entries[p.id]);
+      const isSeen = !isCollected && !!(book.seen && book.seen[p.id]);
+      const statusClass = isCollected ? 'status-green' : (isSeen ? 'status-white' : 'status-grey');
+
+      return `
+        <div class="roster-card-content">
+          <!-- 头部肖像与名称、品质与五行 -->
+          <div class="roster-card-header">
+            <div class="roster-card-avatar-wrap" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);border:2px solid ${elemColor};border-radius:8px;position:relative;overflow:hidden;width:68px;height:68px;flex-shrink:0;">
+              ${window.Portraits ? window.Portraits.getPortraitSvg(p.id, 64, { noBorder: true }) : `<span style="font-size:42px;">${p.icon || '🐾'}</span>`}
+              <div class="dialogue-role-seal seal-${p.quality === 'jinxian' ? 'god' : (p.quality === 'sanxian' ? 'immortal' : 'demon')}">${p.qualityName}</div>
+            </div>
+            <div class="roster-card-title-wrap">
+              <div class="roster-card-name-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="roster-card-name ${statusClass}">${p.name}</span>
+                <span style="font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid ${elemColor};color:${elemColor};background:rgba(0,0,0,0.6);font-weight:bold;">
+                  【${p.qualityName} · ${elemName}行属性】
+                </span>
+                ${isCollected
+          ? '<span class="shanhai-collected-badge">✅ 已收录至《山海经》</span>'
+          : `<button class="shanhai-collect-trigger-btn" onclick="window.App2D.openShanhaiPetPickerModal('${p.id}')">📥 献录至山海经</button>`
+        }
+              </div>
+              <div class="roster-card-location" style="color:#fde047;">📍 栖息出没：${locationStr}</div>
+            </div>
+          </div>
+
+          <div class="roster-card-divider"></div>
+
+          <!-- 核心：初始属性与上下边界对照表 (两列展示) -->
+          <div class="roster-info-block" style="background:rgba(30,18,9,0.78);border-color:#b45309;padding:6px 10px;">
+            <div class="roster-block-label" style="margin-bottom:4px;">
+              <span>📊 初始属性与成长边界对照表</span>
+              <span style="font-size:10.5px;color:#cbd5e1;">品阶: ${p.qualityName} (${tierOverallStr})</span>
+            </div>
+            <table class="shanhai-stat-table">
+              <thead>
+                <tr>
+                  <th style="width:34%;text-align:left;padding-left:12px;">属性项</th>
+                  <th style="width:33%;">初始属性</th>
+                  <th style="width:33%;">上下边界</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${bounds.map(b => `
+                  <tr>
+                    <td class="shanhai-stat-name">${b.name}</td>
+                    <td class="shanhai-stat-init">${b.init}</td>
+                    <td class="shanhai-stat-range">${b.range}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 如何招降法门 -->
+          <div class="roster-info-block" style="background:rgba(25,15,8,0.7);border-color:#78350f;">
+            <div class="roster-block-label">
+              <span>📜 招降法门 (如何招降)</span>
+            </div>
+            <div class="roster-block-desc" style="font-size:11px;color:#fef08a;line-height:1.6;">
+              ${captureTip}
+            </div>
+          </div>
+
+          ${this.renderShanhaiCollection(p)}
         </div>
       `;
     } else {
@@ -8348,7 +11911,7 @@ class GameApp2D {
     this.playerData = this.playerData || {};
     this.playerData.skills = this.playerData.skills || [];
     if (this.playerData.skills.length === 0) {
-      const clsId = this.playerData.class || 'jingang';
+      const clsId = this.playerData.classId || this.playerData.class || 'jingang';
       const gender = this.playerData.gender || 'male';
       if (window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
         this.playerData.skills = window.GAME_DATA.getSkillsForClassAndGender(clsId, gender);
@@ -8359,7 +11922,7 @@ class GameApp2D {
 
   // 拜谒菩提老祖：领悟门派道法
   learnClassSkillsFromMaster() {
-    const clsId = this.playerData.class || 'jingang';
+    const clsId = this.playerData.classId || this.playerData.class || 'jingang';
     const gender = this.playerData.gender || 'male';
     if (window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
       const newSkills = window.GAME_DATA.getSkillsForClassAndGender(clsId, gender);
@@ -8379,38 +11942,20 @@ class GameApp2D {
     }
   }
 
-  // 仙宠 10 级觉醒授法
+  // 祖师授法使用实际随行仙宠库，不再访问 playerData 中不存在的仙宠字段。
   awakenPetSkillAtMaster() {
-    const activePet = this.playerData.activePet || (this.playerData.pets && this.playerData.pets[0]);
-    if (!activePet) {
-      if (window.showGameMessage) window.showGameMessage('菩提老祖温和道：“少侠身侧尚未唤出随行仙宠，请先唤出仙宠再来授业！”', 'info', 3500);
+    if (this.currentMapId !== 'changan_shendan' || this.currentBattle || this.isTransitioning) {
+      window.showGameMessage('请在长安旁神坛拜谒菩提祖师。', 'info');
       return;
     }
-    if ((activePet.level || 1) < 10) {
-      if (window.showGameMessage) window.showGameMessage(`菩提老祖抚须道：“仙宠【${activePet.name}】当前仅 Lv.${activePet.level || 1}，需待其达 Lv.10 灵智开化方可受法！”`, 'warning', 4000);
+    const eligible = (this.pets || []).filter(p => ['sanxian', 'jinxian'].includes(p.quality) &&
+      p.level >= 10 && !p.masterLessonLearned && !p.skills?.length && !p.classId);
+    if (!eligible.length) {
+      window.showGameMessage('祖师道：带未受过传法的10级散仙或金仙来，每只免费传法一次。', 'info');
       return;
     }
-
-    activePet.skills = activePet.skills || [];
-    if (!activePet.skills.some(s => s.id === 'sk_pet_tianlei' || s.name === '天雷引')) {
-      activePet.skills.push({
-        id: 'sk_pet_tianlei',
-        name: '天雷引',
-        level: 1,
-        mastery: 0,
-        maxLevel: 5,
-        icon: '⚡',
-        desc: '灵宠专属雷法！引动九霄天雷轰杀敌方单个目标，受熟练度增幅威力强盛！'
-      });
-      if (window.Sound && window.Sound.playSuccess) window.Sound.playSuccess();
-      if (window.showGameMessage) {
-        window.showGameMessage(`🌟【灵智觉醒】仙宠【${activePet.name}】得菩提老祖真传，领悟专属仙法【天雷引】！`, 'success', 5000);
-      }
-    } else {
-      if (window.showGameMessage) {
-        window.showGameMessage(`仙宠【${activePet.name}】已受老祖启智，可常在战斗中施展以积累熟练度！`, 'info', 3500);
-      }
-    }
+    this.openPetManageModal();
+    window.showGameMessage('请在仙宠面板选择要受法的仙宠；随机门派与技能均遵循其性别。', 'info');
   }
 
   // 打开【神坛·技能参悟与熟练度突破】模态框
@@ -8446,42 +11991,42 @@ class GameApp2D {
           <!-- 技能列表区 -->
           <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;">
             ${skills.map(sk => {
-              const lvl = sk.level || 1;
-              const mastery = (sk.mastery !== undefined) ? sk.mastery : (sk.proficiency || 0);
-              const isLocked = window.SkillMasteryEngine ? window.SkillMasteryEngine.isLevelLocked(lvl, mastery) : (mastery >= lvl * 5000);
-              const canUp = window.SkillMasteryEngine ? window.SkillMasteryEngine.canUpgrade(lvl, mastery) : false;
-              const minReq = window.SkillMasteryEngine ? window.SkillMasteryEngine.getMinMasteryForUpgrade(lvl) : 1000;
-              const spanMax = lvl * 5000;
-              const pct = Math.min(100, Math.floor((mastery / spanMax) * 100));
+      const lvl = sk.level || 1;
+      const mastery = (sk.mastery !== undefined) ? sk.mastery : (sk.proficiency || 0);
+      const isLocked = window.SkillMasteryEngine ? window.SkillMasteryEngine.isLevelLocked(lvl, mastery) : (mastery >= lvl * 5000);
+      const canUp = window.SkillMasteryEngine ? window.SkillMasteryEngine.canUpgrade(lvl, mastery) : false;
+      const minReq = window.SkillMasteryEngine ? window.SkillMasteryEngine.getMinMasteryForUpgrade(lvl) : 1000;
+      const spanMax = lvl * 5000;
+      const pct = Math.min(100, Math.floor((mastery / spanMax) * 100));
 
-              // 预览数值
-              let previewText = '';
-              if (sk.name === '舍生取义' || sk.id === 'sk_jg_shesheng') {
-                const c = window.SkillMasteryEngine.calculateShesheng(null, null, lvl, mastery);
-                previewText = `破甲绝杀: ${c.damage} | 自损反噬: ${c.selfDamage} | 耗蓝: ${c.costMp} (气血需>=10%)`;
-              } else if (sk.name === '雷霆万钧' || sk.id === 'sk_ym_leiting') {
-                const c = window.SkillMasteryEngine.calculateLeiting(null, null, lvl, mastery);
-                previewText = `单体法伤: ${c.damage} | 耗蓝: ${c.costMp} MP (极高魔雷)`;
-              } else if (sk.name === '封印咒' || sk.id === 'sk_xr_fengyin') {
-                const c = window.SkillMasteryEngine.calculateControlSpell('fengyin', lvl, mastery);
-                previewText = `封印硬控 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 耗蓝: ${c.costMp} MP`;
-              } else if (sk.name === '定身咒' || sk.id === 'sk_xr_dingshen') {
-                const c = window.SkillMasteryEngine.calculateControlSpell('dingshen', lvl, mastery);
-                previewText = `定身禁锢 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 受击即苏醒 | 耗蓝: ${c.costMp} MP`;
-              } else if (sk.name === '乱魂咒' || sk.id === 'sk_xr_luanhun') {
-                const c = window.SkillMasteryEngine.calculateControlSpell('luanhun', lvl, mastery);
-                previewText = `混乱内讧 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 耗蓝: ${c.costMp} MP`;
-              } else if (sk.name === '三昧真火' || sk.name === '飞沙走石') {
-                const c = window.SkillMasteryEngine.calculateGroupSpell(sk.name, null, 4, lvl, mastery);
-                previewText = `群法必中 | 目标: 1~${c.maxTargets}人 | 人均: ${c.perTargetDamage} | 耗蓝: ${c.costMp} MP`;
-              } else if (sk.name === '佛光普照' || sk.name === '如来神掌') {
-                const c = window.SkillMasteryEngine.calculateMpDrainAttack(sk.name === '如来神掌', null, null, lvl, mastery);
-                previewText = `削血: ${c.damage} | 扣蓝: ${c.mpDrain} MP | 耗蓝: ${c.costMp} MP`;
-              } else {
-                previewText = sk.desc;
-              }
+      // 预览数值
+      let previewText = '';
+      if (sk.name === '舍生取义' || sk.id === 'sk_jg_shesheng') {
+        const c = window.SkillMasteryEngine.calculateShesheng(null, null, lvl, mastery);
+        previewText = `技能绝杀: ${c.damage} | 自损反噬: ${c.selfDamage} | 耗蓝: ${c.costMp} (气血需>=10%)`;
+      } else if (sk.name === '雷霆万钧' || sk.id === 'sk_ym_leiting') {
+        const c = window.SkillMasteryEngine.calculateLeiting(null, null, lvl, mastery);
+        previewText = `单体法伤: ${c.damage} | 耗蓝: ${c.costMp} MP (极高魔雷)`;
+      } else if (sk.name === '封印咒' || sk.id === 'sk_xr_fengyin') {
+        const c = window.SkillMasteryEngine.calculateControlSpell('fengyin', lvl, mastery);
+        previewText = `封印硬控 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 耗蓝: ${c.costMp} MP`;
+      } else if (sk.name === '定身咒' || sk.id === 'sk_xr_dingshen') {
+        const c = window.SkillMasteryEngine.calculateControlSpell('dingshen', lvl, mastery);
+        previewText = `定身禁锢 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 受击即苏醒 | 耗蓝: ${c.costMp} MP`;
+      } else if (sk.name === '乱魂咒' || sk.id === 'sk_xr_luanhun') {
+        const c = window.SkillMasteryEngine.calculateControlSpell('luanhun', lvl, mastery);
+        previewText = `混乱内讧 | 命中率: ${(c.hitRate * 100).toFixed(1)}% | 耗蓝: ${c.costMp} MP`;
+      } else if (sk.name === '三昧真火' || sk.name === '飞沙走石') {
+        const c = window.SkillMasteryEngine.calculateGroupSpell(sk.name, null, 4, lvl, mastery);
+        previewText = `群法必中 | 目标: 1~${c.maxTargets}人 | 人均: ${c.perTargetDamage} | 耗蓝: ${c.costMp} MP`;
+      } else if (sk.name === '佛光普照' || sk.name === '如来神掌') {
+        const c = window.SkillMasteryEngine.calculateMpDrainAttack(sk.name === '如来神掌', null, null, lvl, mastery);
+        previewText = `削血: ${c.damage} | 扣蓝: ${c.mpDrain} MP | 耗蓝: ${c.costMp} MP`;
+      } else {
+        previewText = sk.desc;
+      }
 
-              return `
+      return `
                 <div style="background:#1a0f07;border:1.5px solid ${isLocked ? '#ff4757' : (canUp ? '#ffd700' : '#4a2c16')};border-radius:8px;padding:12px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 8px rgba(0,0,0,0.5);">
                   <div style="font-size:32px;width:52px;height:52px;background:#2d170a;border:1px solid #c59b27;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     ${sk.icon || '⚔️'}
@@ -8504,7 +12049,7 @@ class GameApp2D {
 
                     <div style="font-size:11px;color:#bdc3c7;display:flex;justify-content:space-between;">
                       <span>${previewText}</span>
-                      <span style="color:#aaa;">升Lv.${lvl+1}最低门槛: ${minReq || 25000}</span>
+                      <span style="color:#aaa;">升Lv.${lvl + 1}最低门槛: ${minReq || 25000}</span>
                     </div>
                   </div>
 
@@ -8514,7 +12059,7 @@ class GameApp2D {
                       <button disabled style="padding:6px 12px;background:#333;color:#888;border:1px solid #555;border-radius:6px;font-size:12px;">已登峰造极</button>
                     ` : (canUp ? `
                       <button onclick="window.App2D.upgradeSkillAtMaster('${sk.id}')" style="padding:6px 14px;background:linear-gradient(to bottom, #f39c12, #d35400);color:#fff;font-weight:bold;border:1px solid #ffd700;border-radius:6px;font-size:12px;cursor:pointer;box-shadow:0 0 8px rgba(243,156,18,0.6);" ${!isAtShendan ? 'title="当前未在神坛，点击将由老祖神念传道"' : ''}>
-                        🌟 老祖点化突破 (升Lv.${lvl+1})
+                        🌟 老祖点化突破 (升Lv.${lvl + 1})
                       </button>
                     ` : `
                       <button disabled style="padding:6px 12px;background:#221208;color:#777;border:1px solid #442512;border-radius:6px;font-size:11px;">
@@ -8524,7 +12069,7 @@ class GameApp2D {
                   </div>
                 </div>
               `;
-            }).join('')}
+    }).join('')}
           </div>
 
           <!-- 底栏 -->

@@ -8,6 +8,19 @@ class GameToastEngine {
   constructor() {
     this.container = null;
     this.timer = null;
+    window.addEventListener('resize', () => this.trimQueue());
+  }
+
+  trimQueue(reserved = 0) {
+    const container = this.container;
+    if (!container) return;
+    const maxItems = container.clientWidth > 0 && container.clientWidth < 400 ? 2 : 4;
+    while (container.children && container.children.length > maxItems - reserved) {
+      const oldest = container.firstElementChild || container.children[0];
+      if (!oldest) break;
+      if (oldest._dismissTimer) clearTimeout(oldest._dismissTimer);
+      oldest.remove();
+    }
   }
 
   ensureContainer() {
@@ -20,28 +33,65 @@ class GameToastEngine {
         this.container.className = 'game-toast-container';
         viewport.appendChild(this.container);
       }
+      if (window.ResizeObserver) {
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = new window.ResizeObserver(() => this.trimQueue());
+        this.resizeObserver.observe(this.container);
+      }
     }
     return this.container;
   }
 
-  // 显示提示：type 可以为 'gold' | 'success' | 'danger' | 'info'
+  // 显示提示：type 可以为 'gold' | 'success' | 'danger' | 'warning' | 'info' | 'mount' | 'peach' | 'level'
   show(text, type = 'gold', duration = 2800) {
     const container = this.ensureContainer();
 
-    const toast = document.createElement('div');
-    toast.className = `game-toast-item toast-${type}`;
+    // 智能提取正文前缀 Emoji 作为徽章图标，避免正文与图标双重堆叠
+    let icon = null;
+    let cleanText = String(text != null ? text : '').trim();
+    const emojiRegex = /^(\p{Extended_Pictographic}|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEFF]|\uD83E[\uDD00-\uDDFF]|[\u2600-\u27BF])\s*/u;
+    const match = cleanText.match(emojiRegex);
+    if (match) {
+      icon = match[1];
+      cleanText = cleanText.replace(emojiRegex, '');
+    }
 
-    let icon = '📜';
-    if (type === 'gold' || type === 'level') icon = '🌟';
-    else if (type === 'success') icon = '✨';
-    else if (type === 'danger') icon = '⚔️';
-    else if (type === 'mount') icon = '🐎';
-    else if (type === 'peach') icon = '🍑';
+    // 归一化类型与缺省图标
+    let normType = type;
+    if (type === 'error') normType = 'danger';
+    else if (type === 'warn') normType = 'warning';
+
+    if (!icon) {
+      if (normType === 'gold' || normType === 'level') icon = '🌟';
+      else if (normType === 'success') icon = '✨';
+      else if (normType === 'danger') icon = '⚔️';
+      else if (normType === 'warning') icon = '⚠️';
+      else if (normType === 'mount') icon = '🐎';
+      else if (normType === 'peach') icon = '🍑';
+      else icon = '📜';
+    }
+
+    // 1. 去重逻辑：若同内容的旧提示已在展示，先移除旧提示再展示新提示；不同内容正常保留
+    const existingItems = Array.from(container.children || []);
+    for (const item of existingItems) {
+      if (item && item.dataset && item.dataset.toastMsg === cleanText) {
+        if (item._dismissTimer) clearTimeout(item._dismissTimer);
+        item.remove();
+      }
+    }
+
+    // 窄游戏窗口保留两条；同步移除超额项，连发提示也不能堆满对白区域。
+    this.trimQueue(1);
+
+    const toast = document.createElement('div');
+    toast.className = `game-toast-item toast-${normType} toast-${type} game-toast-${normType}`;
+    toast.dataset.toastMsg = cleanText;
 
     toast.innerHTML = `
       <div class="toast-inner">
         <span class="toast-icon">${icon}</span>
-        <span class="toast-text">${text}</span>
+        <span class="toast-text">${cleanText}</span>
+        <button class="toast-close-btn" type="button" aria-label="关闭提示" title="关闭">✕</button>
       </div>
     `;
 
@@ -49,23 +99,62 @@ class GameToastEngine {
 
     // 播放提示音
     if (window.Sound) {
-      if (type === 'danger') window.Sound.playHit();
+      if (normType === 'danger') window.Sound.playHit();
       else window.Sound.playSuccess();
     }
 
     // 入场动画
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       toast.classList.add('toast-show');
-    }, 10);
+    });
 
-    // 定时淡出并移除
-    setTimeout(() => {
+    // 统一淡出并销毁逻辑
+    const dismiss = () => {
+      if (toast._dismissTimer) {
+        clearTimeout(toast._dismissTimer);
+        toast._dismissTimer = null;
+      }
       toast.classList.remove('toast-show');
       toast.classList.add('toast-hide');
       setTimeout(() => {
-        toast.remove();
-      }, 400);
-    }, duration);
+        if (toast.parentElement) toast.remove();
+      }, 280);
+    };
+
+    // 右侧叉号点击立即关闭
+    const closeBtn = toast.querySelector('.toast-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismiss();
+      });
+    }
+
+    // 悬停暂停淡出支持
+    let remainingTime = duration;
+    let startTime = Date.now();
+
+    const startDismissTimer = (ms) => {
+      startTime = Date.now();
+      remainingTime = ms;
+      toast._dismissTimer = setTimeout(() => {
+        dismiss();
+      }, ms);
+    };
+
+    toast.addEventListener('mouseenter', () => {
+      if (toast._dismissTimer) {
+        clearTimeout(toast._dismissTimer);
+        toast._dismissTimer = null;
+        remainingTime = Math.max(800, remainingTime - (Date.now() - startTime));
+      }
+    });
+
+    toast.addEventListener('mouseleave', () => {
+      startDismissTimer(remainingTime);
+    });
+
+    startDismissTimer(duration);
   }
 }
 

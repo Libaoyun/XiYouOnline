@@ -11,7 +11,7 @@ export const ITEMS = {
     type: 'consumable',
     icon: '💊',
     price: 80,
-    desc: '闯荡江湖必备的止血外伤药，使用后恢复 300 点气血。',
+    desc: '止血伤药，使用后恢复 300 点气血。',
     effect: { hp: 300 }
   },
   dahuan_dan: {
@@ -20,7 +20,7 @@ export const ITEMS = {
     type: 'consumable',
     icon: '🔴',
     price: 350,
-    desc: '名贵秘药，调理五脏六腑，使用后恢复 1200 点气血。',
+    desc: '名贵秘药，使用后恢复 1200 点气血。',
     effect: { hp: 1200 }
   },
   foshou: {
@@ -29,7 +29,7 @@ export const ITEMS = {
     type: 'consumable',
     icon: '🍃',
     price: 60,
-    desc: '蕴含清凉甘露的灵果，使用后恢复 150 点法力精力。',
+    desc: '灵果甘露，使用后恢复 150 点法力。',
     effect: { mp: 150 }
   },
   biling_dan: {
@@ -38,7 +38,7 @@ export const ITEMS = {
     type: 'consumable',
     icon: '🔵',
     price: 400,
-    desc: '道家纯阳真火炼制，使用后恢复 600 点法力。',
+    desc: '纯阳金丹，使用后恢复 600 点法力。',
     effect: { mp: 600 }
   },
   jiuzhuan_dan: {
@@ -47,7 +47,7 @@ export const ITEMS = {
     type: 'consumable',
     icon: '⭐',
     price: 2000,
-    desc: '太上老君兜率宫所出极品金丹！战斗中复活倒地目标并恢复 800 点气血。',
+    desc: '极品金丹，复活倒地目标并恢复 800 点气血。',
     effect: { revive: true, hp: 800 }
   },
   feixing_fu: {
@@ -56,7 +56,7 @@ export const ITEMS = {
     type: 'consumable',
     icon: '📜',
     price: 150,
-    desc: '仙家神符，念诵咒语可在弹指间瞬移返回繁华的【长安城】。',
+    desc: '仙家神符，使用后瞬移返回长安城。',
     effect: { teleport: 'changan' }
   },
 
@@ -67,7 +67,7 @@ export const ITEMS = {
     type: 'pet_item',
     icon: '🏺',
     price: 1500,
-    desc: '观音菩萨玉净瓶中的圣水甘露。可对召唤兽进行彻底洗髓，重置等级为0并洗练出全新极品资质与技能！',
+    desc: '观音圣水，洗髓仙宠，重置为0级并刷新资质技能。',
     effect: { washPet: true }
   },
   qianghua_shi: {
@@ -76,7 +76,7 @@ export const ITEMS = {
     type: 'forge_item',
     icon: '💎',
     price: 1000,
-    desc: '蕴含地脉精金之力的奇石，用于在长安铁匠铺对装备进行升星强化（+1 ~ +12）。',
+    desc: '地脉精金，装备升星强化（+1 ~ +12）。',
     effect: { enhance: true }
   },
   dingxing_shi: {
@@ -85,7 +85,7 @@ export const ITEMS = {
     type: 'forge_item',
     icon: '🔮',
     price: 3000,
-    desc: '古老神石，强化高星级装备时使用，可防止强化失败时发生掉级或破损！',
+    desc: '古老神石，强化时防止装备掉星或破损。',
     effect: { protect: true }
   },
 
@@ -97,7 +97,7 @@ export const ITEMS = {
     icon: '📕',
     price: 5000,
     skill: '必杀',
-    desc: '记载猛兽必杀绝技的残卷，可让召唤兽领悟【必杀】技能。'
+    desc: '魔兽残卷，领悟【必杀】技能。'
   },
   book_lianji: {
     id: 'book_lianji',
@@ -106,7 +106,7 @@ export const ITEMS = {
     icon: '📘',
     price: 8000,
     skill: '连击',
-    desc: '记载连续追击步法的神卷，可让召唤兽领悟【连击】技能。'
+    desc: '神卷步法，领悟【连击】技能。'
   },
   book_xixue: {
     id: 'book_xixue',
@@ -115,7 +115,7 @@ export const ITEMS = {
     icon: '📙',
     price: 7500,
     skill: '吸血',
-    desc: '记载修罗嗜血功法的秘籍，可让召唤兽领悟【吸血】技能。'
+    desc: '修罗功法，领悟【吸血】技能。'
   },
   book_shenyousheng: {
     id: 'book_shenyousheng',
@@ -124,7 +124,7 @@ export const ITEMS = {
     icon: '👑',
     price: 20000,
     skill: '高级神佑复生',
-    desc: '三界梦寐以求的顶级神书，死亡时有35%几率满血复活！'
+    desc: '顶级神书，领悟【高级神佑复生】。'
   },
 
   // === 装备系列 ===

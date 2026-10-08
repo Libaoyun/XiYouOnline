@@ -34,6 +34,51 @@ class Character {
     return 'hooligan';
   }
 
+  static inferMonsterElement(name, id) {
+    const template = window.GAME_DATA?.PETS?.[id] || Object.values(window.GAME_DATA?.PETS || {}).find(p => p.name === window.GAME_DATA.cleanShanhaiSpeciesName?.(name));
+    if (template?.element) return template.element;
+    const s = `${name || ''}_${id || ''}`.toLowerCase();
+    if (/野猪|wildpig|ye_zhu/.test(s)) return 'earth';
+    // 1. 木属性 (约占普通野怪 40% 及特定神魔)：树妖、猿猴、猕猴、灵蛇、猫妖、猪八戒、黄袍怪、镇元子
+    if (s.includes('tree') || s.includes('树') || s.includes('木') || s.includes('ape') || s.includes('猴') || s.includes('猿') ||
+        s.includes('snake') || s.includes('蛇') || s.includes('cat') || s.includes('猫') || s.includes('pig') || s.includes('猪') ||
+        s.includes('bajie') || s.includes('八戒') || s.includes('huangpao') || s.includes('黄袍') || s.includes('kuimu') || s.includes('奎木') ||
+        s.includes('zhenyuan') || s.includes('镇元')) {
+      return 'wood';
+    }
+    // 2. 水属性 (约占 15% 及水族神灵)：蚌、巨蚌、蟹、巨蟹、虾、龙虾、夜叉、龙、水妖、大海龟、巨蛙、银角、如意仙子
+    if (s.includes('clam') || s.includes('蚌') || s.includes('crab') || s.includes('蟹') || s.includes('shrimp') || s.includes('虾') ||
+        s.includes('lobster') || s.includes('yecha') || s.includes('夜叉') || s.includes('turtle') || s.includes('龟') || s.includes('ju_wa') ||
+        s.includes('蛙') || s.includes('dragon') || s.includes('龙') || s.includes('yinjiao') || s.includes('银角') || s.includes('ruyi') ||
+        s.includes('如意') || s.includes('water') || s.includes('水') || s.includes('shao') || s.includes('沙')) {
+      return 'water';
+    }
+    // 3. 金属性 (约占 15% 及金仙法相)：混混、恶霸、野狼、天将、白骨精、大圣、多闻天王、电母
+    if (s.includes('hooligan') || s.includes('hunhun') || s.includes('混混') || s.includes('地痞') || s.includes('恶霸') ||
+        s.includes('wolf') || s.includes('狼') || s.includes('heaven') || s.includes('天将') || s.includes('天兵') ||
+        s.includes('skeleton') || s.includes('骨') || s.includes('baigu') || s.includes('wukong') || s.includes('大圣') ||
+        s.includes('tianwang') || s.includes('天王') || s.includes('dianmu') || s.includes('电母') || s.includes('gold') || s.includes('金')) {
+      return 'gold';
+    }
+    // 4. 火属性 (约占 15% 及火系妖尊)：火雀、狐狸、九尾、雷公、红孩儿、牛魔王
+    if (s.includes('chihuo') || s.includes('火') || s.includes('niao') || s.includes('雀') || s.includes('fox') || s.includes('狐') ||
+        s.includes('leigong') || s.includes('雷公') || s.includes('honghaier') || s.includes('红孩儿') || s.includes('bull') ||
+        s.includes('niumowang') || s.includes('牛魔王') || s.includes('fire')) {
+      return 'fire';
+    }
+    // 5. 土属性 (约占 15% 及大地厚土)：硕鼠、野猪、怪熊、黑熊精、瑞兽、毒蛛、巨灵神
+    if (s.includes('rat') || s.includes('鼠') || s.includes('bear') || s.includes('熊') || s.includes('ruishou') || s.includes('瑞兽') ||
+        s.includes('spider') || s.includes('蛛') || s.includes('juling') || s.includes('巨灵') || s.includes('earth') || s.includes('土')) {
+      return 'earth';
+    }
+    // 默认保底属性 (按普通野怪木属性占大头法则)
+    return 'wood';
+  }
+
+  inferMonsterElement(name, id) {
+    return Character.inferMonsterElement(name, id);
+  }
+
   inferMonsterType(name, id) {
     return Character.inferMonsterType(name, id);
   }
@@ -237,24 +282,6 @@ class Character {
           ctx.beginPath();
           ctx.ellipse(screenX, screenY + 11, 16, 5.5, 0, 0, Math.PI * 2);
           ctx.stroke();
-
-          // 悬浮采摘提示气泡 (🍄 空格采摘)
-          const bubbleY = screenY - 26 + Math.sin(Date.now() / 180) * 2;
-          ctx.save();
-          ctx.fillStyle = 'rgba(20, 35, 20, 0.92)';
-          ctx.strokeStyle = '#4cd137';
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.roundRect(screenX - 36, bubbleY - 8, 72, 17, 8);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.font = 'bold 9.5px "Microsoft YaHei", sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#fffa65';
-          ctx.fillText('🍄 空格采摘', screenX, bubbleY + 0.5);
-          ctx.restore();
         }
       } else {
         const auraPulse = Math.sin(this.animTimer * 0.12) * 2;
@@ -272,24 +299,6 @@ class Character {
           ctx.beginPath();
           ctx.ellipse(screenX, screenY + this.height / 2 - 2, 13, 5.5, 0, 0, Math.PI * 2);
           ctx.stroke();
-
-          // 悬浮交谈提示气泡
-          const bubbleY = screenY - 42 + Math.sin(Date.now() / 180) * 2.5;
-          ctx.save();
-          ctx.fillStyle = 'rgba(25, 18, 12, 0.92)';
-          ctx.strokeStyle = '#ffd700';
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.roundRect(screenX - 35, bubbleY - 8, 70, 17, 8);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.font = 'bold 9.5px "Microsoft YaHei", sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#ffd700';
-          ctx.fillText('💬 空格交谈', screenX, bubbleY + 0.5);
-          ctx.restore();
         }
       }
     }
@@ -302,40 +311,119 @@ class Character {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    const bCfg = (typeof window !== 'undefined' && window.QUEST_BANNER_CONFIG) || {};
+    const nameFontSize = bCfg.NAME_FONT_SIZE || 13;
+    const titleFontSize = bCfg.TITLE_FONT_SIZE || 12;
+
     // 根据是否骑乘动态抬高头顶基准点
     const newFigure = this.type === 'player' || window.CreatureArt?.ids.has(this.appearance) || window.NpcArt?.ids.has(this.appearance);
     const headTopY = screenY - (this.isRiding ? 52 : newFigure ? 43 : 24);
 
-    // 4.1 任务金色感叹号指引 (悬浮于头顶最高空，带有呼吸浮动)
-    if (this.questStatus === 'available') {
-      const bobOffset = Math.sin(Date.now() / 180) * 3;
-      const questY = headTopY - 26 + bobOffset;
+    // 4.1 任务感叹号指引 (主线金色 / 支线翡翠青玉色，带有华美呼吸浮动与倒三角令符徽宝)
+    if (this.questStatus === 'available' || this.questStatus === 'side') {
+      const isSide = this.questStatus === 'side';
+      const activeBeaconTarget = window.App2D?.minimap?.getCurrentQuestTarget?.(window.App2D?.currentMapId, window.App2D?.storyPhase, window.App2D?.tilemap?.currentMap);
+      const isHandledByBeacon = !isSide && activeBeaconTarget && (activeBeaconTarget.npcId === this.id || activeBeaconTarget.name === this.name);
+      if (!isHandledByBeacon) {
+        const bSpeed = bCfg.BUBBLE_BOUNCE_SPEED || 90;
+        const bRange = bCfg.BOUNCE_RANGE !== undefined ? (bCfg.BOUNCE_RANGE * 0.75) : 3;
+        const bobOffset = Math.sin(Date.now() / bSpeed) * bRange;
+        const questY = headTopY - 28 + bobOffset;
+        const excSize = bCfg.EXCLAMATION_SIZE || 26;
 
-      // 感叹号光晕
-      ctx.fillStyle = 'rgba(255, 215, 0, 0.35)';
-      ctx.beginPath();
-      ctx.arc(screenX, questY, 10, 0, Math.PI * 2);
-      ctx.fill();
+        // 仙家祥云光华脉冲 (主线金纹 / 支线翠玉青华)
+        const pulse = (Math.sin(Date.now() / (bSpeed * 1.5)) + 1) * 0.5;
+        const glowGrad = ctx.createRadialGradient(screenX, questY - 3, 2, screenX, questY - 3, 18 + pulse * 5);
+        if (isSide) {
+          glowGrad.addColorStop(0, 'rgba(110, 245, 175, 0.90)');
+          glowGrad.addColorStop(0.5, 'rgba(16, 172, 132, 0.50)');
+          glowGrad.addColorStop(1, 'rgba(10, 100, 75, 0)');
+        } else {
+          glowGrad.addColorStop(0, 'rgba(255, 235, 120, 0.85)');
+          glowGrad.addColorStop(0.5, 'rgba(255, 180, 0, 0.45)');
+          glowGrad.addColorStop(1, 'rgba(255, 140, 0, 0)');
+        }
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(screenX, questY - 3, 18 + pulse * 5, 0, Math.PI * 2);
+        ctx.fill();
 
-      ctx.font = 'bold 15px "Microsoft YaHei", sans-serif';
-      ctx.fillStyle = '#fffa65';
-      ctx.strokeStyle = '#3d2503';
-      ctx.lineWidth = 3;
-      ctx.strokeText('！', screenX, questY);
-      ctx.fillText('！', screenX, questY);
+        // 任务倒三角令符徽宝 (几何严格对称，宽32高32黄金比例)
+        const halfW = 16;
+        const topH = 15;
+        const bottomH = 17;
+
+        ctx.beginPath();
+        ctx.moveTo(screenX, questY + bottomH);
+        ctx.lineTo(screenX + halfW, questY - topH);
+        ctx.lineTo(screenX - halfW, questY - topH);
+        ctx.closePath();
+        
+        const badgeGrad = ctx.createLinearGradient(screenX, questY - topH, screenX, questY + bottomH);
+        if (isSide) {
+          badgeGrad.addColorStop(0, 'rgba(8, 38, 28, 0.96)');
+          badgeGrad.addColorStop(0.5, 'rgba(4, 24, 18, 0.98)');
+          badgeGrad.addColorStop(1, 'rgba(6, 32, 24, 0.96)');
+        } else {
+          badgeGrad.addColorStop(0, 'rgba(52, 28, 8, 0.95)');
+          badgeGrad.addColorStop(0.5, 'rgba(25, 12, 4, 0.98)');
+          badgeGrad.addColorStop(1, 'rgba(48, 22, 6, 0.95)');
+        }
+        ctx.fillStyle = badgeGrad;
+        ctx.fill();
+        ctx.strokeStyle = isSide ? '#10ac84' : '#ffd700';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 内层流光边 (双重边框)
+        ctx.beginPath();
+        ctx.moveTo(screenX, questY + bottomH - 4);
+        ctx.lineTo(screenX + halfW - 3.5, questY - topH + 2.5);
+        ctx.lineTo(screenX - halfW + 3.5, questY - topH + 2.5);
+        ctx.closePath();
+        ctx.strokeStyle = isSide ? 'rgba(130, 255, 200, 0.65)' : 'rgba(255, 235, 120, 0.55)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 醒目立体感叹号 (主线金光 / 支线翠绿青玉光)
+        const textCenterY = questY + 1.2;
+        ctx.font = `900 ${Math.min(18, excSize)}px "Arial Black", "Microsoft YaHei", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // 阴影轮廓
+        ctx.strokeStyle = isSide ? '#041c14' : '#220e02';
+        ctx.lineWidth = 3.5;
+        ctx.strokeText('！', screenX, textCenterY);
+        
+        // 饱满流光字色
+        const textGrad = ctx.createLinearGradient(screenX, textCenterY - 10, screenX, textCenterY + 10);
+        if (isSide) {
+          textGrad.addColorStop(0, '#ffffff');
+          textGrad.addColorStop(0.35, '#85ffc7');
+          textGrad.addColorStop(1, '#00d2d3');
+        } else {
+          textGrad.addColorStop(0, '#ffffff');
+          textGrad.addColorStop(0.35, '#fffa65');
+          textGrad.addColorStop(1, '#ff9f1a');
+        }
+        ctx.fillStyle = textGrad;
+        ctx.fillText('！', screenX, textCenterY);
+      }
     }
 
     if (isMushroom) {
       // 灵芝野蕈：精致清雅的草木单行标牌，绝不叠压厚重人名黑框
       const shroomLabel = '🍄 ' + (this.name || '野生青蘑菇');
-      ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
+      ctx.font = `bold ${nameFontSize}px "Microsoft YaHei", sans-serif`;
       const mMetrics = ctx.measureText(shroomLabel);
       const mBgW = mMetrics.width + 12;
+      const mBoxH = Math.max(16, nameFontSize + 4);
       const mDrawY = headTopY + 2;
 
       ctx.fillStyle = 'rgba(18, 38, 18, 0.78)';
       ctx.beginPath();
-      ctx.roundRect(screenX - mBgW / 2, mDrawY - 7, mBgW, 14, 7);
+      ctx.roundRect(screenX - mBgW / 2, mDrawY - mBoxH / 2, mBgW, mBoxH, mBoxH / 2);
       ctx.fill();
       ctx.strokeStyle = 'rgba(76, 209, 55, 0.65)';
       ctx.lineWidth = 1;
@@ -343,46 +431,97 @@ class Character {
 
       ctx.fillStyle = '#a8ff78';
       ctx.fillText(shroomLabel, screenX, mDrawY);
-      ctx.restore();
-      return;
-    }
+    } else {
+      // 4.2 专属称号 (若有则居于姓名上方，字号统一配置为 11px)
+      let nameDrawY = headTopY - 2;
+      if (this.title) {
+        const titleY = headTopY - Math.max(16, titleFontSize + 5);
+        ctx.font = `bold ${titleFontSize}px "Microsoft YaHei", sans-serif`;
+        const titleMetrics = ctx.measureText(this.title);
+        const titleBgW = titleMetrics.width + 10;
+        const titleBoxH = Math.max(15, titleFontSize + 4);
 
-    // 4.2 专属称号 (若有则居于姓名上方)
-    let nameDrawY = headTopY - 2;
-    if (this.title) {
-      const titleY = headTopY - 15;
-      ctx.font = '10px "Microsoft YaHei", sans-serif';
-      const titleMetrics = ctx.measureText(this.title);
-      const titleBgW = titleMetrics.width + 10;
+        // 称号精美深色背景
+        ctx.fillStyle = 'rgba(20, 15, 10, 0.75)';
+        ctx.fillRect(screenX - titleBgW / 2, titleY - titleBoxH / 2, titleBgW, titleBoxH);
+        ctx.strokeStyle = 'rgba(197, 155, 39, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(screenX - titleBgW / 2, titleY - titleBoxH / 2, titleBgW, titleBoxH);
 
-      // 称号精美深色背景
-      ctx.fillStyle = 'rgba(20, 15, 10, 0.75)';
-      ctx.fillRect(screenX - titleBgW / 2, titleY - 7, titleBgW, 14);
-      ctx.strokeStyle = 'rgba(197, 155, 39, 0.6)';
+        ctx.fillStyle = '#f5cd79';
+        ctx.fillText(this.title, screenX, titleY);
+      }
+
+      // 4.3 角色/NPC/怪物 姓名 (居于头顶正上方，字号统一配置为 12px，配备半透明防遮挡底托)
+      ctx.font = `bold ${nameFontSize}px "Microsoft YaHei", sans-serif`;
+      const nameMetrics = ctx.measureText(this.name);
+      const nameBgW = nameMetrics.width + 12;
+      const nameBoxH = Math.max(16, nameFontSize + 4);
+      const nameRadius = Math.min(4, Math.round(nameBoxH / 4));
+
+      // 半透明胶囊底衬，彻底消除背景复杂导致的发虚看不清
+      ctx.fillStyle = 'rgba(12, 9, 6, 0.72)';
+      ctx.beginPath();
+      ctx.roundRect(screenX - nameBgW / 2, nameDrawY - nameBoxH / 2, nameBgW, nameBoxH, nameRadius);
+      ctx.fill();
+      ctx.strokeStyle = this.type === 'player' ? 'rgba(241, 196, 15, 0.7)' : (this.type === 'monster' ? 'rgba(255, 71, 87, 0.7)' : 'rgba(255, 255, 255, 0.3)');
       ctx.lineWidth = 1;
-      ctx.strokeRect(screenX - titleBgW / 2, titleY - 7, titleBgW, 14);
+      ctx.stroke();
 
-      ctx.fillStyle = '#f5cd79';
-      ctx.fillText(this.title, screenX, titleY);
+      // 绘制清晰姓名文本
+      ctx.fillStyle = this.type === 'player' ? '#ffeaa7' : (this.type === 'monster' ? '#ff6b81' : '#ffffff');
+      ctx.fillText(this.name, screenX, nameDrawY);
     }
 
-    // 4.3 角色/NPC/怪物 姓名 (居于头顶正上方，配备半透明防遮挡底托与清晰抗锯齿轮廓)
-    ctx.font = 'bold 11px "Microsoft YaHei", sans-serif';
-    const nameMetrics = ctx.measureText(this.name);
-    const nameBgW = nameMetrics.width + 12;
+    // 5. 交互提示气泡 (置于最高顶层绘制，高亮悬浮避开姓名与头衔，绝不重叠遮挡)
+    if (this.type === 'npc' && isPlayerNear) {
+      const bSpeed = bCfg.BUBBLE_BOUNCE_SPEED || 180;
+      const bRange = bCfg.BUBBLE_BOUNCE_RANGE !== undefined ? bCfg.BUBBLE_BOUNCE_RANGE : 2.5;
+      const bFontSize = bCfg.BUBBLE_FONT_SIZE || 11;
+      const bOffsetY = bCfg.BUBBLE_OFFSET_Y !== undefined ? bCfg.BUBBLE_OFFSET_Y : 22;
 
-    // 半透明胶囊底衬，彻底消除背景复杂导致的发虚看不清
-    ctx.fillStyle = 'rgba(12, 9, 6, 0.72)';
-    ctx.beginPath();
-    ctx.roundRect(screenX - nameBgW / 2, nameDrawY - 7, nameBgW, 15, 3);
-    ctx.fill();
-    ctx.strokeStyle = this.type === 'player' ? 'rgba(241, 196, 15, 0.7)' : (this.type === 'monster' ? 'rgba(255, 71, 87, 0.7)' : 'rgba(255, 255, 255, 0.3)');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+      if (isMushroom) {
+        // 灵芝野蕈采摘提示
+        const bubbleY = headTopY - bOffsetY + Math.sin(Date.now() / bSpeed) * bRange;
+        ctx.font = `bold ${bFontSize}px "Microsoft YaHei", sans-serif`;
+        const textW = ctx.measureText('🍄 空格采摘').width;
+        const boxW = textW + 16;
+        const boxH = Math.max(18, bFontSize + 6);
 
-    // 绘制清晰姓名文本
-    ctx.fillStyle = this.type === 'player' ? '#ffeaa7' : (this.type === 'monster' ? '#ff6b81' : '#ffffff');
-    ctx.fillText(this.name, screenX, nameDrawY);
+        ctx.fillStyle = 'rgba(20, 35, 20, 0.94)';
+        ctx.strokeStyle = '#4cd137';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(screenX - boxW / 2, bubbleY - boxH / 2, boxW, boxH, boxH / 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fffa65';
+        ctx.fillText('🍄 空格采摘', screenX, bubbleY);
+      } else {
+        // NPC 交互交谈提示 (放置在姓名/头衔最顶上方，置于顶层)
+        const topLabelY = this.title ? (headTopY - Math.max(16, titleFontSize + 5)) : (headTopY - 2);
+        const bubbleY = topLabelY - bOffsetY + Math.sin(Date.now() / bSpeed) * bRange;
+        ctx.font = `bold ${bFontSize}px "Microsoft YaHei", sans-serif`;
+        const textW = ctx.measureText('💬 空格交谈').width;
+        const boxW = textW + 16;
+        const boxH = Math.max(18, bFontSize + 6);
+
+        ctx.fillStyle = 'rgba(25, 18, 12, 0.94)';
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1.2;
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.roundRect(screenX - boxW / 2, bubbleY - boxH / 2, boxW, boxH, boxH / 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffd700';
+        ctx.fillText('💬 空格交谈', screenX, bubbleY);
+      }
+    }
 
     ctx.restore();
   }
@@ -489,6 +628,90 @@ class CharacterRenderer {
     ctx.restore();
   }
 
+  static getCustomMonsterAsset(mId) {
+    if (!mId) return null;
+    const s = String(mId).toLowerCase();
+    if (window.MonsterArtMap && window.MonsterArtMap[s]) return window.MonsterArtMap[s];
+    if (s.includes('yuanhou')) return 'assets/monsters/yuanhou_jiang.jpg';
+    if (s.includes('mihou')) return 'assets/monsters/mihou_jiang.jpg';
+    if (s.includes('kushu') || s === 'tree') return 'assets/monsters/kushu_jing.jpg';
+    if (s.includes('shuyao')) return 'assets/monsters/shuyao.svg';
+    if (s.includes('xiaohua_she') || s === 'snake') return 'assets/monsters/xiaohua_she.svg';
+    if (s.includes('sheyao')) return 'assets/monsters/sheyao.svg';
+    if (s.includes('langyao')) return 'assets/monsters/langyao.svg';
+    if (s.includes('wolf_wild') || s.includes('shanlang') || s === 'wolf') return 'assets/monsters/wolf_wild.svg';
+    return null;
+  }
+
+  static canDrawCustomMonster(mId) {
+    if (!mId) return false;
+    const s = String(mId).toLowerCase();
+    return !!(
+      (window.MonsterArtMap && window.MonsterArtMap[s]) ||
+      s.includes('yuanhou') || s.includes('mihou') ||
+      s.includes('kushu') || s.includes('shuyao') ||
+      s.includes('xiaohua_she') || s.includes('sheyao') ||
+      s.includes('langyao') || s.includes('wolf_wild') || s.includes('shanlang') ||
+      (typeof Image !== 'undefined' && (s === 'tree' || s === 'snake' || s === 'wolf'))
+    );
+  }
+
+  static drawCustomMonster(ctx, mId, by, animTimer, direction, isMoving) {
+    if (typeof Image === 'undefined') return false;
+    const assetPath = CharacterRenderer.getCustomMonsterAsset(mId);
+    if (!assetPath) return false;
+
+    if (!CharacterRenderer.customMonsterImageCache) {
+      CharacterRenderer.customMonsterImageCache = {};
+    }
+    let img = CharacterRenderer.customMonsterImageCache[assetPath];
+    if (!img) {
+      img = new Image();
+      img.src = assetPath;
+      CharacterRenderer.customMonsterImageCache[assetPath] = img;
+    }
+    if (!img.complete || img.naturalWidth === 0) {
+      return false;
+    }
+
+    ctx.save();
+    // 呼吸起伏与行走漫步微晃动
+    const walkBob = isMoving ? Math.sin(animTimer * 0.35) * 3 : 0;
+    const walkTilt = isMoving ? Math.sin(animTimer * 0.35) * 0.08 : 0;
+    ctx.translate(0, by + walkBob);
+    ctx.rotate(walkTilt);
+
+    // 朝向翻转（左行翻转，原画默认右视或微侧正向）
+    if (direction === 'left') {
+      ctx.scale(-1, 1);
+    }
+
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = assetPath.includes('jpg') ? 'rgba(255, 215, 0, 0.45)' : 'rgba(74, 222, 128, 0.4)';
+
+    if (assetPath.endsWith('.jpg')) {
+      const radius = 23;
+      ctx.beginPath();
+      ctx.arc(0, -radius - 2, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+      ctx.clip();
+      ctx.drawImage(img, -radius, -radius * 2 - 2, radius * 2, radius * 2);
+    } else {
+      const targetH = 50;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      const targetW = targetH * (aspect || 1);
+      ctx.drawImage(img, -targetW / 2, -targetH, targetW, targetH);
+    }
+    ctx.restore();
+
+    ctx.restore();
+    return true;
+  }
+
   static drawCreature(ctx, id, by, time, direction, moving) {
     window.CreatureArt.draw(ctx, id, by, time, direction, moving);
   }
@@ -531,6 +754,14 @@ class CharacterRenderer {
     const mId = window.CreatureArt?.ids.has(alias) ? alias : rawId;
 
     // 模型派发分支
+    // 0. 特别优先：五大类重塑野怪（猿猴、猕猴、树精、青蛇、狼妖）
+    if (CharacterRenderer.canDrawCustomMonster(mId)) {
+      if (CharacterRenderer.drawCustomMonster(ctx, mId, by, animTimer, direction, isMoving)) {
+        ctx.restore();
+        return;
+      }
+    }
+
     // 0. 特别绝密优先：野生青灵芝与鲜菇植物 (彻底独立，绝对不走任何人形逻辑！)
     if (window.CreatureArt?.ids.has(mId)) {
       CharacterRenderer.drawCreature(ctx, mId, by, animTimer, direction, isMoving);
@@ -636,7 +867,7 @@ class CharacterRenderer {
     // 严格排他性匹配虾兵，绝不误伤小白龙！
     } else if ((mId.includes('shrimp') || mId.includes('xiabing') || mId.includes('xia_') || mId.includes('虾') || mId.includes('lobster')) && !mId.includes('xiaobailong')) {
       CharacterRenderer.drawShrimp(ctx, by, animTimer, direction, isMoving);
-    } else if (mId.includes('wolf') || mId.includes('yelang') || mId.includes('ye_lang')) {
+    } else if (mId.includes('wolf') || mId.includes('yelang') || mId.includes('ye_lang') || mId.includes('langyao') || mId.includes('shanlang')) {
       CharacterRenderer.drawWildWolf(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('tieshan') || mId.includes('tie_shan')) {
       CharacterRenderer.drawTieShanGongZhu(ctx, by, animTimer, direction, isMoving);
@@ -659,7 +890,7 @@ class CharacterRenderer {
       CharacterRenderer.drawJuLingShen(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('chimao') || mId.includes('mahou')) {
       CharacterRenderer.drawChiMaoMaHou(ctx, by, animTimer, direction, isMoving);
-    } else if (mId.includes('stone_monkey') || mId.includes('xiaohou') || mId.includes('huaguo_monkey') || (mId.includes('monkey') && !mId.includes('wukong')) || mId.includes('ape')) {
+    } else if (mId.includes('stone_monkey') || mId.includes('xiaohou') || mId.includes('huaguo_monkey') || (mId.includes('monkey') && !mId.includes('wukong')) || mId.includes('ape') || mId.includes('yuanhou') || mId.includes('mihou')) {
       CharacterRenderer.drawStoneMonkey(ctx, by, animTimer, direction, isMoving);
     } else if (mId.includes('yecha') || mId.includes('ye_cha')) {
       CharacterRenderer.drawYeCha(ctx, by, animTimer, direction, isMoving);
@@ -683,8 +914,10 @@ class CharacterRenderer {
       CharacterRenderer.drawBaiguJing(ctx, by, animTimer, direction);
     } else if (mId.includes('hu_xianfeng') || mId.includes('huxianfeng')) {
       CharacterRenderer.drawHuXianfeng(ctx, by, animTimer, direction, isMoving);
-    } else if (mId.includes('snake') || mId.includes('qing_she') || mId.includes('baihua_she') || mId.includes('she')) {
+    } else if (mId.includes('snake') || mId.includes('qing_she') || mId.includes('baihua_she') || mId.includes('she') || mId.includes('xiaohua') || mId.includes('sheyao')) {
       CharacterRenderer.drawPetSnake(ctx, by, animTimer, direction);
+    } else if (mId.includes('tree') || mId.includes('kushu') || mId.includes('shuyao')) {
+      CharacterRenderer.drawCreature(ctx, 'tree', by, animTimer, direction, isMoving);
     } else if (mId.includes('gui') || mId.includes('turtle') || mId.includes('dahai_gui')) {
       CharacterRenderer.drawPetTurtle(ctx, by, animTimer, direction);
     } else if (mId.includes('mushroom') || mId.includes('mogu') || mId.includes('lingzhi') || mId.includes('芝')) {

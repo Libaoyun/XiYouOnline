@@ -1,0 +1,184 @@
+{
+  "dialogue": {
+    "phase": "heaven_to_water_pavilion",
+    "repeated": false,
+    "reopened": false,
+    "trialCorrect": true
+  },
+  "transition": {
+    "map": "changan_city",
+    "locked": false,
+    "overlay": "scene-transition-overlay"
+  },
+  "battle": {
+    "victory": {
+      "wins": 1,
+      "heldUntilImpact": true,
+      "closed": true,
+      "paused": false,
+      "layer": "none"
+    },
+    "defeat": {
+      "losses": 1,
+      "closed": true,
+      "paused": false,
+      "hp": 2200
+    }
+  },
+  "prologue": {
+    "phase": "liujiacun_find_mushrooms",
+    "map": "liujiacun",
+    "locked": false,
+    "paused": false,
+    "failure": null,
+    "trace": [
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_prologue"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_prologue"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_to_water_pavilion"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_pantao_start"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_pantao_start"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_pantao_start",
+        "battle": "天蓬元帅 (醉酒)"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_to_lingxiao"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_to_lingxiao"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_saved_change"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_saved_change"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_huaguoshan"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_huaguoshan"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_huaguoshan"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_huaguoshan_shuilien"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_shuilien"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_shuilien"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_shuilien",
+        "battle": "赤毛马猴 (花果山健将)"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_rescue"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_rescue"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_rescue"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_huaguoshan_rescue",
+        "battle": "征讨先锋·巨灵神"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_juling_defeated"
+      },
+      {
+        "map": "huaguoshan_shuilien",
+        "phase": "heaven_final_wukong"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_final_wukong"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_final_wukong"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_final_wukong",
+        "battle": "齐天大圣·孙悟空 (神威极境)"
+      },
+      {
+        "map": "huaguoshan",
+        "phase": "heaven_yangjian_capture"
+      },
+      {
+        "map": "tiangong_palace",
+        "phase": "heaven_tiangong_trial"
+      },
+      {
+        "map": "liujiacun",
+        "phase": "liujiacun_start"
+      },
+      {
+        "map": "liujiacun",
+        "phase": "liujiacun_find_mushrooms"
+      }
+    ]
+  },
+  "laterChapter": {
+    "closed": true,
+    "checkpoint": "bajie_post_battle",
+    "phase": "yingchou_cleared"
+  },
+  "reload": {
+    "recovered": true,
+    "phase": "gaolao_cleared",
+    "joined": true,
+    "checkpoint": null,
+    "reopened": false
+  },
+  "escape": {
+    "closed": true,
+    "paused": false,
+    "rewards": 0,
+    "cooldown": true
+  },
+  "keyboard": {
+    "phase": "heaven_to_water_pavilion",
+    "reopened": false
+  },
+  "errors": []
+}

@@ -3600,8 +3600,8 @@ window.GAME_DATA.MAPS_2D = {
         "id": "npc_pantao_tudi",
         "name": "蟠桃园土地",
         "title": "【灵根守奉仙官】",
-        "x": 512,
-        "y": 384,
+        "x": 608,
+        "y": 800,
         "appearance": "tudi_gong",
         "icon": "🍑",
         "dialogueKey": "pantao_tudi_talk"
@@ -3616,14 +3616,6 @@ window.GAME_DATA.MAPS_2D = {
         "targetX": 1120,
         "targetY": 448,
         "name": "御马监"
-      },
-      {
-        "x": 1152,
-        "y": 448,
-        "targetMap": "tiangong_palace",
-        "targetX": 64,
-        "targetY": 448,
-        "name": "南天门"
       }
     ]
   },
@@ -4789,7 +4781,8 @@ window.GAME_DATA.MAPS_2D = {
         "y": 416,
         "appearance": "tudi_gong",
         "icon": "🌿",
-        "dialogueKey": "liujia_tudi_talk"
+        "dialogueKey": "liujia_tudi_talk",
+        "isSideQuest": true
       },
       {
         "id": "prop_mushroom_1",
@@ -4841,10 +4834,10 @@ window.GAME_DATA.MAPS_2D = {
         "x": 672,
         "y": 288,
         "level": 2,
-        "hp": 90,
-        "maxHp": 90,
-        "atk": 20,
-        "def": 10,
+        "hp": 120,
+        "maxHp": 120,
+        "atk": 32,
+        "def": 12,
         "spd": 24,
         "skills": [
           "撕咬"
@@ -4859,10 +4852,10 @@ window.GAME_DATA.MAPS_2D = {
         "x": 576,
         "y": 704,
         "level": 3,
-        "hp": 110,
-        "maxHp": 110,
-        "atk": 24,
-        "def": 12,
+        "hp": 140,
+        "maxHp": 140,
+        "atk": 36,
+        "def": 14,
         "spd": 26,
         "skills": [
           "撕咬",
@@ -4878,10 +4871,10 @@ window.GAME_DATA.MAPS_2D = {
         "x": 160,
         "y": 608,
         "level": 2,
-        "hp": 95,
-        "maxHp": 95,
-        "atk": 22,
-        "def": 11,
+        "hp": 120,
+        "maxHp": 120,
+        "atk": 32,
+        "def": 12,
         "spd": 25,
         "skills": [
           "撕咬"
@@ -4896,10 +4889,10 @@ window.GAME_DATA.MAPS_2D = {
         "x": 1024,
         "y": 640,
         "level": 3,
-        "hp": 105,
-        "maxHp": 105,
-        "atk": 23,
-        "def": 11,
+        "hp": 140,
+        "maxHp": 140,
+        "atk": 36,
+        "def": 14,
         "spd": 25,
         "skills": [
           "撕咬"
@@ -6685,7 +6678,7 @@ window.GAME_DATA.MAPS_2D = {
       },
       {
         "id": "npc_changan_scholar",
-        "name": "杜子美",
+        "name": "杜书生",
         "title": "【游方书生】",
         "x": 640,
         "y": 320,
@@ -44989,7 +44982,7 @@ window.GAME_DATA.MAPS_2D = {
       {
         "id": "npc_puti_laozu",
         "name": "菩提老祖",
-        "title": "【万法之宗·太上道祖】",
+        "title": "【方寸传道·万法之宗】",
         "x": 608,
         "y": 320,
         "appearance": "puti_zushi",

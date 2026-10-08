@@ -2,7 +2,9 @@
 
 > **版本**：v2.0 (官方正统全量扩充案)  
 > **数据来源**：手游之家《汉风西游》官方百科、FAQ与道具系统全解  
-> **归档路径**：`d:\Extends\Antigravity_proj\maopao\rules\items.md`
+> **归档路径**：项目根目录 `rules/items.md`
+
+> **2026-10-03 单机实现补充**：含 `maxHpBonus`／`maxMpBonus` 的属性丹写入 `Player.storyBonuses`，服用后提升对应上限并补满对应资源；升级、换装重算和自动存档读档保留加成。历史已消耗丹药无法可靠推断，不自动补发。普通 `addItem` 仍可能部分入包；一次性奖励应使用 `addItemsAtomically([{itemId,count}])` 整批提交，购物／锻造等其他调用待单独迁移。
 
 ---
 

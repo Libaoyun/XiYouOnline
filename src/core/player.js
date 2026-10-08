@@ -89,7 +89,7 @@ export class Player {
     let baseMaxHp = Math.floor(100 + this.level * 30 + this.attributes.con * w.hp + this.attributes.sta * 2);
     let baseMaxMp = Math.floor(80 + this.level * 15 + this.attributes.int * w.mp);
     let baseAtk = Math.floor(25 + this.level * 8 + this.attributes.str * w.atk);
-    let baseDef = Math.floor(20 + this.level * 6 + this.attributes.sta * w.def + this.attributes.con * 0.3);
+    let baseDef = Math.floor(6 + this.level * 3 + this.attributes.sta * (w.def || 1.5) * 0.8 + this.attributes.con * 0.2);
     let baseMatk = Math.floor(20 + this.level * 7 + this.attributes.int * w.matk);
     let baseMdef = Math.floor(15 + this.level * 5 + this.attributes.int * 1.2 + this.attributes.sta * 0.8);
     let baseSpd = Math.floor(10 + this.level * 2 + this.attributes.dex * w.spd);

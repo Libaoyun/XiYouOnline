@@ -14,6 +14,9 @@ class Player {
     this.bankSilver = initData.bankSilver || 0; // 钱庄存款
     this.homeResidence = initData.homeResidence || null; // 定居地（如 'changan_city'）
     this.appearance = initData.appearance || 'heaven_general';
+    this.storyRewards = { ...(initData.storyRewards || {}) };
+    this.storyBonuses = { hp: 0, mp: 0, def: 0, mdef: 0, ...(initData.storyBonuses || {}) };
+    this.sideQuests = initData.sideQuests || {};
 
     // 五维自由潜能加点
     this.potentialPoints = initData.potentialPoints || 0;
@@ -65,7 +68,37 @@ class Player {
     this.fatalRate = initData.fatalRate || 0.02; // 致命一击率 按生命上限真伤无视防御抗性
     this.dodgeRate = initData.dodgeRate || 0.05; // 闪避率 完全规避伤害并打断连击
 
+    // 门派专属与通用技能集合 (严格遵守性别专属排他性与佛光/如来不可共存法则)
+    this.skills = initData.skills ? Player.sanitizeSkills(initData.skills, this.gender) : [];
+    if (this.skills.length === 0 && window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
+      this.skills = window.GAME_DATA.getSkillsForClassAndGender(this.classId, this.gender);
+    }
+
     this.recalculateStats(true);
+  }
+
+  // 本地一次性奖励：物品整批入包成功后再提交成长和领取标记。
+  // 调用者只在成功后推进剧情并保存；此接口不承担磁盘存档事务。
+  claimStoryReward(key, reward = {}, inventory = null) {
+    if (typeof key !== 'string' || !/^[a-z][a-z0-9_]*$/.test(key) || !reward || typeof reward !== 'object') {
+      return { success: false, reason: 'invalid_reward' };
+    }
+    if (this.storyRewards[key] === true) return { success: false, reason: 'already_claimed' };
+    const { items = [], silver = 0, exp = 0, bonuses = {}, healToFull = false } = reward;
+    if (![silver, exp].every(n => Number.isSafeInteger(n) && n >= 0) || !bonuses ||
+      Object.entries(bonuses).some(([attr, n]) => !['hp', 'mp', 'def', 'mdef'].includes(attr) || !Number.isSafeInteger(n) || n < 0) ||
+      !Array.isArray(items)) return { success: false, reason: 'invalid_reward' };
+    if (items.length) {
+      if (!inventory) return { success: false, reason: 'inventory_unavailable' };
+      const result = inventory.addItemsAtomically(items);
+      if (!result.success) return result;
+    }
+    for (const [attr, amount] of Object.entries(bonuses)) this.storyBonuses[attr] += amount;
+    this.silver += silver;
+    this.gainExp(exp);
+    if (healToFull) this.recalculateStats(true);
+    this.storyRewards[key] = true;
+    return { success: true };
   }
 
   // 仙宠最大可出战数量 (20、30、40级分别解锁 1、2、3)
@@ -86,15 +119,24 @@ class Player {
     while (this.exp >= this.getNextLevelExp()) {
       this.exp -= this.getNextLevelExp();
       this.level += 1;
-      this.potentialPoints += 5;
+      this.potentialPoints += 4;
       this.attributes.con += 1;
       this.attributes.str += 1;
       this.attributes.int += 1;
       this.attributes.dex += 1;
       this.attributes.sta += 1;
+      const silverReward = this.level * 100;
+      this.silver = (this.silver || 0) + silverReward;
       levelUpEvents.push(this.level);
     }
     this.recalculateStats(levelUpEvents.length > 0);
+    if (levelUpEvents.length > 0) {
+      if (typeof window !== 'undefined' && window.App2D && typeof window.App2D.showLevelUpModal === 'function') {
+        const totalSilver = levelUpEvents.reduce((s, lvl) => s + lvl * 100, 0);
+        const totalPoints = levelUpEvents.length * 4;
+        window.App2D.showLevelUpModal(this.level, totalSilver, totalPoints);
+      }
+    }
     return levelUpEvents;
   }
 
@@ -104,9 +146,9 @@ class Player {
     const w = (classData && classData.attrWeights) || { hp: 14, atk: 2.0, def: 2.0, spd: 1.0, mp: 8, matk: 1.0 };
 
     let baseMaxHp = Math.floor(120 + this.level * 32 + this.attributes.con * w.hp + this.attributes.sta * 2);
-    let baseMaxMp = Math.floor(90 + this.level * 16 + this.attributes.int * w.mp);
+    let baseMaxMp = Math.floor(240 + this.level * 22 + this.attributes.int * w.mp);
     let baseAtk = Math.floor(28 + this.level * 8 + this.attributes.str * w.atk);
-    let baseDef = Math.floor(22 + this.level * 6 + this.attributes.sta * w.def + this.attributes.con * 0.3);
+    let baseDef = Math.floor(6 + this.level * 3 + this.attributes.sta * (w.def || 1.5) * 0.8 + this.attributes.con * 0.2);
     let baseMatk = Math.floor(22 + this.level * 7 + this.attributes.int * w.matk);
     let baseMdef = Math.floor(16 + this.level * 5 + this.attributes.int * 1.2 + this.attributes.sta * 0.8);
     let baseSpd = Math.floor(12 + this.level * 2 + this.attributes.dex * w.spd);
@@ -202,13 +244,33 @@ class Player {
       baseAtk += mountBonus.atk;
     }
 
-    this.maxHp = baseMaxHp;
-    this.maxMp = baseMaxMp;
+    this.maxHp = baseMaxHp + this.storyBonuses.hp;
+    this.maxMp = baseMaxMp + this.storyBonuses.mp;
     this.atk = baseAtk;
-    this.def = baseDef;
+    this.def = baseDef + this.storyBonuses.def;
     this.matk = baseMatk;
-    this.mdef = baseMdef;
+    this.mdef = baseMdef + this.storyBonuses.mdef;
     this.spd = baseSpd;
+
+    // 挂链装备决定玩家五行属性与加成 (玩家需装备挂链才会有属性，附加法力值与抗性/暴击/致命/反震/反击)
+    if (this.equipment && this.equipment.necklace) {
+      const nkItem = (window.GAME_DATA?.ITEMS && window.GAME_DATA.ITEMS[this.equipment.necklace.itemId]) || this.equipment.necklace;
+      this.element = nkItem.element || null;
+      if (nkItem.resists) {
+        if (nkItem.resists.phy) this.resistances.res_phy += (nkItem.resists.phy > 1 ? nkItem.resists.phy / 100 : nkItem.resists.phy);
+        if (nkItem.resists.shesheng) this.resistances.res_shesheng += (nkItem.resists.shesheng > 1 ? nkItem.resists.shesheng / 100 : nkItem.resists.shesheng);
+        if (nkItem.resists.leiting) this.resistances.res_leiting += (nkItem.resists.leiting > 1 ? nkItem.resists.leiting / 100 : nkItem.resists.leiting);
+        if (nkItem.resists.fengyin) this.resistances.res_fengyin += (nkItem.resists.fengyin > 1 ? nkItem.resists.fengyin / 100 : nkItem.resists.fengyin);
+      }
+      if (nkItem.critRate) baseCritRate += nkItem.critRate;
+      if (nkItem.fatalRate) baseFatalRate += nkItem.fatalRate;
+      this.counterShockRate = (nkItem.counterShockRate || 0);
+      this.counterAttackRate = (nkItem.counterAttackRate || 0);
+    } else {
+      this.element = null;
+      this.counterShockRate = 0;
+      this.counterAttackRate = 0;
+    }
 
     this.critRate = Math.min(0.85, Number(baseCritRate.toFixed(3)));
     this.comboRate = Math.min(0.75, Number(baseComboRate.toFixed(3)));
@@ -248,16 +310,67 @@ class Player {
     return oldEquip;
   }
 
+  /**
+   * 角色技能性别专属排他性过滤法则：
+   * 1. 金刚门派：男专属【佛光普照】，女专属【如来神掌】，同一角色严禁同时拥有二者，仅保留对应性别技能
+   * 2. 妖魔门派：女职业独有【万毒攻心】，男专属【雷霆万钧】
+   * 3. 仙人门派：男专属【乱魂咒】，女专属【封印咒】
+   */
+  static sanitizeSkills(skills = [], gender = 'male') {
+    const g = (gender === 'female') ? 'female' : 'male';
+    let list = (skills || []).filter(s => {
+      if (!s) return false;
+      const name = s.name || s.id || '';
+      const id = s.id || '';
+      if (g === 'female') {
+        if (name === '佛光普照' || id === 'sk_jg_foguang') return false;
+        if (name === '雷霆万钧' || id === 'sk_ym_leiting') return false;
+        if (name === '乱魂咒' || id === 'sk_xr_luanhun') return false;
+      } else {
+        if (name === '如来神掌' || id === 'sk_jg_ruxiang') return false;
+        if (name === '万毒攻心' || id === 'sk_ym_wandu') return false;
+        if (name === '封印咒' || id === 'sk_xr_fengyin') return false;
+      }
+      return true;
+    });
+
+    // 确保同一角色严格只能保留【佛光普照】或【如来神掌】其中一个
+    const hasFoguang = list.some(s => (s.name === '佛光普照' || s.id === 'sk_jg_foguang'));
+    const hasRuxiang = list.some(s => (s.name === '如来神掌' || s.id === 'sk_jg_ruxiang'));
+    if (hasFoguang && hasRuxiang) {
+      list = list.filter(s => g === 'female'
+        ? (s.name !== '佛光普照' && s.id !== 'sk_jg_foguang')
+        : (s.name !== '如来神掌' && s.id !== 'sk_jg_ruxiang'));
+    }
+    return list;
+  }
+
   getSkills() {
-    const classData = window.GAME_DATA.CLASSES[this.classId];
-    if (!classData || !classData.skills) return [];
-    const skillList = Array.isArray(classData.skills) ? classData.skills : (classData.skills[this.gender] || classData.skills.male || []);
-    return skillList.filter(s => this.level >= (s.levelReq || 1));
+    const g = (this.gender === 'female') ? 'female' : 'male';
+    let rawSkills = [];
+    if (this.skills && Array.isArray(this.skills) && this.skills.length > 0) {
+      rawSkills = this.skills;
+    } else {
+      const classData = window.GAME_DATA?.CLASSES?.[this.classId];
+      if (classData && classData.skills) {
+        rawSkills = Array.isArray(classData.skills) ? classData.skills : (classData.skills[this.gender] || classData.skills.male || []);
+      }
+    }
+
+    const sanitized = Player.sanitizeSkills(rawSkills, this.gender);
+    return sanitized.filter(s => {
+      const matchGender = !s.genderReq || s.genderReq === 'all' || s.genderReq === g;
+      const matchLevel = this.level >= (s.levelReq || 1);
+      return matchGender && matchLevel;
+    });
   }
 
   switchClass(classId) {
     if (!window.GAME_DATA.CLASSES[classId]) return { success: false, msg: '无效门派！' };
     this.classId = classId;
+    if (window.GAME_DATA && typeof window.GAME_DATA.getSkillsForClassAndGender === 'function') {
+      this.skills = window.GAME_DATA.getSkillsForClassAndGender(this.classId, this.gender);
+    }
     this.recalculateStats(false);
     const cData = window.GAME_DATA.CLASSES[classId];
     return {
@@ -268,9 +381,27 @@ class Player {
   }
 
   allocatePoints(attrName, points = 1) {
-    if (this.potentialPoints < points || points <= 0) return false;
-    if (this.attributes[attrName] === undefined) return false;
-    this.attributes[attrName] += points;
+    if (!Number.isSafeInteger(points) || !Number.isSafeInteger(this.potentialPoints) || this.potentialPoints < points || points <= 0) return false;
+    // 支持四维正统属性分配：生(气血)、法(法力)、力(攻防)、速(速度/敏捷)
+    const map = {
+      sheng: 'con',
+      fa: 'int',
+      li: 'str',
+      su: 'dex',
+      '生': 'con',
+      '法': 'int',
+      '力': 'str',
+      '速': 'dex',
+      '敏': 'dex'
+    };
+    const key = Object.hasOwn(map, attrName) ? map[attrName] : attrName;
+    if (!['con', 'int', 'str', 'dex', 'sta'].includes(key) || this.attributes[key] === undefined) return false;
+    const previous = this.attributes[key];
+    this.attributes[key] += points;
+    if (key === 'str') {
+      // 力量分配略微提升防御耐力
+      this.attributes.sta = (this.attributes.sta ?? 10) + Math.floor(this.attributes[key] * 0.4) - Math.floor(previous * 0.4);
+    }
     this.potentialPoints -= points;
     this.recalculateStats(false);
     return true;

@@ -1,0 +1,14 @@
+2026/10/04-13:25:27.096 3ed4 Creating DB D:\Extends\antigravityProj\XiYouOnline\scratch\shanhai-qa-profile\Default\Local Storage\leveldb since it was missing.
+2026/10/04-13:25:27.134 3ed4 Reusing MANIFEST D:\Extends\antigravityProj\XiYouOnline\scratch\shanhai-qa-profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/10/04-13:31:27.334 6aac Level-0 table #5: started
+2026/10/04-13:31:27.350 6aac Level-0 table #5: 22423 bytes OK
+2026/10/04-13:31:27.355 6aac Delete type=0 #3
+2026/10/04-13:37:27.327 6aac Level-0 table #7: started
+2026/10/04-13:37:27.339 6aac Level-0 table #7: 24906 bytes OK
+2026/10/04-13:37:27.343 6aac Delete type=0 #4
+2026/10/04-13:43:27.330 6aac Level-0 table #9: started
+2026/10/04-13:43:27.343 6aac Level-0 table #9: 24917 bytes OK
+2026/10/04-13:43:27.347 6aac Delete type=0 #6
+2026/10/04-13:49:27.326 6aac Level-0 table #11: started
+2026/10/04-13:49:27.332 6aac Level-0 table #11: 24912 bytes OK
+2026/10/04-13:49:27.337 6aac Delete type=0 #8

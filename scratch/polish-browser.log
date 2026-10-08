@@ -1,0 +1,45 @@
+{
+  "smoke": {
+    "lethal": {
+      "visibleBefore": true,
+      "visibleAfter": 0,
+      "reset": true
+    },
+    "canvas": {
+      "width": 828,
+      "height": 408
+    }
+  },
+  "overflow": {
+    "width": 390,
+    "scrollWidth": 390
+  },
+  "visualResults": [
+    {
+      "roleId": "changan_girl",
+      "normalized": "changan_girl",
+      "image": true
+    },
+    {
+      "roleId": "changan_scholar",
+      "normalized": "changan_scholar",
+      "image": true
+    },
+    {
+      "roleId": "baoxiang_king",
+      "normalized": "baoxiang_king",
+      "image": true
+    },
+    {
+      "roleId": "baihuaxiu",
+      "normalized": "baihuaxiu",
+      "image": true
+    },
+    {
+      "roleId": "rulai",
+      "normalized": "rulai",
+      "image": true
+    }
+  ],
+  "errors": []
+}

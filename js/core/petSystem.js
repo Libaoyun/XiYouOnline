@@ -2,14 +2,15 @@
  * 汉风西游 - 仙宠养成与转职学技核心引擎 (PetSystem 2.0)
  * 严格支持：
  * 1. 普通、散仙、金仙三大品质分层生成
- * 2. 普通无技能只普攻；散仙10级学技；金仙最高成长与属性
- * 3. 散仙与金仙一键领悟9大神技之一，自动确立职业(金刚/妖魔/神仙)并激活对应门派技能抗性+5%
+ * 2. 普通只普攻；散仙和金仙均10级后学技，每只免费一次
+ * 3. 随机门派与符合性别的技能，门派技能抗性+5%
  * 4. 独立抗性与血量持久化存储
  */
 class PetSystem {
   static createPet(petId, isWild = false, level = 0, isMutated = null) {
     const template = window.GAME_DATA.PETS[petId];
     if (!template) return null;
+    level = Number.isFinite(level) ? Math.max(0, Math.min(100, Math.floor(level))) : 0;
 
     const quality = template.quality || 'ordinary';
     const qualityName = template.qualityName || '普通';
@@ -20,7 +21,14 @@ class PetSystem {
 
     const growthMin = template.growthRange[0];
     const growthMax = template.growthRange[1];
-    let growth = Number((growthMin + Math.random() * (growthMax - growthMin)).toFixed(3));
+    let growth;
+    if (isWild) {
+      // 玩家招降后：成长率在固定区间内纯随机 roll 点，体现招降后属性与成长的随机性
+      growth = Number((growthMin + Math.random() * (growthMax - growthMin)).toFixed(3));
+    } else {
+      // 战中野怪：成长率在区间内偏大（中等偏上约75%分位），属性相对固定
+      growth = Number((growthMin + (growthMax - growthMin) * 0.75).toFixed(3));
+    }
     if (mutated) growth = Number((growth * 1.06).toFixed(3));
 
     // 资质生成
@@ -37,16 +45,45 @@ class PetSystem {
       spd: rollApt(template.aptitudes.spd)
     };
 
+    // 四维分配点数 (生-气血、法-法力、力-攻防、速-速度敏捷)
+    let shengPts, faPts, liPts, suPts;
+    if (isWild) {
+      // 招降后野怪属性不固定：四维加点趋于平均但带有随机浮动方差
+      const totalPoints = level * 8;
+      const basePer = Math.floor(totalPoints / 4);
+      const distribution = [basePer, basePer, basePer, basePer];
+      // 在四维间转移点数，低等级也守恒，不会因截断负数凭空增加潜能。
+      for (let i = 0; i < 3; i++) {
+        const delta = Math.floor((Math.random() - 0.5) * Math.min(6, basePer + 1));
+        const moved = Math.max(-distribution[i], Math.min(distribution[3], delta));
+        distribution[i] += moved;
+        distribution[3] -= moved;
+      }
+      [shengPts, faPts, liPts, suPts] = distribution;
+    } else {
+      // 未招降的标准野怪：四维均匀均衡分布
+      const per = Math.floor((level * 8) / 4);
+      shengPts = per;
+      faPts = per;
+      liPts = per;
+      suPts = per;
+    }
+
     const pet = {
-      instanceId: 'pet_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      instanceId: 'pet_' + Date.now() + '_' + (this._instanceSequence = (this._instanceSequence || 0) + 1) + '_' + Math.floor(Math.random() * 10000),
       templateId: petId,
       name: mutated ? `变异${template.name}` : template.name,
       icon: template.icon,
       quality: quality, // 'ordinary' | 'sanxian' | 'jinxian'
       qualityName: qualityName,
+      gender: template.gender || (Math.random() < 0.5 ? 'male' : 'female'),
+      masterLessonLearned: false,
+      element: template.element || 'wood',
+      elementName: template.elementName || (window.FiveElements ? window.FiveElements.NAMES[template.element || 'wood'] : '木'),
       classId: null, // 'jingang' | 'yaomo' | 'xianren'
       className: '无门派',
       isMutated: mutated,
+      isWild: isWild,
       level: level,
       exp: 0,
       loyalty: 100,
@@ -54,7 +91,8 @@ class PetSystem {
       aptitudes: aptitudes,
       skills: [], // 领悟后的技能对象数组 [{ id, name, classId, level, proficiency, icon, desc, costMp, costHpRatio }]
       passives: [], // 研习魔兽要诀领悟的被动特技列表 [{ id, name, icon, desc }]
-      // 金仙独门元神变身与天赋点
+      // 自由潜能点与金仙独门元神变身
+      potentialPoints: 0,
       talentPoints: quality === 'jinxian' ? 0 : 0,
       avatarTransformed: false,
       avatarRoundsLeft: 0,
@@ -70,13 +108,18 @@ class PetSystem {
         res_dingshen: 0,
         res_yinshen: 0
       },
-      // 基础属性点
+      // 四维正统属性分配 (生、法、力、速)
       attrs: {
-        con: 10 + level * 2,
-        str: 10 + level * 2,
-        int: 10 + level * 1,
-        dex: 10 + level * 1,
-        sta: 10 + level * 1
+        sheng: 10 + shengPts,
+        fa: 10 + faPts,
+        li: 10 + liPts,
+        su: 10 + suPts,
+        // 兼容映射
+        con: 10 + shengPts,
+        str: 10 + liPts,
+        int: 10 + faPts,
+        dex: 10 + suPts,
+        sta: 10 + Math.floor(liPts * 0.5)
       },
       hp: 0,
       maxHp: 0,
@@ -108,13 +151,32 @@ class PetSystem {
     if (pet.quality === 'sanxian') qMult = 1.15;
     if (pet.quality === 'jinxian') qMult = 1.35;
 
-    let maxHp = Math.floor((lvl * 18 + pet.attrs.con * (apt.hp / 800) * 1.6) * qMult);
-    let maxMp = Math.floor((lvl * 10 + pet.attrs.int * (apt.matk / 900) * 1.3) * qMult);
-    let atk = Math.floor((lvl * 7 + pet.attrs.str * (apt.atk / 700) * g) * qMult);
-    let def = Math.floor((lvl * 5 + pet.attrs.sta * (apt.def / 800) * g) * qMult);
-    let matk = Math.floor((lvl * 6 + pet.attrs.int * (apt.matk / 850) * g) * qMult);
-    let mdef = Math.floor((lvl * 4 + pet.attrs.sta * 0.9 + pet.attrs.int * 0.6) * qMult);
-    let spd = Math.floor((pet.attrs.dex * (apt.spd / 900) * 1.3) * qMult);
+    const shengVal = pet.attrs.sheng !== undefined ? pet.attrs.sheng : pet.attrs.con;
+    const faVal = pet.attrs.fa !== undefined ? pet.attrs.fa : pet.attrs.int;
+    const liVal = pet.attrs.li !== undefined ? pet.attrs.li : pet.attrs.str;
+    const suVal = pet.attrs.su !== undefined ? pet.attrs.su : pet.attrs.dex;
+    const staVal = pet.attrs.sta !== undefined ? pet.attrs.sta : Math.floor(liVal * 0.5);
+    const template = window.GAME_DATA.PETS[pet.templateId];
+    const aptitudeRatio = key => {
+      const range = template?.aptitudes?.[key];
+      if (!range || !Number.isFinite(apt?.[key])) return 1;
+      return Math.max(0.5, Math.min(1.5, apt[key] / ((range[0] + range[1]) / 2)));
+    };
+
+    // 核心数值法则：生-气血值、法-法力值、力-攻击&防御力、速-速度&敏捷
+    // 招降后在固定区间内纯随机roll点(普遍在400左右，很难达到450以上)；战中野怪成长偏大且属性相对固定(450左右，攻击60左右)
+    const isCombatWild = (pet.isWild === false);
+    const wildHpBonus = isCombatWild ? Math.floor(40 + lvl * 2) : 0;
+    const wildAtkBonus = isCombatWild ? Math.floor(1 + lvl * 0.3) : 0;
+
+    let maxHp = Math.floor((185 + lvl * 25 + shengVal * 11.5 * g * aptitudeRatio('hp')) * qMult) + wildHpBonus;
+    let maxMp = Math.floor((120 + lvl * 15 + faVal * 8 * g) * qMult);
+    let atk = Math.floor((18 + lvl * 5 + liVal * 2.1 * g * aptitudeRatio('atk')) * qMult) + wildAtkBonus;
+    let def = Math.floor((15 + lvl * 4 + staVal * 1.8 * g * aptitudeRatio('def')) * qMult);
+    let matk = Math.floor((15 + lvl * 4 + faVal * 2.0 * g * aptitudeRatio('matk')) * qMult);
+    let mdef = Math.floor((12 + lvl * 3 + faVal * 1.5 * g) * qMult);
+    let spd = Math.floor((15 + suVal * 1.8 * g * aptitudeRatio('spd')) * qMult);
+
     // 高级敏捷被动加成 +30 速度
     if (pet.passives && pet.passives.some(p => p.id === 'high_speed')) {
       spd += 30;
@@ -170,7 +232,7 @@ class PetSystem {
       pet.resistances.res_yinshen += 0.05;
     }
 
-    if (healToFull || pet.hp === 0) {
+    if (healToFull) {
       pet.hp = pet.maxHp;
       pet.mp = pet.maxMp;
     } else {
@@ -181,36 +243,32 @@ class PetSystem {
 
   // 散仙 / 金仙一键领悟技能与自动转职
   static learnSkill(pet) {
-    if (pet.quality === 'ordinary') {
+    if (!pet || !['sanxian', 'jinxian'].includes(pet.quality)) {
       return {
         success: false,
-        msg: `【${pet.name}】属于普通仙宠，天资平庸无法领悟门派绝技，仅能进行普通物理攻击！`
+        msg: '普通仙宠只能进行普通物理攻击，散仙与金仙才可接受祖师传法。'
       };
     }
 
-    if (pet.quality === 'sanxian' && pet.level < 10) {
+    if (pet.level < 10) {
       return {
         success: false,
-        msg: `【${pet.name}】当前等级为 Lv.${pet.level}，散仙仙宠需修行达到 10 级方可开启灵窍领悟神技！`
+        msg: `【${pet.name}】当前 Lv.${pet.level}，散仙与金仙都需达到10级方可受法。`
       };
     }
 
-    // 从九大技能中随机领悟 1 种
-    const skillPool = window.GAME_DATA.NINE_CLASS_SKILLS;
-    const chosen = skillPool[Math.floor(Math.random() * skillPool.length)];
-
-    pet.skills = [
-      {
-        id: chosen.id,
-        name: chosen.name,
-        classId: chosen.classId,
-        className: chosen.className,
-        icon: chosen.icon,
-        desc: chosen.desc,
-        level: 1,
-        proficiency: 100
-      }
-    ];
+    if (pet.masterLessonLearned || pet.skills?.length || pet.classId) {
+      return { success: false, msg: `【${pet.name}】已受过一次传法，祖师嘱咐：先把这一招练好。` };
+    }
+    const gender = pet.gender === 'female' ? 'female' : 'male';
+    const classes = ['jingang', 'yaomo', 'xianren'];
+    const classId = classes[Math.floor(Math.random() * classes.length)];
+    const skillPool = window.GAME_DATA.getSkillsForClassAndGender(classId, gender);
+    const chosen = { ...skillPool[Math.floor(Math.random() * skillPool.length)], classId,
+      className: window.GAME_DATA.CLASSES[classId].name, level: 1, mastery: 0, proficiency: 0 };
+    pet.skills = [chosen];
+    pet.gender = gender;
+    pet.masterLessonLearned = true;
 
     pet.classId = chosen.classId;
     pet.className = chosen.className;
@@ -221,29 +279,80 @@ class PetSystem {
     return {
       success: true,
       skill: chosen,
-      msg: `🎉【神技顿悟】${pet.name}灵光冲霄，一键领悟了【${chosen.className}】门派绝技【${chosen.name}】！并获得本门派技能抗性永久+5%！`
+      msg: `✨祖师传法：【${pet.name}】学会${chosen.className}·${chosen.name}，门派抗性+5%。`
     };
   }
 
   // 获得经验升级
   static gainExp(pet, amount) {
-    pet.exp += amount;
-    const reqExp = pet.level * pet.level * 50 + pet.level * 40 + 60;
+    if (!pet || !Number.isFinite(amount) || amount <= 0) return false;
+    pet.exp = (pet.exp || 0) + amount;
     let leveledUp = false;
-    while (pet.exp >= reqExp && pet.level < 100) {
+    while (pet.level < 100) {
+      const reqExp = pet.level * pet.level * 50 + pet.level * 40 + 60;
+      if (pet.exp < reqExp) break;
       pet.exp -= reqExp;
       pet.level += 1;
+      pet.potentialPoints = (pet.potentialPoints || 0) + 5;
       pet.attrs.con += 2;
       pet.attrs.str += 2;
       pet.attrs.int += 1;
       pet.attrs.dex += 1;
       pet.attrs.sta += 1;
+      if (pet.attrs.sheng !== undefined) pet.attrs.sheng += 2;
+      if (pet.attrs.li !== undefined) pet.attrs.li += 2;
+      if (pet.attrs.fa !== undefined) pet.attrs.fa += 1;
+      if (pet.attrs.su !== undefined) pet.attrs.su += 1;
       leveledUp = true;
     }
     if (leveledUp) {
       this.recalculatePet(pet, true);
     }
     return leveledUp;
+  }
+
+  // 仙宠四维属性自由加点 (生、法、力、速)
+  static allocatePetPoints(pet, attrKey, points = 1) {
+    if (!pet || !Number.isSafeInteger(points) || points <= 0) return false;
+    if (!Number.isSafeInteger(pet.potentialPoints) || pet.potentialPoints < points) return false;
+    const map = {
+      sheng: 'sheng',
+      fa: 'fa',
+      li: 'li',
+      su: 'su',
+      '生': 'sheng',
+      '法': 'fa',
+      '力': 'li',
+      '速': 'su',
+      '敏': 'su',
+      con: 'sheng',
+      int: 'fa',
+      str: 'li',
+      dex: 'su',
+      sta: 'li'
+    };
+    if (!Object.hasOwn(map, attrKey)) return false;
+    const key = map[attrKey];
+    if (!pet.attrs) {
+      pet.attrs = { sheng: 10, fa: 10, li: 10, su: 10, con: 10, int: 10, str: 10, dex: 10, sta: 10 };
+    }
+    const legacy = { sheng: 'con', fa: 'int', li: 'str', su: 'dex' };
+    if (pet.attrs[key] === undefined) pet.attrs[key] = pet.attrs[legacy[key]] ?? 10;
+    const previous = pet.attrs[key];
+    pet.attrs[key] += points;
+
+    // 保持传统属性映射同步
+    if (key === 'sheng') pet.attrs.con = pet.attrs[key];
+    if (key === 'fa') pet.attrs.int = pet.attrs[key];
+    if (key === 'li') {
+      pet.attrs.str = pet.attrs[key];
+      pet.attrs.sta = (pet.attrs.sta ?? 10) + Math.floor(pet.attrs[key] * 0.5) - Math.floor(previous * 0.5);
+    }
+    if (key === 'su') pet.attrs.dex = pet.attrs[key];
+
+    pet.potentialPoints -= points;
+    this.recalculatePet(pet, false);
+    return true;
   }
 
   // 金柳露洗炼：随机生成新资质与成长预览
@@ -274,6 +383,8 @@ class PetSystem {
     };
 
     return {
+      instanceId: pet.instanceId,
+      templateId: pet.templateId,
       level: 1,
       exp: 0,
       isMutated: isMutated,
@@ -285,15 +396,15 @@ class PetSystem {
 
   // 确认替换金柳露洗炼新属性
   static applyWashResult(pet, washResult) {
+    if (!pet || !washResult || washResult.instanceId !== pet.instanceId || washResult.templateId !== pet.templateId) return null;
     pet.level = washResult.level || 1;
     pet.exp = 0;
     pet.isMutated = washResult.isMutated;
     pet.name = washResult.name;
     pet.growth = washResult.growth;
     pet.aptitudes = JSON.parse(JSON.stringify(washResult.aptitudes));
-    pet.skills = [];
-    pet.classId = null;
-    pet.className = '无门派';
+    // 洗炼只重置成长与属性，不退回传法次数、不清除已修成的门派技能。
+    pet.potentialPoints = 0;
     pet.attrs = {
       con: 12,
       str: 12,
@@ -367,140 +478,182 @@ class PetSystem {
   // =========================================================================
 
   static JINXIAN_AVATAR_TALENTS = {
+    // 1. 白龙马
+    bailong_ma: {
+      id: 'avatar_bailong',
+      name: '八部天龙',
+      desc: '变身后法术攻击有概率(25%~45%)触发法术连击。',
+      type: 'spell_combo',
+      getDoubleCastRate(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.25 + (p / 5000) * 0.20).toFixed(3)); // 25% ~ 45%
+      },
+      getEffects(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return { spdBonus: 0, doubleCastRate: Number((0.25 + (p / 5000) * 0.20).toFixed(3)) };
+      }
+    },
+    // 2. 白骨精
     baigu_jing: {
       id: 'avatar_baigu',
-      name: '画皮移伤',
-      desc: '变身后受到直接伤害时，将一定比例伤害(5%~30%)随机转移给场上一名单位。',
+      name: '白骨夫人',
+      desc: '变身后受到直接伤害时，将一定比例伤害(15%~30%)随机转移给场上一名其他单位。',
       type: 'damage_transfer',
       getTransferRatio(talentPoints) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return Number((0.05 + (p / 5000) * 0.25).toFixed(3)); // 5% ~ 30%
+        return Number((0.15 + (p / 5000) * 0.15).toFixed(3)); // 15% ~ 30%
       }
     },
-    huangfeng_guai: {
-      id: 'avatar_huangfeng',
-      name: '三昧神风·断速',
-      desc: '变身后普攻或技能命中敌方，概率(30%~70%)使目标速度降为全场最低；群法命中则群体降速。',
-      type: 'speed_slow',
-      getSlowRate(talentPoints) {
-        const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return Number((0.30 + (p / 5000) * 0.40).toFixed(3)); // 30% ~ 70%
-      }
-    },
-    sha_seng: {
-      id: 'avatar_shaseng',
-      name: '流沙护体·蓝移',
-      desc: '变身后受到的直接伤害，15%~35%必中由法力值(MP)直接抵扣抵免。',
-      type: 'mp_absorb',
-      getMpAbsorbRatio(talentPoints) {
-        const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return Number((0.15 + (p / 5000) * 0.20).toFixed(3)); // 15% ~ 35%
-      }
-    },
+    // 3. 猪八戒
     zhu_bajie: {
       id: 'avatar_bajie',
-      name: '天蓬真元·巨灵',
-      desc: '变身瞬间气血上限与当前血量暴增(+500~2000 HP 及 +15%~35% 最大气血)。',
+      name: '天蓬元帅',
+      desc: '变身瞬间气血上限与当前血量暴增(+500~2000 HP 及 +25%~40% 最大气血)。',
       type: 'hp_boost',
       getHpBoost(talentPoints, maxHp) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
         const flatHp = Math.floor(500 + (p / 5000) * 1500); // 500 ~ 2000
-        const percentRatio = Number((0.15 + (p / 5000) * 0.20).toFixed(3)); // 15% ~ 35%
+        const percentRatio = Number((0.25 + (p / 5000) * 0.15).toFixed(3)); // 25% ~ 40%
         const totalBonus = flatHp + Math.floor((maxHp || 1000) * percentRatio);
         return { flatHp, percentRatio, totalBonus };
       }
     },
-    niumo_wang: {
+    // 4. 红孩儿
+    honghai_er: {
+      id: 'avatar_honghaier',
+      name: '圣婴大王',
+      desc: '变身后三昧真火技能伤害提升(+35%~50%)。',
+      type: 'fire_boost',
+      getFireBoost(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.35 + (p / 5000) * 0.15).toFixed(3)); // 35% ~ 50%
+      }
+    },
+    // 5. 铁扇公主
+    tieshan_gongzhu: {
+      id: 'avatar_tieshan',
+      name: '罗刹女',
+      desc: '变身后飞沙走石与三昧真火技能伤害提升(+30%~45%)。',
+      type: 'wind_fire_boost',
+      getWindFireBoost(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.30 + (p / 5000) * 0.15).toFixed(3)); // 30% ~ 45%
+      }
+    },
+    // 6. 牛魔王
+    niumowang: {
       id: 'avatar_niumo',
-      name: '大力蛮牛·狂暴',
-      desc: '变身后生命增加(+300~1200 HP 及 +10%~25% 血量)，物理攻击力狂暴暴增(+20%~50%，仅普攻生效)。',
+      name: '平天大圣',
+      desc: '变身后增加气血(+30%)，物理攻击力狂暴暴增(+30%~50%，仅普攻生效)。',
       type: 'atk_boost',
       getBoosts(talentPoints, maxHp, baseAtk) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        const flatHp = Math.floor(300 + (p / 5000) * 900); // 300 ~ 1200
-        const hpPercent = Number((0.10 + (p / 5000) * 0.15).toFixed(3)); // 10% ~ 25%
-        const atkPercent = Number((0.20 + (p / 5000) * 0.30).toFixed(3)); // 20% ~ 50%
+        const flatHp = Math.floor(400 + (p / 5000) * 800);
+        const hpPercent = Number((0.20 + (p / 5000) * 0.10).toFixed(3)); // 20% ~ 30%
+        const atkPercent = Number((0.30 + (p / 5000) * 0.20).toFixed(3)); // 30% ~ 50%
         return { flatHp, hpPercent, atkPercent };
       }
     },
-    xiaobai_long: {
-      id: 'avatar_bailong',
-      name: '龙魂啸天·疾行',
-      desc: '变身后速度直接增加(+50~100 点抢占一速)，法术攻击有概率(20%~45%)触发法术连击。',
-      type: 'spd_combo',
-      getEffects(talentPoints) {
+    // 7. 沙僧
+    sha_seng: {
+      id: 'avatar_shaseng',
+      name: '卷帘大将',
+      desc: '变身后受到的直接伤害，30%~50%直接由法力值(MP)等额扣除抵免。',
+      type: 'mp_absorb',
+      getMpAbsorbRatio(talentPoints) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        const spdBonus = Math.floor(50 + (p / 5000) * 50); // 50 ~ 100
-        const doubleCastRate = Number((0.20 + (p / 5000) * 0.25).toFixed(3)); // 20% ~ 45%
-        return { spdBonus, doubleCastRate };
+        return Number((0.30 + (p / 5000) * 0.20).toFixed(3)); // 30% ~ 50%
       }
     },
-    jinjiao_dawang: {
-      id: 'avatar_jinjiao',
-      name: '紫金吸魂·断蓝',
-      desc: '变身后法术命中抽取目标 10%~25% 当前法力值回补自身。',
-      type: 'mp_drain',
-      getMpDrainRatio(talentPoints) {
+    // 8. 黄风怪
+    huangfeng_guai: {
+      id: 'avatar_huangfeng',
+      name: '黄鼠原身',
+      desc: '变身后增加法力上限(+35%)以及出手速度(+25%)。',
+      type: 'mp_spd_boost',
+      getBoosts(talentPoints, maxMp, baseSpd) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return Number((0.10 + (p / 5000) * 0.15).toFixed(3)); // 10% ~ 25%
+        const mpBonus = Math.floor((maxMp || 400) * (0.25 + (p / 5000) * 0.10));
+        const spdBonus = Math.floor((baseSpd || 50) * (0.20 + (p / 5000) * 0.05));
+        return { mpBonus, spdBonus };
       }
     },
-    yinjiao_dawang: {
-      id: 'avatar_yinjiao',
-      name: '羊脂封魄·逆御',
-      desc: '变身后法暴率提升(+15%~30%)，自身已损生命转化为免伤(最高25%)。',
-      type: 'damage_reduction',
-      getReductionRatio(talentPoints, curHp, maxHp) {
-        const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        const maxRed = Number((0.10 + (p / 5000) * 0.15).toFixed(3)); // 10% ~ 25%
-        const lostRatio = 1 - (curHp / (maxHp || 1));
-        return Number((lostRatio * maxRed).toFixed(3));
-      }
-    },
-    honghai_er: {
-      id: 'avatar_honghaier',
-      name: '六道真火·嗜血',
-      desc: '变身后造成伤害的 15%~35% 转化为自身气血回复。',
-      type: 'vampire',
-      getVampireRatio(talentPoints) {
-        const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return Number((0.15 + (p / 5000) * 0.20).toFixed(3)); // 15% ~ 35%
-      }
-    },
-    tieshan_gongzhu: {
-      id: 'avatar_tieshan',
-      name: '太阴神风·破障',
-      desc: '变身后风系法术命中 40%~80% 概率驱散敌方全部防御 Buff。',
-      type: 'buff_dispel',
-      getDispelRate(talentPoints) {
-        const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return Number((0.40 + (p / 5000) * 0.40).toFixed(3)); // 40% ~ 80%
-      }
-    },
+    // 9. 黄袍怪
     huangpao_guai: {
       id: 'avatar_huangpao',
-      name: '奎木凶星·噬魂',
-      desc: '变身后普攻 20%~40% 吸血，击杀后 30%~80% 概率对随机敌人追加攻击。',
-      type: 'vampire_chase',
-      getEffects(talentPoints) {
+      name: '奎木狼星君',
+      desc: '伤害会使敌方额外少量流血两回合，每回合流失受创者最大生命4%~6%，可叠加。',
+      type: 'bleed_dot',
+      getBleedRatio(talentPoints) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return {
-          vampireRatio: Number((0.20 + (p / 5000) * 0.20).toFixed(3)),
-          chaseRate: Number((0.30 + (p / 5000) * 0.50).toFixed(3))
-        };
+        return Number((0.04 + (p / 5000) * 0.02).toFixed(3)); // 4% ~ 6%
       }
     },
-    heixiong_jing: {
+    // 10. 黑熊精
+    heixiong_guai: {
       id: 'avatar_heixiong',
-      name: '黑风磐石·化劲',
-      desc: '变身后双抗提升 15%~30%，受到近战物理攻击反震 20%~40% 伤害给敌人。',
-      type: 'reflect',
-      getEffects(talentPoints) {
+      name: '黑熊原身',
+      desc: '变身后增加速度(+25%)以及物理攻击力(+30%)。',
+      type: 'spd_atk_boost',
+      getBoosts(talentPoints, baseSpd, baseAtk) {
         const p = Math.max(0, Math.min(5000, talentPoints || 0));
-        return {
-          resBonus: Number((0.15 + (p / 5000) * 0.15).toFixed(3)),
-          reflectRatio: Number((0.20 + (p / 5000) * 0.20).toFixed(3))
-        };
+        const spdBonus = Math.floor((baseSpd || 50) * (0.20 + (p / 5000) * 0.05));
+        const atkBonus = Math.floor((baseAtk || 90) * (0.25 + (p / 5000) * 0.05));
+        return { spdBonus, atkBonus };
+      }
+    },
+    // 11. 哪吒
+    nezha: {
+      id: 'avatar_nezha',
+      name: '三头六臂',
+      desc: '变身后攻击有30%~40%概率眩晕定身目标1回合。',
+      type: 'stun_strike',
+      getStunRate(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.30 + (p / 5000) * 0.10).toFixed(3)); // 30% ~ 40%
+      }
+    },
+    // 12. 黄眉大王
+    huangmei_dawang: {
+      id: 'avatar_huangmei',
+      name: '黄眉老祖',
+      desc: '对目标造成伤害后会使下回合该目标造成的伤害降低20%；如果速度比该目标快，则当回合立即生效。',
+      type: 'weaken_strike',
+      getWeakenRatio(talentPoints) {
+        return 0.20;
+      }
+    },
+    // 13. 李靖（托塔天王）
+    lijing: {
+      id: 'avatar_lijing',
+      name: '托塔天王',
+      desc: '变身后提升神仙职业技能命中概率(+20%~35%)。',
+      type: 'xianren_hit_boost',
+      getHitBoost(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.20 + (p / 5000) * 0.15).toFixed(3)); // 20% ~ 35%
+      }
+    },
+    // 14. 蝎子精
+    xiezi_jing: {
+      id: 'avatar_xiezi',
+      name: '琵琶妖仙',
+      desc: '变身后提升万毒攻心伤害(+40%~60%)。',
+      type: 'poison_boost',
+      getPoisonBoost(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.40 + (p / 5000) * 0.20).toFixed(3)); // 40% ~ 60%
+      }
+    },
+    // 15. 九头虫
+    jiutou_chong: {
+      id: 'avatar_jiutouchong',
+      name: '九头蛇原身',
+      desc: '变身期间内死亡后直接复活并回复少量气血(25%~35%)，每战限一次。',
+      type: 'reborn',
+      getRebornRatio(talentPoints) {
+        const p = Math.max(0, Math.min(5000, talentPoints || 0));
+        return Number((0.25 + (p / 5000) * 0.10).toFixed(3)); // 25% ~ 35%
       }
     }
   };
@@ -591,12 +744,25 @@ class PetSystem {
   }
 
   /**
+   * 变身天赋物种别名：方向为「物种库ID → 策划天赋表键」。
+   * 策划表沿用西游本名（niumo_wang），物种库使用统一ID（niumowang），
+   * 未建立别名会让整条天赋永久失效（曾导致牛魔王狂暴、黑熊精反震形同虚设）。
+   */
+  static AVATAR_TALENT_ALIAS = {
+    niumo_wang: 'niumowang',
+    xiaobai_long: 'bailong_ma',
+    jinjiao_dawang: 'huangmei_dawang',
+    yinjiao_dawang: 'sha_seng'
+  };
+
+  /**
    * 获取该仙宠的天赋配置
    */
   static getPetAvatarTalent(pet) {
     if (!pet) return null;
     const tid = pet.templateId;
-    return this.JINXIAN_AVATAR_TALENTS[tid] || {
+    const alias = this.AVATAR_TALENT_ALIAS[tid];
+    return this.JINXIAN_AVATAR_TALENTS[tid] || (alias ? this.JINXIAN_AVATAR_TALENTS[alias] : null) || {
       id: 'avatar_generic',
       name: '金仙法相',
       desc: '变身后全属性提升 15%，受到伤害减免 10%。'

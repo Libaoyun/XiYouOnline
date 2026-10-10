@@ -17,13 +17,97 @@ class TilemapEngine {
       huoyanshan: { kind: 'ash', base: '#453b3b', detail: '#b47752', path: '#57433c' },
       huoyundong: { kind: 'ash', base: '#4e403a', detail: '#bc8358', path: '#62483a' },
       heifengshan: { kind: 'forest', base: '#304a40', detail: '#77937a', path: '#63594a' },
-      pansidong: { kind: 'forest', base: '#464955', detail: '#93818c', path: '#66515a' }
+      pansidong: { kind: 'forest', base: '#464955', detail: '#93818c', path: '#66515a' },
+      wuzhuangguan: { kind: 'forest', base: '#42654c', detail: '#9bac7e', path: '#948264' },
+      gaolaozhuang: { kind: 'forest', base: '#51664a', detail: '#b7af79', path: '#96805c' }
     };
   }
 
   // 更新水流与仙气动画时序
+  drawWaterBanks(ctx, x, y, c, r, map, muddy = false) {
+    if (!map?.tiles) return;
+    const s = this.tileSize, water = new Set(['water', 'dark_water']);
+    const land = (col, row) => map.tiles[row]?.[col] != null && !water.has(map.tiles[row][col]);
+    ctx.save();
+    ctx.strokeStyle = muddy ? 'rgba(217,184,125,.38)' : 'rgba(189,222,205,.45)';
+    ctx.lineWidth = 1.2;
+    const edges = [[0,-1,[x,y+2],[x+s,y+2]], [0,1,[x,y+s-2],[x+s,y+s-2]],
+      [-1,0,[x+2,y],[x+2,y+s]], [1,0,[x+s-2,y],[x+s-2,y+s]]];
+    for (const [dx, dy, start, end] of edges) {
+      if (!land(c+dx,r+dy)) continue;
+      ctx.beginPath(); ctx.moveTo(...start); ctx.lineTo(...end); ctx.stroke();
+      ctx.fillStyle = muddy ? 'rgba(60,43,27,.22)' : 'rgba(20,48,42,.22)';
+      if (dx) ctx.fillRect(dx<0?x:x+s-4, y, 4, s);
+      else ctx.fillRect(x, dy<0?y:y+s-4, s, 4);
+    }
+    // 清溪岸边稀疏水草，只占岸线，不铺满水面或遮住过桥落点。
+    if (['liujiacun','gaolaozhuang','wuzhuangguan','yingchoujian'].includes(map.id) && (c*17+r*11)%7===0 && land(c-1,r)) {
+      ctx.strokeStyle = '#7f9b78'; ctx.lineWidth = 0.7;
+      for (let i=0;i<3;i++) {ctx.beginPath();ctx.moveTo(x+3,y+22);ctx.quadraticCurveTo(x+2+i*2,y+15,x+i*3,y+10-i);ctx.stroke();}
+    }
+    ctx.restore();
+  }
+
   updateAnimation() {
     this.waterAnimTime += 0.025;
+  }
+
+  getGinsengTreeBounds(map, c, r) {
+    const isTree = (col, row) => map?.tiles?.[row]?.[col] === 'ginseng_tree';
+    let left = c, top = r;
+    while (isTree(left - 1, top)) left--;
+    while (isTree(left, top - 1)) top--;
+    let width = 1, height = 1;
+    while (isTree(left + width, top)) width++;
+    while (isTree(left, top + height)) height++;
+    return { left, top, width, height };
+  }
+
+  drawGinsengTree(ctx, x, y, c, r, map, state = 'healthy') {
+    const s = this.tileSize, bounds = this.getGinsengTreeBounds(map, c, r);
+    // 相邻四块仍保留原来的碰撞；每块裁切同一棵树，镜头只看到半棵也能连续绘制。
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, s, s); ctx.clip();
+    ctx.fillStyle = (c+r)%2 ? '#939d91' : '#99a397'; ctx.fillRect(x, y, s, s);
+    ctx.translate(x - (c-bounds.left)*s, y - (r-bounds.top)*s);
+    ctx.scale(bounds.width*s/64, bounds.height*s/64);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const oval = (px,py,rx,ry,color) => {ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(px,py,rx,ry,0,0,Math.PI*2);ctx.fill();};
+    const line = (points,color,width) => {ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();points.forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));ctx.stroke();};
+    oval(32,55,27,6,'rgba(30,49,36,.22)');
+    if (state === 'fallen') {
+      // 树根翻起，树冠侧倒；救树前不悬挂成熟的金果。
+      oval(45,24,11,7,'#6e644d');
+      for (let i=0;i<5;i++) line([[43,27],[50+i*2,15+i*3],[57+i,13+i*3]],'#67543d',1.8);
+      line([[45,26],[30,36],[13,46]],'#6a5137',8);
+      line([[43,25],[29,35],[13,45]],'#ac8a58',1.5);
+      for(const [px,py,rx,ry] of [[16,43,13,8],[24,46,16,8],[10,50,8,6],[34,44,9,7]])oval(px,py,rx,ry,'#466653');
+      for(let i=0;i<10;i++)oval(5+(i*13)%36,38+(i*7)%16,2.3,1.3,i%2?'#78917a':'#63816a');
+      line([[36,50],[48,52],[55,49]],'#7f7256',1);
+      line([[40,58],[49,56],[54,58]],'#9d8d68',0.8);
+    } else {
+      // 苍干、分枝、层叠树冠与金击子留下的细绳，使它成为观内的地标。
+      for(const points of [[[29,47],[21,58],[12,60]],[[34,48],[39,58],[50,60]],[[32,49],[31,60]]])line(points,'#756044',3);
+      const bark=ctx.createLinearGradient(24,0,40,0);bark.addColorStop(0,'#5b4832');bark.addColorStop(0.5,'#ae8b57');bark.addColorStop(1,'#665239');
+      line([[31,55],[33,35],[29,18]],bark,9);
+      line([[32,38],[16,28],[12,17]],'#776041',4);line([[32,35],[47,23],[49,13]],'#776041',4);
+      line([[31,54],[32,37],[28,22]],'#d0b17c',0.9);
+      for(const [px,py,rx,ry,color] of [[17,22,15,12,'#315b43'],[44,21,17,12,'#365f45'],
+        [31,13,19,11,'#47734d'],[13,15,10,8,'#537c55'],[48,13,10,8,'#65845a'],[30,26,20,11,'#426b46']])oval(px,py,rx,ry,color);
+      for(let i=0;i<22;i++){const px=7+(i*17)%49,py=8+(i*7)%23;oval(px,py,2.2,1.1,i%3?'#6b8d60':'#94a975');}
+      line([[36,29],[36,42],[40,44]],'#9d7554',0.8);
+      for(const [px,py] of [[14,24],[28,29],[47,23]]){
+        const float = Math.sin(this.waterAnimTime*1.3+px)*0.35;
+        line([[px,py-4],[px,py+float]],'#b9ab6b',0.5);
+        const glow=ctx.createRadialGradient(px,py+4,1,px,py+4,7);glow.addColorStop(0,'rgba(244,219,141,.22)');glow.addColorStop(1,'rgba(244,219,141,0)');
+        oval(px,py+4,7,7,glow);oval(px,py+1+float,1.5,1.7,'#f0dab0');oval(px,py+4+float,1.5,2,'#dcca8b');
+        line([[px-2,py+3+float],[px+2,py+3+float]],'#ead6a0',0.8);
+      }
+      if (state === 'restored') {
+        line([[24,55],[21,49],[18,48]],'#658b53',0.9);oval(19,49,2.2,1.1,'#aac784');
+        oval(24,53,2.4,1.2,'#8daa6d');oval(37,57,2.5,1.2,'#9cb877');
+      }
+    }
+    ctx.restore();
   }
 
   // 1. 渲染天宫浩瀚云海天幕背景 (在瓦片最底层渲染，营造深渊悬空与神光漫射)
@@ -126,7 +210,7 @@ class TilemapEngine {
   }
 
   // 绘制高品质瓦片
-  drawTile(ctx, tileType, screenX, screenY, c = 0, r = 0, mapData = null) {
+  drawTile(ctx, tileType, screenX, screenY, c = 0, r = 0, mapData = null, sceneState = {}) {
     const col = c;
     const row = r;
     const s = this.tileSize;
@@ -134,6 +218,18 @@ class TilemapEngine {
     switch (tileType) {
       // === 1. 天宫·汉白玉金丝雕纹地砖 ===
       case 'heaven_floor': {
+        if (mapData?.id === 'wuzhuangguan') {
+          ctx.fillStyle = (c+r)%2 ? '#939d91' : '#99a397';ctx.fillRect(screenX,screenY,s,s);
+          ctx.fillStyle='rgba(37,55,46,.22)';ctx.fillRect(screenX,screenY+s-1,s,1);ctx.fillRect(screenX+s-1,screenY,1,s);
+          ctx.fillStyle='rgba(225,229,209,.12)';ctx.fillRect(screenX,screenY,s,1);
+          if ((c*17+r*13)%11===0) {
+            ctx.strokeStyle='rgba(68,84,65,.16)';ctx.lineWidth=.7;ctx.beginPath();
+            ctx.moveTo(screenX+6,screenY+15);ctx.quadraticCurveTo(screenX+17,screenY+10,screenX+25,screenY+19);ctx.stroke();
+          }
+          const nearWall = [[-1,0],[1,0],[0,-1],[0,1]].some(([dx,dy])=>mapData.tiles[r+dy]?.[c+dx]==='city_wall');
+          if (nearWall && (c*7+r*19)%3===0) {ctx.fillStyle='rgba(70,98,63,.3)';ctx.beginPath();ctx.ellipse(screenX+7,screenY+6,5,2,0,0,Math.PI*2);ctx.fill();}
+          break;
+        }
         const isAlt = (c + r) % 2 === 0;
         // 细腻玉石微渐变
         const g = ctx.createLinearGradient(screenX, screenY, screenX + s, screenY + s);
@@ -656,8 +752,10 @@ class TilemapEngine {
         const isDark = tileType === 'dark_water';
         const isLiusha = mapData && (mapData.id === 'liushahe' || mapData.id === 'liushaho');
         const isUnderwater = mapData && (mapData.id === 'shuijinggong' || mapData.id === 'longgong_palace' || mapData.id === 'donghai_coast');
-        const wave = Math.sin(this.waterAnimTime * 2.4 + screenX * 0.08 + screenY * 0.08);
-        const wave2 = Math.cos(this.waterAnimTime * 1.8 + screenX * 0.06 - screenY * 0.06);
+        // 波纹锚在世界网格，镜头移动不改变同一处河面的波相。
+        const worldX = c * s, worldY = r * s;
+        const wave = Math.sin(this.waterAnimTime * 2.4 + worldX * 0.08 + worldY * 0.08);
+        const wave2 = Math.cos(this.waterAnimTime * 1.8 + worldX * 0.06 - worldY * 0.06);
 
         // 1. 材质底色 (高性能纯色与流动光影填充，彻底杜绝逐瓦片创建 Gradient 引起的巨大掉帧)
         if (isLiusha) {
@@ -704,7 +802,7 @@ class TilemapEngine {
 
           // 东海水下专属：动态焦散网纹 (Underwater Caustics Wave & Shimmer)
           if (isUnderwater) {
-            const caustics = Math.sin(this.waterAnimTime * 2.8 + screenX * 0.12) * Math.cos(this.waterAnimTime * 2.2 + screenY * 0.12);
+            const caustics = Math.sin(this.waterAnimTime * 2.8 + worldX * 0.12) * Math.cos(this.waterAnimTime * 2.2 + worldY * 0.12);
             ctx.fillStyle = 'rgba(186, 230, 253, ' + (0.12 + Math.abs(caustics) * 0.18) + ')';
             ctx.beginPath();
             ctx.arc(screenX + 16 + wave * 2.5, screenY + 16 + wave2 * 2.5, 6, 0, Math.PI * 2);
@@ -719,6 +817,7 @@ class TilemapEngine {
             ctx.fill();
           }
         }
+        this.drawWaterBanks(ctx, screenX, screenY, c, r, mapData, isLiusha);
         break;
       }
 
@@ -954,6 +1053,16 @@ class TilemapEngine {
 
       // === 9. 大唐·巍峨城墙与化生寺围墙 ===
       case 'city_wall': {
+        if (mapData?.id === 'wuzhuangguan') {
+          ctx.fillStyle='#7b8072';ctx.fillRect(screenX,screenY,s,s);
+          ctx.fillStyle='rgba(205,205,183,.12)';ctx.fillRect(screenX,screenY,s,2);
+          ctx.strokeStyle='rgba(41,52,44,.23)';ctx.lineWidth=.8;ctx.beginPath();
+          ctx.moveTo(screenX,screenY+16);ctx.lineTo(screenX+s,screenY+16);
+          ctx.moveTo(screenX+(r%2?8:24),screenY);ctx.lineTo(screenX+(r%2?8:24),screenY+16);ctx.stroke();
+          if (mapData.tiles[r-1]?.[c]!=='city_wall') {ctx.fillStyle='#445747';ctx.fillRect(screenX,screenY,s,4);ctx.fillStyle='#a5ad93';ctx.fillRect(screenX,screenY+4,s,1);}
+          if (mapData.tiles[r+1]?.[c]!=='city_wall') {ctx.fillStyle='rgba(29,43,35,.25)';ctx.fillRect(screenX,screenY+s-4,s,4);}
+          break;
+        }
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(screenX, screenY, s, s);
 
@@ -1465,26 +1574,7 @@ class TilemapEngine {
 
       // === 12. 万寿山五庄观·草还丹人参果仙树 ===
       case 'ginseng_tree': {
-        ctx.fillStyle = '#1e3a24';
-        ctx.fillRect(screenX, screenY, s, s);
-
-        // 苍劲神木古干
-        ctx.fillStyle = '#451a03';
-        ctx.fillRect(screenX + 9, screenY + 7, 14, s - 7);
-
-        // 灵冠苍翠祥云树顶
-        ctx.fillStyle = '#15803d';
-        ctx.beginPath();
-        ctx.arc(screenX + s / 2, screenY + 10, 15, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 闪耀神光的人参果灵形
-        const glow = Math.sin(this.waterAnimTime * 3);
-        ctx.fillStyle = '#fef08a';
-        ctx.beginPath();
-        ctx.arc(screenX + 9, screenY + 10 + glow, 3.5, 0, Math.PI * 2);
-        ctx.arc(screenX + 23, screenY + 13 - glow, 3.5, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawGinsengTree(ctx, screenX, screenY, c, r, mapData, sceneState.ginsengTree);
         break;
       }
 
@@ -1540,6 +1630,18 @@ class TilemapEngine {
           if (mapData.tiles[r]?.[c - 1] === 'demon_cave_wall') ctx.fillRect(screenX, screenY, 4, s);
           if (mapData.tiles[r]?.[c + 1] === 'demon_cave_wall') ctx.fillRect(screenX + s - 4, screenY, 4, s);
         } else ctx.fillRect(screenX + 2, screenY + 2, s - 4, s - 4);
+
+        // 残车轮与布条留下被掳者行迹，不增加可刷奖励或碰撞。
+        if (interior && tileType === 'cave_floor') {
+          const trace = (c * 31 + r * 19) % 47;
+          if (trace === 3) {
+            ctx.save();ctx.strokeStyle='rgba(174,148,119,.28)';ctx.lineWidth=.75;
+            ctx.beginPath();ctx.arc(screenX+18,screenY+20,5,.2,4.8);ctx.moveTo(screenX+14,screenY+17);ctx.lineTo(screenX+22,screenY+23);ctx.stroke();ctx.restore();
+          } else if (trace === 12) {
+            ctx.fillStyle='rgba(161,145,137,.26)';ctx.beginPath();ctx.moveTo(screenX+8,screenY+13);ctx.lineTo(screenX+18,screenY+15);
+            ctx.lineTo(screenX+15,screenY+18);ctx.lineTo(screenX+6,screenY+16);ctx.fill();
+          }
+        }
 
         // 钟乳石滴水水滴涟漪
         if ((c * 13 + r * 29) % 7 === 0) {
@@ -1652,7 +1754,7 @@ class TilemapEngine {
   }
 
   // 渲染整屏可见区域
-  render(ctx, mapData, camera) {
+  render(ctx, mapData, camera, sceneState = {}) {
     this.updateAnimation();
 
     // 1. 依据场景类型，先行绘制多层视差天幕底色
@@ -1673,14 +1775,14 @@ class TilemapEngine {
         const tileType = mapData.tiles[r][c];
         const screenX = c * this.tileSize - camera.x;
         const screenY = r * this.tileSize - camera.y;
-        this.drawTile(ctx, tileType, screenX, screenY, c, r, mapData);
+        this.drawTile(ctx, tileType, screenX, screenY, c, r, mapData, sceneState);
       }
     }
   }
 
   // 瓦片渲染统一门禁接口 (兼容 renderTile 别名)
-  renderTile(ctx, tileType, screenX, screenY, c = 0, r = 0, mapData = null) {
-    return this.drawTile(ctx, tileType, screenX, screenY, c, r, mapData);
+  renderTile(ctx, tileType, screenX, screenY, c = 0, r = 0, mapData = null, sceneState = {}) {
+    return this.drawTile(ctx, tileType, screenX, screenY, c, r, mapData, sceneState);
   }
 }
 

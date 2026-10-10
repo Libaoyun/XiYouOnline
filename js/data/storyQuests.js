@@ -1869,7 +1869,8 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '镇元大仙',
         speakerTitle: '【八拜结交】',
         speakerIcon: '仙',
-        text: '【交手止息，悟空承认毁树之过，你也提出留下相助。观音应邀而来，以甘露救活宝树；树根重新抽芽，清风、明月这才松了口气。】救树之约已践，旧怨便放下。我愿与悟空结交，往后有争执，先讲理。'
+        text: '【交手止息，悟空承认毁树之过，你也提出留下相助。观音应邀而来，以甘露救活宝树；树根重新抽芽，清风、明月这才松了口气。】救树之约已践，旧怨便放下。我愿与悟空结交，往后有争执，先讲理。',
+        action: () => window.App2D.restoreWuzhuangTree()
       },
       {
         speaker: '镇元大仙',
@@ -1881,6 +1882,17 @@ window.GAME_DATA.STORY_DIALOGUES = {
         }
       }
     ]
+  },
+
+  zhenyuanzi_gift_ready: {
+    steps: [{
+      speaker: '镇元大仙', speakerTitle: '【五庄观故交】',
+      text: '宝树已无恙，你的两枚人参果和道袍也好好收着。果子不急着吃，行囊倒要先腾出地方——老道的袖里乾坤，可不能随赠礼一并送你。',
+      options: [
+        { text: '【领取人参果与道袍】', action: () => window.App2D.grantZhenyuanziGift() },
+        { text: '【先整理行囊，稍后再来】' }
+      ]
+    }]
   },
 
   // =========================================================================
@@ -1896,7 +1908,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
       {
         speaker: '孙悟空',
         speakerTitle: '【火眼金睛】',
-        text: '师父且慢！她脚下无影，篮里透出尸气，脚边还卷着逆风。将军先护住师父，别只凭衣上的骨纹辨人。',
+        text: '师父且慢！她脚下无影，篮里透出尸气，脚边还卷着逆风。将军先护住师父，再看她的影子和篮里藏的东西，莫只凭模样断人善恶。',
         options: [
           {
             text: '【护住师父，破第一重画皮】',
@@ -2686,6 +2698,7 @@ window.GAME_DATA.STORY_DIALOGUES = {
         options: [
           { text: '你为何留在这里守灯？', nextStep: 1 },
           { text: '洞里的人，可还有线索？', nextStep: 2 },
+          { text: '地上的残车轮与布条，是谁留下的？', nextStep: 4 },
           { text: '记下了。老人家也请保重。' }
         ]
       },
@@ -2703,6 +2716,11 @@ window.GAME_DATA.STORY_DIALOGUES = {
         speaker: '守灯老人', roleId: 'fisherman', speakerTitle: '【为归人留灯】',
         text: '愿你有破幻的眼，也有肯听人说话的心。你有你的西行路，不必在此久留。出洞后若遇寻亲的人，告诉他这里有人留着灯。',
         options: [{ text: '我会转告。告辞。' }]
+      },
+      {
+        speaker: '守灯老人', roleId: 'fisherman', speakerTitle: '【行迹尚存】',
+        text: '车轮是旧商队的，布条却不知属于谁。东西留在这里，不代表主人就没能逃出去。若遇寻亲人，只转告看见了什么，别替人把生死说定。',
+        options: [{ text: '只说所见，不妄断生死。', nextStep: 3 }, { text: '多谢提醒，告辞。' }]
       }
     ]
   },
@@ -2968,6 +2986,18 @@ if (window.GAME_DATA && window.GAME_DATA.STORY_DIALOGUES) {
   stories.baihuaxiu_talk.steps[0].roleId = 'baihuaxiu';
   stories.baihuaxiu_homecoming.steps[0].roleId = 'baihuaxiu';
   stories.baoxiang_king_reunion.steps[0].roleId = 'baoxiang_king';
+  // 可选话题只追加正常分支，无奖励、无阶段变更；严肃委托与日常机锋分开。
+  const hermit = stories.hermit_talk;
+  hermit.steps[0].roleId = 'xuanfeng_daoshi';
+  hermit.steps[0].options.splice(3, 0, { text: '道长平日如何照料山中行人？', nextStep: 1 });
+  hermit.steps.push(
+    { speaker: '玄风道长', roleId: 'xuanfeng_daoshi', speakerTitle: '【山中日常】',
+      text: '贫道认路、备水，也替伤者包扎。有人问能否画符让鞋底不磨——能，少走几步便是。可商旅总得赶路，还是补鞋匠的手艺更实在。',
+      options: [{ text: '那道长的符，究竟能帮什么？', nextStep: 2 }, { text: '实在的照料，也是一门功夫。告辞。' }] },
+    { speaker: '玄风道长', roleId: 'xuanfeng_daoshi', speakerTitle: '【护路之道】',
+      text: '符能暂驱阴气，伤口仍要洗净上药。遇到妖患，先让行人避开险路，再想如何除妖。神通若只顾显摆，连一壶热水都比不过。',
+      options: [{ text: '先护人，再除妖。记下了，告辞。' }] }
+  );
   window.GAME_DATA.STORY_DIALOGUES.huaguoshan_battle_intro = window.GAME_DATA.STORY_DIALOGUES.juling_shuilien_battle;
   window.GAME_DATA.STORY_DIALOGUES.wukong_respect_scene = window.GAME_DATA.STORY_DIALOGUES.juling_defeated_to_huaguoshan;
   window.GAME_DATA.STORY_DIALOGUES.wukong_final_spar = window.GAME_DATA.STORY_DIALOGUES.wukong_huaguoshan_havoc;

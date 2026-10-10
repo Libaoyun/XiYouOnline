@@ -81,6 +81,28 @@ if (typeof window !== 'undefined') {
 }
 
 class GameApp2D {
+  getUnitVisualId(unit = {}) {
+    if (unit.isPlayer) return this.playerChar?.appearance || this.playerData?.appearance || 'martial_hero';
+    return window.VisualIdentity?.resolveUnit(unit) ||
+      (window.Character ? window.Character.inferMonsterType(unit.name, unit.id) : 'martial_hero');
+  }
+  getNpcPortraitRoleId(npc = {}) {
+    if (window.NpcArt?.ids.has(npc.appearance)) return npc.appearance;
+    return window.Dialogue?.inferRoleId(npc.name, npc.title) || 'shaoxia';
+  }
+
+  hasCompletedWuzhuang(phase = this.storyPhase) {
+    return ['wuzhuang_cleared', 'baihu_first_cleared', 'baihu_second_cleared', 'baihu_cleared',
+      'baoxiang_seek_princess', 'baoxiang_boss_ready', 'baoxiang_cleared',
+      'pingding_scout_cleared', 'pingding_silver_cleared', 'pingding_gold_cleared', 'pingding_cleared',
+      'huoyun_cleared', 'poer_cleared', 'chedi_cleared', 'tongtian_cleared', 'huoyan_cleared',
+      'pansi_cleared', 'shituo_cleared', 'journey_completed'].includes(phase);
+  }
+
+  getWuzhuangTreeState() {
+    if (this.playerData?.storyEvents?.wuzhuang_tree_restored || this.hasCompletedWuzhuang()) return 'restored';
+    return this.storyPhase === 'liusha_cleared' ? 'fallen' : 'healthy';
+  }
   constructor() {
     this.canvas = null;
     this.ctx = null;
@@ -582,6 +604,7 @@ class GameApp2D {
           equipment: this.playerData.equipment,
           resistances: this.playerData.resistances,
           storyRewards: this.playerData.storyRewards,
+          storyEvents: this.playerData.storyEvents,
           storyBonuses: this.playerData.storyBonuses,
           sideQuests: this.playerData.sideQuests
         },
@@ -676,6 +699,14 @@ class GameApp2D {
       }
       // 旧档只根据明确的完成状态补领取键，不猜测已消耗的丹药或可选心经。
       this.playerData.storyRewards = this.playerData.storyRewards || {};
+      this.playerData.storyEvents = this.playerData.storyEvents || {};
+      if (this.hasCompletedWuzhuang(state.storyPhase)) {
+        this.playerData.storyRewards.wuzhuang_gift = true;
+        this.playerData.storyEvents.wuzhuang_tree_restored = true;
+      } else if (state.storyPhase === 'liusha_cleared' && state.pendingStoryDialogue?.key === 'zhenyuanzi_post_battle') {
+        // 兼容更新前停在战后对白的旧档，仍须读完救树对白才可领取。
+        this.playerData.storyEvents.wuzhuang_trial_won = true;
+      }
       if (state.storyPhase === 'pingding_cleared') this.playerData.storyRewards.pingding_laojun = true;
       if (this.playerData.sideQuests?.sq_sanling_demon?.step === 'done') {
         this.playerData.storyRewards.sanling_completion = true;
@@ -1506,8 +1537,8 @@ class GameApp2D {
       x: n.x,
       y: n.y,
       appearance: n.id === 'npc_baigujing' ?
-        (this.storyPhase === 'wuzhuang_cleared' ? 'changan_girl' :
-          this.storyPhase === 'baihu_first_cleared' ? 'tea_granny' : 'tudi_gong') : n.appearance,
+        (this.storyPhase === 'wuzhuang_cleared' ? 'baigu_maiden' :
+          this.storyPhase === 'baihu_first_cleared' ? 'baigu_granny' : 'baigu_oldman') : n.appearance,
       dialogueKey: n.dialogueKey,
       questStatus: shouldShowQuestExclamation(n) || null
     }));
@@ -2291,6 +2322,10 @@ class GameApp2D {
     if (npc.id === 'npc_baigujing') {
       npc.dialogueKey = this.storyPhase === 'baihu_first_cleared' ? 'baigujing_second_encounter' :
         this.storyPhase === 'baihu_second_cleared' ? 'baigujing_third_encounter' : 'baigujing_encounter';
+    }
+    if (npc.id === 'npc_zhenyuanzi' && this.storyPhase === 'liusha_cleared') {
+      npc.dialogueKey = this.playerData.storyEvents?.wuzhuang_tree_restored ? 'zhenyuanzi_gift_ready' :
+        this.playerData.storyEvents?.wuzhuang_trial_won ? 'zhenyuanzi_post_battle' : 'zhenyuanzi_encounter';
     }
     if (npc.id === 'npc_changan_tea' && this.storyPhase !== 'changan_arrived') {
       window.Dialogue.start({
@@ -3622,7 +3657,7 @@ class GameApp2D {
     let avatarHtml = '';
     if (isPet) {
       avatarHtml = (window.Portraits && typeof window.Portraits.getPortraitSvg === 'function')
-        ? window.Portraits.getPortraitSvg(activePet.templateId || activePet.id || 'dahai_gui', 56, { noBorder: true })
+        ? window.Portraits.getPortraitSvg(this.getUnitVisualId(activePet), 56, { noBorder: true })
         : `<span style="font-size:26px;">${activePet.icon || '🐾'}</span>`;
     } else {
       const isGeneral = this.playerChar?.appearance === 'heaven_general' || this.playerData?.appearance === 'heaven_general';
@@ -4047,7 +4082,7 @@ class GameApp2D {
               <section class="inventory-equipment">
                 <div class="inventory-equipment-inner">
                   <div class="inventory-hero-preview">
-                    <div class="inventory-hero-portrait">${window.Portraits ? window.Portraits.getPortraitSvg(this.playerData.appearance === 'heaven_general' ? 'heaven_general' : 'shaoxia', 54) : '⚔️'}</div>
+                    <div class="inventory-hero-portrait">${window.Portraits ? window.Portraits.getPortraitSvg(this.getUnitVisualId({ isPlayer: true }), 54) : '⚔️'}</div>
                     <div style="flex:1;">
                       <div style="font-weight:bold;font-size:13.5px;color:#fef08a;">${this.playerData.name}</div>
                       <div style="font-size:10px;color:#a89682;margin-top:2px;">Lv.${this.playerData.level} · 当前装束</div>
@@ -4525,6 +4560,7 @@ class GameApp2D {
       const canLearn = ['jinxian', 'sanxian'].includes(pet.quality) && pet.level >= 10 && !pet.masterLessonLearned;
 
       const getPetPortrait = (p, size = 32) => {
+        if (window.VisualIdentity && window.Portraits) return window.Portraits.getPortraitSvg(this.getUnitVisualId(p), size);
         const pId = p.templateId || p.id;
         if (pId && window.Portraits?.customMonsterImages?.[pId]) {
           return window.Portraits.getPortraitSvg(pId, size);
@@ -5894,10 +5930,12 @@ class GameApp2D {
 
   // === 第九章：万寿山五庄观地仙之祖镇元子战 ===
   triggerZhenyuanziBattle() {
+    if (this.storyPhase !== 'liusha_cleared' || this.playerData.storyEvents?.wuzhuang_trial_won) return;
     if (window.Dialogue) window.Dialogue.close();
     const boss = {
       id: 'boss_zhenyuanzi',
       name: '镇元大仙 (地仙之祖)',
+      modelId: 'zhenyuanzi',
       level: 55,
       hp: 28000,
       maxHp: 28000,
@@ -5911,22 +5949,34 @@ class GameApp2D {
       skills: ['金刚护体', '封印咒', '雷霆万钧', '大闹天宫']
     };
     this.start2DBattle([boss], () => {
+      this.playerData.storyEvents.wuzhuang_trial_won = true;
       this.scheduleStoryDialogue('zhenyuanzi_post_battle');
     });
   }
 
+  restoreWuzhuangTree() {
+    if (this.storyPhase !== 'liusha_cleared' || !this.playerData.storyEvents?.wuzhuang_trial_won) return false;
+    if (!this.playerData.storyEvents.wuzhuang_tree_restored) {
+      this.playerData.storyEvents.wuzhuang_tree_restored = true;
+      this.saveAutoProgress();
+    }
+    return true;
+  }
+
   grantZhenyuanziGift() {
-    if (this.storyPhase === 'wuzhuang_cleared' || this.storyPhase === 'baihu_first_cleared' ||
-      this.storyPhase === 'baihu_second_cleared' || this.storyPhase === 'baihu_cleared') return;
+    if (this.storyPhase !== 'liusha_cleared' || !this.playerData.storyEvents?.wuzhuang_tree_restored) return;
+    const result = this.playerData.claimStoryReward('wuzhuang_gift', {
+      items: [{ itemId: 'renshen_guo', count: 2 }, { itemId: 'eq_am_hunyuan', count: 1 }],
+      exp: 60000, silver: 50000
+    }, this.inventory);
+    if (!result.success) {
+      if (result.reason !== 'already_claimed') {
+        window.showGameMessage('宝树已救活，赠礼由镇元大仙替你保管。整理行囊后再来领取，不必重新交手。', 'warning', 5000);
+      }
+      return;
+    }
     this.storyPhase = 'wuzhuang_cleared';
     this.npcs = this.npcs.filter(n => n.id !== 'npc_zhenyuanzi');
-    if (this.inventory) {
-      this.inventory.addItem('renshen_guo', 2);
-      this.inventory.addItem('eq_am_hunyuan', 1);
-    }
-    this.playerData.exp += 60000;
-    this.playerData.silver += 50000;
-    this.playerData.recalculateStats(false);
     window.Sound.playLevelUp();
     this.updatePlayerHud();
     this.saveAutoProgress();
@@ -5948,8 +5998,8 @@ class GameApp2D {
 
   // === 第十章：白虎岭白骨夫人战 ===
   triggerBaigujingBattle() {
+    if (!['wuzhuang_cleared', 'baihu_first_cleared', 'baihu_second_cleared'].includes(this.storyPhase)) return;
     if (window.Dialogue) window.Dialogue.close();
-    if (this.storyPhase === 'baihu_cleared' || this.storyPhase === 'baoxiang_cleared') return;
     const stage = this.storyPhase === 'baihu_first_cleared' ? 2 :
       this.storyPhase === 'baihu_second_cleared' ? 3 : 1;
     const boss = {
@@ -5975,7 +6025,7 @@ class GameApp2D {
         this.storyPhase = stage === 1 ? 'baihu_first_cleared' : 'baihu_second_cleared';
         const guide = this.npcs.find(n => n.id === 'npc_baigujing');
         if (guide) {
-          guide.appearance = stage === 1 ? 'tea_granny' : 'tudi_gong';
+          guide.appearance = stage === 1 ? 'baigu_granny' : 'baigu_oldman';
           guide.name = stage === 1 ? '寻女的老妪' : '拄杖的老翁';
           guide.questStatus = 'available';
         }
@@ -7039,7 +7089,7 @@ class GameApp2D {
       if (unit.isPlayer) {
         return this.playerChar?.appearance || this.playerData?.appearance || 'martial_hero';
       }
-      const creature = window.VisualIdentity?.resolveMonster(unit.appearance || unit.modelId, name, unit.id);
+      const creature = this.getUnitVisualId(unit);
       if (creature) return creature;
       if (name.includes('大圣') || name.includes('悟空')) return 'sun_wukong';
       if (name.includes('八戒') || name.includes('猪刚鬣')) return 'zhu_bajie';
@@ -7551,6 +7601,7 @@ class GameApp2D {
 
       // 敌方全身模型派发：优先继承野外实体的原生 appearance / modelId / templateId，绝不粗暴篡改！
       let mId = e.appearance || e.modelId || e.templateId || '';
+      if (e.templateId && window.GAME_DATA?.PETS?.[e.templateId]) mId = this.getUnitVisualId(e);
 
       // 仅在未配置外观或外观模糊时，才做精确推断，且严格区分齐天大圣与普通猴精、天蓬大将与凡间猪八戒、巨灵神与天兵
       if (!mId || mId === 'default' || mId === 'undefined') {
@@ -7749,8 +7800,9 @@ class GameApp2D {
           mId = 'martial_hero';
         }
       } else {
-        const species = window.VisualIdentity?.resolveMonster(mId, ally.name, ally.templateId);
-        if (ally.name.includes('悟空') || ally.roleId === 'sun_wukong') mId = 'sun_wukong';
+        const species = this.getUnitVisualId(ally);
+        if (ally.templateId || ally.entity?.templateId) mId = species;
+        else if (ally.name.includes('悟空') || ally.roleId === 'sun_wukong') mId = 'sun_wukong';
         else if (ally.name.includes('八戒') || ally.name.includes('猪刚鬣') || ally.roleId === 'zhu_bajie') mId = 'zhu_bajie';
         else if (ally.name.includes('悟净') || ally.name.includes('沙僧') || ally.roleId === 'sha_wujing') mId = 'sha_wujing';
         else if (window.CreatureArt?.ids.has(species)) mId = species;
@@ -9635,7 +9687,7 @@ class GameApp2D {
     if (!mapData) return;
 
     // 1. 地图瓦片
-    this.tilemap.render(this.ctx, mapData, this.camera);
+    this.tilemap.render(this.ctx, mapData, this.camera, { ginsengTree: this.getWuzhuangTreeState() });
 
     // 2. 主线任务世界大光柱与跳动感叹号指引
     if (this.minimap) {
@@ -9882,6 +9934,7 @@ class GameApp2D {
               <div style="display:flex;align-items:center;gap:10px;">
                 <div style="width:42px;height:42px;border-radius:50%;border:1.8px solid #ffd700;overflow:hidden;background:#2d1a0d;box-shadow:0 0 10px rgba(255,215,0,0.4);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
                   ${(() => {
+        if (window.VisualIdentity && window.Portraits) return window.Portraits.getPortraitSvg(this.getUnitVisualId(pet), 42);
         const pId = pet.templateId || pet.id;
         if (pId && window.Portraits?.customMonsterImages?.[pId]) {
           return window.Portraits.getPortraitSvg(pId, 42);
@@ -10846,6 +10899,19 @@ class GameApp2D {
       stepProgressRatio = 1;
       stepHint = '黄风岭怪石林立，借宝定风';
       isDone = true;
+    } else if (sp === 'liusha_cleared') {
+      const events = this.playerData.storyEvents || {};
+      ordealNumber = '【第九难·五庄人参】';
+      ordealName = '万寿山仙山 · 甘露救树';
+      ordealDesc = '大圣一怒毁了人参果树。护人也须担责，交手之后邀观音以甘露救树，再与镇元大仙化解旧怨。';
+      chapter = '第九回 · 人参果会';
+      stepName = events.wuzhuang_tree_restored ? '领取五庄观赠礼' : events.wuzhuang_trial_won ? '践约救树' : '赴五庄观承担救树之责';
+      stepTarget = events.wuzhuang_tree_restored ? '整理行囊，向镇元大仙领取人参果与混元道袍' :
+        '与镇元大仙交谈，护住同行众人并留下相助';
+      stepProgress = events.wuzhuang_tree_restored ? '宝树已复生，赠礼待领取' : events.wuzhuang_trial_won ? '交手已止，救树待议' : '待赴五庄观';
+      stepProgressRatio = events.wuzhuang_tree_restored ? 0.9 : events.wuzhuang_trial_won ? 0.65 : 0.15;
+      stepHint = '乌巢禅师的心经可顺路领悟；主线目标在万寿山五庄观。';
+      isDone = false;
     } else if (sp.startsWith('liusha_')) {
       ordealNumber = '【第八难·流沙收徒】';
       ordealName = '流沙八百里 · 卷帘归真';
@@ -10863,7 +10929,7 @@ class GameApp2D {
       ordealDesc = '万寿山五庄观人参果三千年一开花三千年一结果，大圣推倒宝树，需寻南海观音以玉净瓶甘露复活神树。';
       chapter = '第九回 · 人参果会';
       stepName = '甘露回春复活仙树';
-      stepTarget = '前往南海请得观音菩萨甘露，与镇元大仙结为异姓兄弟';
+      stepTarget = '救树践约，与镇元大仙结交，整装继续前往白虎岭';
       stepProgress = '已结义';
       stepProgressRatio = 1;
       stepHint = '五庄观大殿前与镇元大仙交谈';
@@ -11145,8 +11211,10 @@ class GameApp2D {
       yingchou_cleared: { mapId: 'gaolaozhuang', name: '乌斯藏·高老庄' },
       gaolao_cleared: { mapId: 'huangfengling', name: '八百里·黄风岭' },
       huangfeng_cleared: { mapId: 'liushahe', name: '八百里·流沙河' },
-      liusha_cleared: { mapId: 'futushan', name: '浮屠山·乌巢禅院' },
+      liusha_cleared: { mapId: 'wuzhuangguan', name: '万寿山·五庄观' },
       wuzhuang_cleared: { mapId: 'baihuling', name: '白虎岭' },
+      baihu_first_cleared: { mapId: 'baihuling', name: '白虎岭' },
+      baihu_second_cleared: { mapId: 'baihuling', name: '白虎岭' },
       baihu_cleared: { mapId: 'baoxiangguo', name: '宝象国王都' },
       baoxiang_seek_princess: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
       baoxiang_boss_ready: { mapId: 'baoxiangguo', name: '宝象国波月洞' },
@@ -11525,7 +11593,7 @@ class GameApp2D {
               <div class="roster-items-column">
                 ${npcs.length === 0 ? `<div class="roster-empty-tip">当前场景暂无往来仙民</div>` : npcs.map(n => {
       const isSelected = (selectedType === 'npc' && selectedObj && selectedObj.id === n.id);
-      const roleId = window.Dialogue ? window.Dialogue.inferRoleId(n.name, n.title) : 'shaoxia';
+      const roleId = this.getNpcPortraitRoleId(n);
       const portraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 32) : '👤';
       const hasQuest = (n.questStatus === 'available');
       return `
@@ -11587,7 +11655,7 @@ class GameApp2D {
         : (isSeen ? '<span class="shanhai-status-tag tag-white">👁️ 已遇见</span>' : '<span class="shanhai-status-tag tag-grey">❓ 未遇见</span>');
       return `
                     <div class="roster-item-card ${isSelected ? 'active' : ''}" onclick="window.App2D.renderSceneRosterModal('${p.id}', '${currentTab}')">
-                      <div class="roster-item-avatar-frame" style="display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;width:34px;height:34px;flex-shrink:0;">${window.Portraits ? window.Portraits.getPortraitSvg(p.id, 34, { noBorder: true }) : `<span style="font-size:22px;">${p.icon || '🐾'}</span>`}</div>
+                      <div class="roster-item-avatar-frame" style="display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;width:34px;height:34px;flex-shrink:0;">${window.Portraits ? window.Portraits.getPortraitSvg(this.getUnitVisualId({ templateId: p.id }), 34, { noBorder: true }) : `<span style="font-size:22px;">${p.icon || '🐾'}</span>`}</div>
                       <div class="roster-item-info">
                         <div class="roster-item-title-row">
                           <span class="roster-item-name-text ${statusClass}">${p.name}</span>
@@ -11623,7 +11691,7 @@ class GameApp2D {
   _renderRosterDetailCard(type, obj) {
     if (type === 'npc') {
       const npc = obj;
-      const roleId = window.Dialogue ? window.Dialogue.inferRoleId(npc.name, npc.title) : 'shaoxia';
+      const roleId = this.getNpcPortraitRoleId(npc);
       const bigPortraitSvg = window.Portraits ? window.Portraits.getPortraitSvg(roleId, 68) : '👤';
       const roleSeal = window.Dialogue ? window.Dialogue.getRoleBadge(roleId, npc.name) : '<div class="dialogue-role-seal seal-mortal">人</div>';
       const coordX = Math.round(npc.x / 32);
@@ -11717,7 +11785,7 @@ class GameApp2D {
           <!-- 头部肖像与名称、品质与五行 -->
           <div class="roster-card-header">
             <div class="roster-card-avatar-wrap" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);border:2px solid ${elemColor};border-radius:8px;position:relative;overflow:hidden;width:68px;height:68px;flex-shrink:0;">
-              ${window.Portraits ? window.Portraits.getPortraitSvg(p.id, 64, { noBorder: true }) : `<span style="font-size:42px;">${p.icon || '🐾'}</span>`}
+              ${window.Portraits ? window.Portraits.getPortraitSvg(this.getUnitVisualId({ templateId: p.id }), 64, { noBorder: true }) : `<span style="font-size:42px;">${p.icon || '🐾'}</span>`}
               <div class="dialogue-role-seal seal-${p.quality === 'jinxian' ? 'god' : (p.quality === 'sanxian' ? 'immortal' : 'demon')}">${p.qualityName}</div>
             </div>
             <div class="roster-card-title-wrap">

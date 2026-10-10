@@ -1,0 +1,21 @@
+{
+  "errors": [],
+  "broken": [],
+  "checks": [
+    {
+      "treeRestored": true,
+      "treeCollisionIntact": true
+    },
+    {
+      "waterCameraStable": true
+    },
+    {
+      "petNightYaksha": true,
+      "petRedboy": true,
+      "petCat": true
+    },
+    {
+      "baiguStagesConsistent": true
+    }
+  ]
+}

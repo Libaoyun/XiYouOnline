@@ -45094,6 +45094,7 @@ window.GAME_DATA.MAPS_2D = {
         monster.appearance = window.VisualIdentity.resolveMonster(monster.appearance, monster.name, monster.id);
       }
       for (const npc of map.npcs || []) {
+        if (window.VisualIdentity.npcAppearances[npc.id]) npc.appearance = window.VisualIdentity.npcAppearances[npc.id];
         if (npc.name.includes('受困小猴')) npc.appearance = 'stone_monkey';
         if (npc.name.includes('东海龙王')) npc.appearance = 'aoguang';
         if (npc.name.includes('巡海夜叉')) npc.appearance = 'yecha';

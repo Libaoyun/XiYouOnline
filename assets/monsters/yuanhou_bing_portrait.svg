@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="27 18 66 66"><title>猿猴兵</title>
+    <defs><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6d4bd"/><stop offset=".55" stop-color="#85877e"/><stop offset="1" stop-color="#363c3c"/></linearGradient>
+    <linearGradient id="armor" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9f9275"/><stop offset=".5" stop-color="#4c6264"/><stop offset="1" stop-color="#2d373a"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5d2a1"/><stop offset=".6" stop-color="#9d9275"/><stop offset="1" stop-color="#675642"/></linearGradient></defs>
+    <g stroke-linejoin="round" stroke-linecap="round"><g stroke-linecap="round"><path d="M91 117 L88 39" stroke="#8b6c48" stroke-width="3"/>
+    <path d="M88 29 L84 44 L93 44Z" fill="#c5c9b5"/>
+    <path d="M86 53 L98 58 L96 65 L88 62Z" fill="#4c6264"/></g>
+    <path d="M48 94 L44 119 L36 124 L51 126 L58 97 M63 97 L70 122 L68 126 L84 125 L78 118 L75 93" fill="url(#fur)" stroke="#4b4b43"/>
+    <path d="M43 63 Q60 54 77 63 L81 98 Q60 107 39 98Z" fill="url(#fur)"/>
+    <path d="M42 67 Q28 81 33 105 M78 67 Q93 80 88 96" fill="none" stroke="url(#fur)" stroke-width="10"/>
+    <ellipse cx="33" cy="105" rx="5" ry="4" fill="#d6d4bd"/><ellipse cx="88" cy="96" rx="5" ry="4" fill="#d6d4bd"/>
+    <path d="M44 66 Q60 60 76 66 L77 94 Q60 102 43 94Z" fill="url(#armor)" stroke="#9d9275"/>
+    <path d="M46 70 Q60 76 74 70 M46 78 Q60 84 74 78 M46 86 Q60 92 74 86" fill="none" stroke="#9d9275" stroke-width=".8"/>
+    <path d="M45 66 L34 70 L35 80 L46 77 M75 66 L85 70 L84 80 L74 77" fill="url(#armor)" stroke="#9d9275"/>
+    <circle cx="60" cy="78" r="4" fill="#4c6264" stroke="#9d9275"/>
+    <path d="M44 96 Q60 100 77 96" fill="none" stroke="#9d9275" stroke-width="3"/>
+    <ellipse cx="43" cy="48" rx="5" ry="7" fill="#85877e"/><ellipse cx="77" cy="48" rx="5" ry="7" fill="#85877e"/>
+    <path d="M44 38 Q60 29 76 38 L78 53 L71 67 L60 71 L49 67 L42 53Z" fill="url(#fur)"/>
+    <path d="M49 43 Q54 39 60 45 Q66 39 72 43 L70 52 Q73 61 60 65 Q47 61 50 52Z" fill="#d3c5a7"/>
+    <path d="M49 46 L55 48 M65 48 L72 45" fill="none" stroke="#413b33" stroke-width="2"/>
+    <ellipse cx="53" cy="49" rx="2" ry="1.5" fill="#d9be7f"/><ellipse cx="68" cy="49" rx="2" ry="1.5" fill="#d9be7f"/>
+    <circle cx="54" cy="49" r=".9" fill="#292e31"/><circle cx="67" cy="49" r=".9" fill="#292e31"/>
+    <path d="M57 54 L63 54 L60 57 M54 60 Q60 62 66 60" fill="none" stroke="#7b5a47"/>
+    <path d="M45 52 L42 58 M76 52 L79 58 M49 65 L48 69 M71 65 L72 69" fill="none" stroke="#d6d4bd"/>
+    <path d="M45 40 Q43 24 60 23 Q78 24 76 40 L68 35 L52 35Z" fill="url(#armor)" stroke="#9d9275"/>
+    <path d="M60 24 Q51 12 40 19" fill="none" stroke="#4c6264" stroke-width="3"/>
+    </g></svg>

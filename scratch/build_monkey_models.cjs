@@ -1,0 +1,52 @@
+// Offline vector source for the six monkey stages. No external dependencies.
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..', 'assets', 'monsters');
+function build(family, rank) {
+  const ape = family === 'yuanhou', soldier = rank > 0, general = rank === 2;
+  const id = family + (general ? '_jiang' : soldier ? '_bing' : '');
+  const fur = ape ? '#85877e' : '#a78358', light = ape ? '#d6d4bd' : '#e0b889';
+  const cloth = ape ? '#4c6264' : '#725345', metal = general ? '#c2a168' : '#9d9275';
+  const width = ape ? 17 : 13;
+  const title = (ape ? '猿猴' : '猕猴') + (general ? '将' : soldier ? '兵' : '');
+  const tail = ape ? '' : '<path d="M39 99 C12 110 10 77 27 75" fill="none" stroke="url(#fur)" stroke-width="5"/>';
+  const weapon = soldier ? `<g stroke-linecap="round"><path d="M91 117 L88 39" stroke="#8b6c48" stroke-width="3"/>
+    ${general ? '<path d="M88 38 Q106 20 100 49 L89 56Z" fill="url(#gold)" stroke="#caba8e"/>' : '<path d="M88 29 L84 44 L93 44Z" fill="#c5c9b5"/>'}
+    <path d="M86 53 L98 58 L96 65 L88 62Z" fill="${cloth}"/></g>` : '';
+  const armor = soldier ? `<path d="M44 66 Q60 60 76 66 L77 94 Q60 102 43 94Z" fill="url(#armor)" stroke="${metal}"/>
+    <path d="M46 70 Q60 76 74 70 M46 78 Q60 84 74 78 M46 86 Q60 92 74 86" fill="none" stroke="${metal}" stroke-width=".8"/>
+    <path d="M45 66 L34 70 L35 80 L46 77 M75 66 L85 70 L84 80 L74 77" fill="url(#armor)" stroke="${metal}"/>
+    <circle cx="60" cy="78" r="${general ? 7 : 4}" fill="${cloth}" stroke="${metal}"/>
+    ${general ? '<path d="M57 77 L60 73 L64 78 L60 82Z" fill="#dbc58b"/><path d="M47 92 L42 111 L55 112 L60 97 L66 112 L79 110 L73 92Z" fill="url(#armor)" stroke="#b7a077"/>' : ''}` : '';
+  const crown = general ? `<path d="M47 39 L44 24 L52 29 L60 17 L68 29 L76 24 L73 39Z" fill="url(#gold)" stroke="#ded2a4"/>
+    <path d="M55 24 Q36 -2 20 11 M66 24 Q91 -3 112 8" fill="none" stroke="${ape ? '#9bb3a7' : '#b97458'}" stroke-width="2"/>
+    <circle cx="60" cy="29" r="3" fill="#916b66"/>` : soldier ? `<path d="M45 40 Q43 24 60 23 Q78 24 76 40 L68 35 L52 35Z" fill="url(#armor)" stroke="${metal}"/>
+    <path d="M60 24 Q51 12 40 19" fill="none" stroke="${cloth}" stroke-width="3"/>` : `<path d="M49 39 Q46 29 54 32 L59 26 L64 33 L70 31 L72 40" fill="url(#fur)"/>`;
+  return { id, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="136" viewBox="0 0 120 136"><title>${title}</title>
+    <defs><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${light}"/><stop offset=".55" stop-color="${fur}"/><stop offset="1" stop-color="#363c3c"/></linearGradient>
+    <linearGradient id="armor" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9f9275"/><stop offset=".5" stop-color="${cloth}"/><stop offset="1" stop-color="#2d373a"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5d2a1"/><stop offset=".6" stop-color="${metal}"/><stop offset="1" stop-color="#675642"/></linearGradient></defs>
+    <g stroke-linejoin="round" stroke-linecap="round">${tail}${weapon}
+    <path d="M48 94 L44 119 L36 124 L51 126 L58 97 M63 97 L70 122 L68 126 L84 125 L78 118 L75 93" fill="url(#fur)" stroke="#4b4b43"/>
+    <path d="M${60-width} 63 Q60 54 ${60+width} 63 L${64+width} 98 Q60 107 ${56-width} 98Z" fill="url(#fur)"/>
+    <path d="M${59-width} 67 Q${45-width} 81 33 105 M${61+width} 67 Q${76+width} 80 88 96" fill="none" stroke="url(#fur)" stroke-width="${ape ? 10 : 7}"/>
+    <ellipse cx="33" cy="105" rx="5" ry="4" fill="${light}"/><ellipse cx="88" cy="96" rx="5" ry="4" fill="${light}"/>
+    ${armor}<path d="M44 96 Q60 100 77 96" fill="none" stroke="${soldier ? metal : '#695c43'}" stroke-width="3"/>
+    <ellipse cx="43" cy="48" rx="5" ry="7" fill="${fur}"/><ellipse cx="77" cy="48" rx="5" ry="7" fill="${fur}"/>
+    <path d="M44 38 Q60 29 76 38 L78 53 L71 67 L60 71 L49 67 L42 53Z" fill="url(#fur)"/>
+    <path d="M49 43 Q54 39 60 45 Q66 39 72 43 L70 52 Q73 61 60 65 Q47 61 50 52Z" fill="${ape ? '#d3c5a7' : '#dcb089'}"/>
+    <path d="M49 46 L55 48 M65 48 L72 45" fill="none" stroke="#413b33" stroke-width="2"/>
+    <ellipse cx="53" cy="49" rx="2" ry="1.5" fill="#d9be7f"/><ellipse cx="68" cy="49" rx="2" ry="1.5" fill="#d9be7f"/>
+    <circle cx="54" cy="49" r=".9" fill="#292e31"/><circle cx="67" cy="49" r=".9" fill="#292e31"/>
+    <path d="M57 54 L63 54 L60 57 M54 60 Q60 62 66 60" fill="none" stroke="#7b5a47"/>
+    <path d="M45 52 L42 58 M76 52 L79 58 M49 65 L48 69 M71 65 L72 69" fill="none" stroke="${light}"/>
+    ${crown}${!soldier ? '<path d="M52 74 Q60 69 68 74 L67 89 Q60 94 53 89Z" fill="#b8ac8c" opacity=".5"/>' : ''}
+    </g></svg>` };
+}
+for (const family of ['mihou', 'yuanhou']) for (const rank of [0, 1, 2]) {
+  const { id, svg } = build(family, rank);
+  fs.writeFileSync(path.join(root, id + '_model.svg'), svg + '\n');
+  if (rank < 2) fs.writeFileSync(path.join(root, id + '_portrait.svg'),
+    svg.replace('width="120" height="136" viewBox="0 0 120 136"', 'width="100" height="100" viewBox="27 18 66 66"') + '\n');
+}
+console.log('Built six distinct monkey stage models.');

@@ -19,6 +19,14 @@ class DialogueEngine {
   // 根据说话人姓名/称号推断角色立绘ID
   inferRoleId(speaker, speakerTitle) {
     const s = `${speaker || ''} ${speakerTitle || ''}`;
+    if (speaker === '送斋饭的村姑') return 'baigu_maiden';
+    if (speaker === '寻女的老妪') return 'baigu_granny';
+    if (speaker === '拄杖的老翁') return 'baigu_oldman';
+    if (s.includes('镇元')) return 'zhenyuanzi';
+    if (s.includes('太上老君') || s.includes('兜率天尊')) return 'taishang_laojun';
+    if (s.includes('唐太宗') || s.includes('李世民')) return 'tangtaizong';
+    if (s.includes('高翠兰')) return 'gaocuilan';
+    if (s.includes('玄风道长')) return 'xuanfeng_daoshi';
     if (s.includes('百花羞')) return 'baihuaxiu';
     if (s.includes('宝象国国王')) return 'baoxiang_king';
     if (s.includes('苏绣娘')) return 'changan_girl';

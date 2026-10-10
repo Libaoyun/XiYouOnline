@@ -19,13 +19,19 @@ class ForgeSystem {
       { star: 12, rate: 0.15, costStones: 8, costSilver: 88888, penalty: 'down_2' }
     ];
 
-    if (currentStar >= 12) return null; // 已达到强化最高峰
+    if (!Number.isInteger(currentStar) || currentStar < 0 || currentStar >= 12) return null;
     return table[currentStar];
   }
 
   // 执行强化
   static enhance(equipObj, inventory, player, useProtectStone = false) {
-    const curStar = equipObj.star || 0;
+    const baseItem = window.GAME_DATA.ITEMS[equipObj?.itemId];
+    const isOwned = equipObj && (Object.values(player?.equipment || {}).includes(equipObj) ||
+      inventory?.slots.some(slot => slot.equipData === equipObj && slot.itemId === equipObj.itemId));
+    if (!baseItem || baseItem.type !== 'equip' || !isOwned) {
+      return { success: false, msg: '请重新选择当前持有的装备，未扣除强化材料。' };
+    }
+    const curStar = equipObj.star ?? 0;
     if (curStar >= 12) {
       return { success: false, msg: '该装备已强化至最高 +12 星，已达天道极限！' };
     }
@@ -34,13 +40,15 @@ class ForgeSystem {
     if (!info) return { success: false, msg: '未知强化参数！' };
 
     // 检查银两
-    if (player.silver < info.costSilver) {
+    if (!Number.isSafeInteger(player.silver) || player.silver < info.costSilver) {
       return { success: false, msg: `银两不足！强化需要 ${info.costSilver} 两银子。` };
     }
 
     // 检查强化石
-    if (inventory.getItemCount('qianghua_shi') < info.costStones) {
-      return { success: false, msg: `强化石不足！需要 ${info.costStones} 颗强化石。` };
+    const stoneCount = inventory.getItemCount('qianghua_shi');
+    const ironCount = inventory.getItemCount('meteor_iron');
+    if (stoneCount + ironCount < info.costStones) {
+      return { success: false, msg: `强化材料不足！需要 ${info.costStones} 颗强化石或天外陨铁。` };
     }
 
     // 检查定星石
@@ -50,15 +58,16 @@ class ForgeSystem {
 
     // 扣减资源
     player.silver -= info.costSilver;
-    inventory.removeItem('qianghua_shi', info.costStones);
+    const takeStones = Math.min(stoneCount, info.costStones);
+    if (takeStones > 0) inventory.removeItem('qianghua_shi', takeStones);
+    if (takeStones < info.costStones) inventory.removeItem('meteor_iron', info.costStones - takeStones);
     if (useProtectStone) {
       inventory.removeItem('dingxing_shi', 1);
     }
 
     // 几率判定
     const isSuccess = Math.random() < info.rate;
-    const baseItem = window.GAME_DATA.ITEMS[equipObj.itemId];
-    const equipName = baseItem ? baseItem.name : '神秘装备';
+    const equipName = baseItem.name;
 
     if (isSuccess) {
       equipObj.star = curStar + 1;
@@ -66,6 +75,7 @@ class ForgeSystem {
       window.Sound.playSuccess();
       return {
         success: true,
+        attempted: true,
         star: equipObj.star,
         msg: `【锻造通灵】火光冲天，金石交鸣！恭喜少侠，【${equipName}】成功淬炼升星至 +${equipObj.star}！`
       };
@@ -87,6 +97,7 @@ class ForgeSystem {
       window.Sound.playFailure();
       return {
         success: false,
+        attempted: true,
         star: equipObj.star,
         msg: `【淬火失手】炉温不均，强化遗憾失败……${dropText}`
       };

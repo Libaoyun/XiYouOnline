@@ -18,11 +18,11 @@ class Inventory {
           ...s,
           equipData: {
             star: ed.star || 0,
-            sockets: ed.sockets || [null, null, null]
+            sockets: (ed.sockets || [null, null, null]).slice()
           }
         };
       }
-      return s;
+      return { ...s };
     });
   }
 
@@ -51,7 +51,15 @@ class Inventory {
   // 添加物品（新装备绝不自动穿戴，直接入包）
   addItem(itemId, count = 1, customData = null) {
     const itemData = window.GAME_DATA.ITEMS[itemId];
-    if (!itemData) return false;
+    if (!itemData || !Number.isSafeInteger(count) || count <= 0) return false;
+
+    // 先计算整批容量，不能补入半堆后才报告背包已满。
+    const freeSlots = Math.max(0, this.maxSlots - this.slots.length);
+    const stackSpace = itemData.type === 'equip' ? 0 : this.slots
+      .filter(slot => slot.itemId === itemId)
+      .reduce((space, slot) => space + Math.max(0, 99 - slot.count), 0);
+    const neededSlots = itemData.type === 'equip' ? count : Math.ceil(Math.max(0, count - stackSpace) / 99);
+    if (neededSlots > freeSlots) return false;
 
     // 装备不可堆叠，独立占一格，初始保证3孔
     if (itemData.type === 'equip') {
@@ -64,7 +72,7 @@ class Inventory {
           count: 1,
           equipData: {
             star: ed.star || 0,
-            sockets: ed.sockets || [null, null, null]
+            sockets: (ed.sockets || [null, null, null]).slice()
           }
         });
       }
@@ -113,6 +121,7 @@ class Inventory {
 
   // 扣减指定物品
   removeItem(itemId, count = 1) {
+    if (!Number.isSafeInteger(count) || count <= 0) return false;
     if (this.getItemCount(itemId) < count) return false;
 
     let remaining = count;
@@ -286,12 +295,16 @@ class Inventory {
 
   // 宝石镶嵌 (装备最多3孔，同时支持背包中装备与已穿戴装备)
   socketGem(equipInstanceId, gemItemId, socketIdx, player) {
+    if (!Number.isInteger(socketIdx) || socketIdx < 0 || socketIdx >= 3) {
+      return { success: false, msg: '无效的宝石孔位编号！' };
+    }
     let targetEquipData = null;
     let targetItem = null;
 
     const equipSlot = this.slots.find(s => s.instanceId === equipInstanceId);
     if (equipSlot) {
       targetItem = window.GAME_DATA.ITEMS[equipSlot.itemId];
+      if (!targetItem || targetItem.type !== 'equip') return { success: false, msg: '目标物品并非有效装备！' };
       equipSlot.equipData = equipSlot.equipData || { star: 0, sockets: [null, null, null] };
       equipSlot.equipData.sockets = equipSlot.equipData.sockets || [null, null, null];
       targetEquipData = equipSlot.equipData;
@@ -309,11 +322,9 @@ class Inventory {
 
     if (!targetEquipData) return { success: false, msg: '未找到对应装备！' };
     if (!targetItem || targetItem.type !== 'equip') return { success: false, msg: '目标物品并非有效装备！' };
-    if (socketIdx < 0 || socketIdx >= 3) return { success: false, msg: '无效的宝石孔位编号！' };
-
     targetEquipData.sockets = targetEquipData.sockets || [null, null, null];
     if (targetEquipData.sockets[socketIdx]) {
-      return { success: false, msg: `该孔位已镶嵌有【${window.GAME_DATA.ITEMS[targetEquipData.sockets[socketIdx]].name}】！需先拆除！` };
+      return { success: false, msg: `该孔位已镶嵌有【${window.GAME_DATA.ITEMS[targetEquipData.sockets[socketIdx]]?.name || '宝石'}】！需先拆除！` };
     }
 
     const gemItem = window.GAME_DATA.ITEMS[gemItemId];
@@ -337,8 +348,8 @@ class Inventory {
 
   // 宝石摘除 (同时支持背包中装备与身上穿戴的装备)
   unsocketGem(equipInstanceId, socketIdx, player) {
-    if (this.slots.length >= this.maxSlots) {
-      return { success: false, msg: '背包已满，无法摘除宝石！' };
+    if (!Number.isInteger(socketIdx) || socketIdx < 0 || socketIdx >= 3) {
+      return { success: false, msg: '无效的宝石孔位编号！' };
     }
 
     let targetEquipData = null;
@@ -363,8 +374,11 @@ class Inventory {
     if (!gemItemId) return { success: false, msg: '该孔位为空，无宝石可拆除！' };
 
     const gemItem = window.GAME_DATA.ITEMS[gemItemId];
+    if (!gemItem || gemItem.type !== 'gem') return { success: false, msg: '孔内宝石信息无效，无法摘除！' };
+    if (!this.addItem(gemItemId, 1)) {
+      return { success: false, msg: '背包已满，无法摘除宝石！' };
+    }
     targetEquipData.sockets[socketIdx] = null;
-    this.addItem(gemItemId, 1);
 
     if (player) {
       player.recalculateStats(false);
